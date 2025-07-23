@@ -2,7 +2,7 @@
   "models": {
     "main": {
       "provider": "gemini-cli",
-      "modelId": "gemini-2.5-pro",
+      "modelId": "gemini-2.5-flash",
       "maxTokens": 65536,
       "temperature": 0.2
     },
@@ -30,7 +30,8 @@
     "bedrockBaseURL": "https://bedrock.us-east-1.amazonaws.com",
     "responseLanguage": "koearn",
     "defaultTag": "master",
-    "azureOpenaiBaseURL": "https://your-endpoint.openai.azure.com/"
+    "azureOpenaiBaseURL": "https://your-endpoint.openai.azure.com/",
+    "userId": "1234567890"
   },
   "claudeCode": {}
 }
