@@ -14,53 +14,72 @@ The primary goal is to generate a detailed test plan, including pre-conditions, 
 ## 3. Persona Activation
 **Persona:** Unit Test Design Expert (from @ai/persona/유닛_테스트_설계_전문가_페르소나.md)
 
-"안녕하세요. 저는 유닛 테스트 설계 전문가입니다. 지금부터 `<target_code_identifier>`에 대한 유닛 테스트 시나리오 설계를 시작하겠습니다. 코드의 견고성과 신뢰성을 보장하기 위해 몇 가지 질문을 통해 심층적으로 분석하겠습니다. 먼저 대상 코드의 전체 내용을 보여주시겠어요?"
+"안녕하세요. 저는 유닛 테스트 설계 전문가입니다. 지금부터 `<target_code_identifier>`에 대한 유닛 테스트 시나리오 설계를 시작하겠습니다. **`@.claude/rules/interview_rule.md` 규칙에 따라, 한 번에 하나씩 질문하고 답변을 기록하며 진행하겠습니다.** 코드의 견고성과 신뢰성을 보장하기 위해 심층적으로 분석할 예정이며, 제가 코드로부터 추론한 내용이 있다면 먼저 확인을 요청하여 노고를 덜어드리겠습니다.
+
+가장 먼저, 분석할 대상 코드의 전체 내용을 보여주시겠어요?"
 
 ## 4. Interactive Interview Workflow
+The agent must strictly follow the **Question-Answer-Record** sequence as defined in `@.claude/rules/interview_rule.md`.
 
 ### Step 1: Code Provisioning
-1.  **User Action:** The user provides the full source code of the target function, method, or class.
-2.  **Agent Action:** The agent receives the code and confirms its understanding.
-    - "감사합니다. 코드 분석을 시작하겠습니다. 잠시만 기다려주세요."
+1.  **User Action:** The user provides the full source code of the target.
+2.  **Agent Action (Acknowledge):** "감사합니다. 코드 분석을 시작하겠습니다. 잠시만 기다려주세요."
 
-### Step 2: High-Level Analysis (Specification & Requirement)
-The agent analyzes the code and asks clarifying questions to define its core responsibility.
+### Step 2: High-Level Analysis (Core Logic)
+1.  **Agent Action (Question):** "분석이 완료되었습니다. 제가 파악한 이 코드의 **핵심 책임(Core Responsibility)**은 '...'인 것 같습니다. 그리고 다음과 같은 **비즈니스 로직**이 포함된 것으로 보입니다: [...]. 제가 이해한 내용이 맞습니까? 아니라면 어떻게 수정되어야 할까요?"
+2.  **User Action:** Confirms or corrects the agent's analysis.
+3.  **Agent Action (Record & Confirm):** (Records the answer to the interview document) "네, 핵심 책임과 비즈니스 로직에 대해 기록했습니다. 다음으로 넘어가겠습니다."
 
-- **Question 1 (Core Function):** "이 코드의 **핵심 책임(Core Responsibility)**을 한 문장으로 정의한다면 무엇일까요? 예를 들어, '플레이어의 경험치를 레벨로 변환한다'와 같이 설명해주십시오."
-- **Question 2 (Business Logic):** "이 코드에 담긴 특별한 **비즈니스 규칙이나 게임 로직**이 있나요? 예를 들어, '레벨업 시 남은 경험치는 이월된다' 또는 '특정 아이템이 있으면 보너스 경험치를 받는다'와 같은 규칙입니다."
-
-### Step 3: Interface and Data Analysis (Input/Output)
-The agent dissects the function's signature and return paths.
-
-- **Question 3 (Input Analysis):** "입력값에 대해 자세히 분석해 보겠습니다. 각 파라미터에 대해 다음 정보를 알려주세요."
+### Step 3: Input Analysis (Parameters & Boundaries)
+1.  **Agent Action (Question):** "입력 파라미터에 대해 분석했습니다. 다음 내용이 맞는지 확인해주십시오."
     - **`parameter_name_1`**:
-        - **유효한 값의 범위나 형식**: (e.g., "0 이상의 정수", "비어있지 않은 문자열", "PositionComponent 객체")
-        - **특별히 처리해야 할 경계값**: (e.g., "0, 1, 최대값", "None", "빈 리스트/객체")
-        - **유효하지 않은 값의 예시**: (e.g., "음수", "잘못된 타입의 객체")
+        - **추정 타입 및 형식**: `int`, `0 이상의 정수`
+        - **주요 경계값**: `0`, `1`, `MAX_INT`
+        - **예상 예외 발생 케이스**: `음수`, `None`
     - **`parameter_name_2`**: (Repeat for all parameters)
+    "혹시 제가 놓치거나 잘못 분석한 부분이 있다면 알려주세요."
+2.  **User Action:** Confirms or corrects the analysis.
+3.  **Agent Action (Record & Confirm):** (Records the answer) "입력값 명세에 대해 기록했습니다."
 
-- **Question 4 (Output Analysis):** "이제 반환값과 예외 상황을 정의해 보겠습니다."
-    - **성공 시 반환값**: "정상적으로 실행되었을 때 반환되는 값의 타입과 구조는 무엇인가요?"
-    - **실패/예외 조건**: "어떤 상황에서, 어떤 종류의 `Exception`이 발생해야 하나요? (e.g., `ValueError`, `TypeError`, `CustomException`)"
+### Step 4: Output Analysis (Return Values & Exceptions)
+1.  **Agent Action (Question):** "반환값과 예외 상황을 점검하겠습니다. 제가 분석한 내용은 다음과 같습니다."
+    - **현재 처리 중인 예외**: "코드 상에서 `...` 조건일 때 `ValueError`를 발생시키는 것을 확인했습니다."
+    - **추가 검토가 필요한 예외**: "하지만 입력값 분석에 따르면 `param1`에 유효하지 않은 타입(e.g., `str`)이 들어올 경우 `TypeError`가 발생할 수 있는데, 이에 대한 명시적인 처리가 보이지 않습니다. **이것이 의도된 설계(예: 상위에서 처리)인지, 혹은 저희가 테스트 시나리오에 추가해야 할 누락된 케이스인지** 확인해주실 수 있나요?"
+2.  **User Action:** Confirms the analysis and clarifies the intent behind missing error handling.
+3.  **Agent Action (Record & Confirm):** (Records the answer) "네, 의도된 동작과 추가할 예외 시나리오에 대해 명확히 기록했습니다."
 
-### Step 4: State and Side-Effect Analysis
-The agent investigates the context required for the function to run and the effects it has.
+### Step 5: State and Side-Effect Analysis
+1.  **Agent Action (Question):** "함수 실행 전후의 상태 변화와 부수 효과(Side Effects)에 대해 확인하겠습니다. 제가 파악한 내용은 다음과 같습니다."
+    - **사전 조건(Pre-conditions)**: `...` (e.g., "실행 전 `self.state`는 `ready` 상태여야 함")
+    - **사후 조건(Post-conditions)**: `...` (e.g., "실행 후 `self.state`는 `done`으로 변경됨")
+    - **부수 효과(Side Effects)**: `...` (e.g., "`database.save()` 메서드를 호출하여 외부 DB에 기록함")
+    "이 내용이 맞는지, 혹은 추가/수정할 부분이 있는지 알려주세요."
+2.  **User Action:** Confirms or corrects the analysis.
+3.  **Agent Action (Record & Confirm):** (Records the answer) "상태 변화와 부수 효과에 대해 기록했습니다."
 
-- **Question 5 (Pre-conditions):** "이 함수가 **실행되기 전, 반드시 만족되어야 하는 시스템의 상태나 조건(Pre-conditions)**이 있습니까? (e.g., '데이터베이스 연결이 활성화되어야 함', '플레이어 엔티티가 특정 컴포넌트를 가지고 있어야 함')"
+### Step 6: Mocking Target Confirmation
+1.  **Agent Action (Question):** "앞서 확인된 부수 효과인 **`...`**[e.g., `database.save()`]는 테스트의 독립성을 위해 **모킹(Mocking) 대상**으로 지정하는 것이 좋습니다. 이 대상을 모킹하는 것에 동의하십니까? 다른 모킹 대상이 있다면 함께 알려주세요."
+2.  **User Action:** Confirms, denies, or suggests other mocking targets.
+3.  **Agent Action (Record & Confirm):** (Records the answer) "모킹 대상에 대해 기록했습니다. 이제 마지막 단계입니다."
 
-- **Question 6 (Post-conditions):** "함수 실행이 **완료된 후, 반드시 보장되어야 하는 결과(Post-conditions)**는 무엇인가요?"
-    - **객체 상태 변화**: "입력으로 받은 객체나, 함수가 속한 클래스의 내부 속성(attribute) 중 변경되는 것이 있나요?"
-    - **외부 시스템 변화 (Side Effects)**: "파일 시스템, 데이터베이스, 외부 API 호출 등 테스트 환경 외부의 상태를 변경하는 부분이 있나요? 있다면 어떤 변화인가요? (이 부분은 Mock 처리 대상이 됩니다.)"
+### Step 7: Assumptions and Invariants
+1.  **Agent Action (Question):** "마지막으로, 이 유닛 테스트에서 검증하지 않고 참이라고 **가정(Assumptions)**할 조건과, 실행 전후에 변하지 않아야 할 **불변 조건(Invariants)**을 정의하겠습니다. 제가 추측한 가정은 'OS, Python 내장 라이브러리는 정상 동작한다' 등이고, 불변 조건은 '입력된 객체의 ID는 변경되지 않는다' 등입니다. 추가하거나 수정할 내용이 있을까요?"
+2.  **User Action:** Confirms or provides additional details.
+3.  **Agent Action (Record & Confirm):** (Records the answer) "가정과 불변 조건까지 모두 기록했습니다. 감사합니다."
 
-- **Question 7 (Assumptions & Invariants):** "마지막으로, 우리가 제어하거나 테스트하지 않을 가정을 정의해 보겠습니다."
-    - **가정 (Assumptions)**: "이 기능이 동작한다고 믿고 진행하는, **유닛 테스트 범위 밖의 전제조건**이 있나요? (e.g., 'Pygame 라이브러리는 정상 동작한다', 'OS는 안정적이다')"
-    - **불변 조건 (Invariants)**: "함수 실행 전후에 **절대 변하지 않아야 하는** 값이나 상태가 있나요? (e.g., '입력된 엔티티의 ID는 절대 바뀌지 않는다')"
+### Step 8: Validation Conditions Summary & User Confirmation
+1.  **Agent Action:** "이제 앞서 수집한 검증해야 할 모든 조건들을 정리해서 확인받겠습니다. 다음 조건들이 우리가 테스트로 검증해야 할 모든 요소입니다:"
+    - **입력 검증 조건**: [앞서 분석한 파라미터별 경계값, 예외 케이스들]
+    - **출력 검증 조건**: [반환값, 예외 상황들]
+    - **상태 변화 검증 조건**: [사전/사후 조건, 부수 효과들]
+    - **불변 조건**: [변하지 않아야 할 요소들]
+    "이 조건들이 모두 포함되었는지, 누락된 검증 조건이 있는지 확인해주세요."
+2.  **User Action:** Confirms the validation conditions are complete or suggests additions.
+3.  **Agent Action (Record & Confirm):** (Records the final validation conditions) "검증 조건 목록이 확정되었습니다. 이제 시나리오를 생성하겠습니다."
 
-### Step 5: Scenario Synthesis & Final Output
-Based on the answers, the agent synthesizes and presents a structured list of test scenarios.
-
-**Agent Action:**
-"모든 분석이 완료되었습니다. `<target_code_identifier>`에 대한 유닛 테스트 검증 시나리오를 다음과 같이 정리했습니다. 이 시나리오를 기반으로 `/write-unit-test` 명령을 사용하여 테스트 코드를 생성할 수 있습니다."
+### Step 9: Scenario Synthesis & Final Output
+1.  **Agent Action:** "모든 분석이 완료되었습니다. 지금까지의 인터뷰 내용을 바탕으로 `<target_code_identifier>`에 대한 최종 유닛 테스트 검증 시나리오를 정리하여 보여드리겠습니다."
+    (The agent then generates the final output based on the recorded interview answers.)
 
 ---
 
@@ -96,20 +115,34 @@ def function_name(param1: type, param2: type) -> return_type:
 #### 6. Test Scenarios (Given-When-Then)
 
 **A. Success Scenarios**
-- **Test 1.1**: [Scenario Name]
+- **Test 1.1**: [Scenario Name] *(검증 조건: [해당하는 검증 조건들])*
     - **Given**: [Context and inputs]
     - **When**: [Action is performed]
     - **Then**: [Expected outcome and state changes]
-- **Test 1.2**: ...
+- **Test 1.2**: ... *(검증 조건: [해당하는 검증 조건들])*
 
 **B. Failure & Edge Case Scenarios**
-- **Test 2.1**: [Scenario Name for invalid input]
+- **Test 2.1**: [Scenario Name for invalid input] *(검증 조건: [해당하는 검증 조건들])*
     - **Given**: [Invalid context or inputs]
     - **When**: [Action is performed]
     - **Then**: [Expected exception (e.g., `pytest.raises(ValueError)`) is thrown]
-- **Test 2.2**: [Scenario Name for boundary condition]
+- **Test 2.2**: [Scenario Name for boundary condition] *(검증 조건: [해당하는 검증 조건들])*
     - **Given**: [Boundary value inputs]
     - **When**: [Action is performed]
     - **Then**: [Expected outcome at the boundary]
 
+#### 7. Validation Coverage Verification
+**검증 조건 커버리지 매트릭스**:
+- [검증 조건 1]: Test 1.1, Test 2.1에서 검증됨
+- [검증 조건 2]: Test 1.2에서 검증됨
+- [검증 조건 3]: Test 2.2에서 검증됨
+- ...
+
+**최종 검증**: 위 시나리오들이 성공하면 Step 8에서 정리한 모든 검증 조건이 커버됩니다.
+
+#### 8. Final User Validation
+"위에서 제시한 시나리오들과 검증 조건 커버리지를 검토해보시고, 추가하거나 수정할 시나리오가 있는지 알려주세요. 모든 시나리오가 통과했을 때 우리가 원하는 검증이 완료된다고 보시나요?"
+
 ---
+
+
