@@ -1,0 +1,109 @@
+{
+	"meta": {
+		"generatedAt": "2025-08-07T18:04:56.624Z",
+		"tasksAnalyzed": 12,
+		"totalTasks": 12,
+		"analysisCount": 12,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "ECS 프레임워크 기반 구조 설정",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "ECS 아키텍처의 핵심 구성요소별로 세분화하여 프로젝트 구조 설정, Entity/Component/System 추상 클래스 정의, EntityManager 구현, ComponentRegistry 구현, SystemOrchestrator 구현, 의존성 및 환경 설정 단계로 나누어 구현",
+			"reasoning": "ECS 아키텍처는 게임 개발에서 복잡한 패턴이며, 여러 핵심 컴포넌트를 정의하고 상호작용을 구현해야 함. 프로젝트의 기반이 되는 중요한 작업으로 신중한 설계가 필요"
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "게임 루프 및 기본 렌더링 시스템 구현",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "pygame 기반 게임 루프 구현, 고정 시간 간격 처리, RenderSystem과 스프라이트 렌더링 구현, 게임 상태 관리 및 설정 파일 처리 단계로 구분하여 구현",
+			"reasoning": "pygame을 활용한 표준적인 게임 루프 구현으로 중간 복잡도. FPS 관리와 렌더링 최적화가 주요 고려사항"
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "충돌감지 및 물리 시스템 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "AABB 충돌감지 알고리즘 구현, CollisionComponent 설계, PhysicsSystem의 벡터 연산 구현, 브루트포스 충돌 처리, 추후 확장성을 위한 인터페이스 추상화 단계로 나누어 구현",
+			"reasoning": "물리 시스템과 충돌감지는 게임 핵심 메커니즘으로 수학적 계산과 성능 최적화가 중요. 알고리즘 구현의 복잡성이 있음"
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "JSON 데이터 로딩 및 관리 시스템",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "DataLoader 클래스 구현, Pydantic 모델 정의, JSON 스키마 검증 시스템, 런타임 데이터 리로딩 기능 구현 단계로 나누어 구현",
+			"reasoning": "데이터 로딩은 상대적으로 표준적인 작업이지만, 타입 안전성과 유효성 검증, 에러 처리가 필요한 중간 복잡도 작업"
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "플레이어 마우스 이동 시스템",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "마우스 위치 추적 및 벡터 계산 구현, PlayerMovementComponent와 부드러운 이동 로직, 화면 경계 처리 및 예외 상황 대응으로 나누어 구현",
+			"reasoning": "마우스 입력 처리와 기본적인 벡터 수학을 사용하는 비교적 단순한 시스템. pygame의 표준 기능을 활용"
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "자동 공격 및 투사체 시스템",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "WeaponComponent와 자동 타겟팅 시스템 구현, ProjectileComponent와 투사체 물리 처리, 투사체 충돌 및 수명 관리, 거리 계산 및 최적화 로직으로 나누어 구현",
+			"reasoning": "자동 타겟팅과 투사체 물리 처리가 결합된 중간 복잡도 시스템. 성능 최적화와 정확한 충돌 처리가 요구됨"
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "기본 적 AI 및 스포너 시스템",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "EnemyAIComponent와 상태 기반 AI 구조 설계, AI 상태 전환 로직 구현, EnemySpawner와 시간 기반 생성 시스템, 난이도 조정 메커니즘, JSON 기반 적 데이터 관리 단계로 나누어 구현",
+			"reasoning": "상태 기반 AI와 동적 난이도 조정이 포함된 복잡한 시스템. 여러 AI 상태와 스포너 로직의 조화가 필요"
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "경험치 및 레벨업 시스템",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "ExperienceComponent와 경험치 관리 구조 구현, 이벤트 기반 경험치 부여 시스템, 레벨업 공식과 LEVEL_UP 이벤트 처리, UI 렌더링용 컴포넌트 구현으로 나누어 구현",
+			"reasoning": "이벤트 시스템과 수학적 공식이 포함된 중간 복잡도 작업. 다른 시스템과의 연동이 중요"
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "JSON 기반 아이템 시스템 및 인벤토리",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "JSON 아이템 데이터 구조 설계 및 로딩, 6슬롯 인벤토리 관리 시스템 구현, ItemComponent와 효과 적용 메커니즘, 레벨업 시 아이템 선택 UI, 아이템 효과 중첩 계산 로직으로 나누어 구현",
+			"reasoning": "인벤토리 관리, UI 상호작용, 아이템 효과 계산이 복합적으로 결합된 복잡한 시스템. 사용자 경험과 데이터 관리가 모두 중요"
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "룰 엔진 기반 시너지 시스템",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "룰 엔진 아키텍처 설계, 시너지 패턴 매칭 알고리즘 구현, JSON 기반 시너지 규칙 관리, 실시간 시너지 계산 및 효과 적용, 최대치 제한 및 밸런싱 시스템, 성능 최적화로 나누어 구현",
+			"reasoning": "룰 엔진은 복잡한 패턴 매칭과 동적 효과 계산을 요구하는 고도의 시스템. 확장성과 성능을 모두 고려해야 함"
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "교장선생님 보스 시스템",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "BossSpawner와 타이밍 관리 시스템 구현, BossAI 패턴 시스템 (훈화 알파/베타) 구현, 디버프 시스템과 시각적 경고 표시, 미션 기반 디버프 해제 메커니즘, 보스 보상 시스템으로 나누어 구현",
+			"reasoning": "복잡한 보스 패턴과 미션 시스템, 디버프 관리가 결합된 고급 시스템. 타이밍과 상태 관리가 중요"
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "UI 시스템 및 게임 상태 표시",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "UISystem 기본 구조와 HUD 관리 구현, HealthBar/ExperienceBar 프로그레스 바 구현, InventoryUI와 ItemSelectionUI 모달 시스템, 시각적 피드백과 이펙트 시스템으로 나누어 구현",
+			"reasoning": "여러 UI 컴포넌트의 조화와 실시간 업데이트가 필요한 중간 복잡도 시스템. 사용자 경험이 중요한 요소"
+		}
+	]
+}
