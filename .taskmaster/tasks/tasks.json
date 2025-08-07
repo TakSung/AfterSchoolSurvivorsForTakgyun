@@ -74,7 +74,7 @@
               "1.1"
             ],
             "details": "pyproject.toml에 pygame>=2.6.0, numpy>=2.2.4, pytest>=8.0.0, ruff>=0.6.0 의존성을 설정합니다. requirements.txt와 dev-requirements.txt를 생성하고, ruff와 pytest 설정 파일을 추가합니다. Python 가상환경 생성 스크립트와 설치 가이드를 작성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
