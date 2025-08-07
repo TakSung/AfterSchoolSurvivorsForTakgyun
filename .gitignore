@@ -229,3 +229,9 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# settings
+*/*/config.json
+.taskmaster/config.json
+.gemini/settings.json
+.mcp.json
