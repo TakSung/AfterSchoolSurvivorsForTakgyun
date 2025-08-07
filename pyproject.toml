@@ -1,0 +1,80 @@
+# pyproject.toml
+
+[tool.ruff]
+# 검사할 파일 및 디렉터리 지정
+# 현재 프로젝트 구조에 맞게 'src' 또는 다른 폴더를 추가할 수 있습니다.
+include = ["*.py", "ai/**/*.py", "docs/**/*.py", "todo/**/*.py"]
+
+# 제외할 파일 및 디렉터리
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+# Python 3.12 버전을 기준으로 코드를 검사합니다.
+# 프로젝트의 Python 버전에 맞게 수정하세요.
+target-version = "py312"
+
+[tool.ruff.format]
+# 포맷터 설정 (인터뷰 기반)
+quote-style = "single"  # 홑따옴표 사용
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+# Linter 규칙 설정 (인터뷰 기반 + 추천 규칙)
+# 선택하신 규칙과 함께, 일반적으로 유용한 규칙(B, SIM, RUF)을 추가했습니다.
+select = [
+    "E",   # pycodestyle (오류)
+    "W",   # pycodestyle (경고)
+    "F",   # Pyflakes (논리적 오류)
+    "I",   # isort (import 정렬)
+    "D",   # pydocstyle (Docstring 스타일)
+    "ANN", # flake8-annotations (타입 힌트 강제)
+    "B",   # flake8-bugbear (버그 유발 가능성 높은 코드)
+    "C4",  # flake8-comprehensions (비효율적 comprehension)
+    "T20", # flake8-print (print문 사용 감지)
+    "S",   # flake8-bandit (보안 문제)
+    "UP",  # pyupgrade (최신 파이썬 문법으로 업그레이드)
+    "SIM", # flake8-simplify (코드 간소화)
+    "RUF", # Ruff 전용 규칙
+]
+
+# 비활성화할 규칙
+ignore = [
+    "S101",  # 'assert' 문 사용 경고 제외
+]
+
+# 한 줄의 최대 길이
+line-length = 79
+
+[tool.ruff.lint.pydocstyle]
+# Docstring 스타일로 PEP 257 지정
+convention = "pep257"
+
+[tool.ruff.lint.flake8-annotations]
+# 함수 인자, 반환 값 등에 타입 힌트가 없으면 경고
+# 필요에 따라 아래 규칙들을 개별적으로 비활성화할 수 있습니다.
+# "ANN101" - self에 타입 힌트 누락
+# "ANN102" - cls에 타입 힌트 누락
+# "ANN401" - Any 타입 사용 금지
+mypy-init-only = true
+suppress-none-returning = true
