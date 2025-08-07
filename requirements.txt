@@ -1,0 +1,24 @@
+# Essential Game Development
+pygame>=2.6.0
+numpy>=2.2.4
+pymunk>=6.8.1
+
+# UI and Menu Systems
+pygame-menu>=4.5.2
+pygame-gui>=0.6.14
+
+# Data Management
+pydantic>=2.0.0
+
+# Performance Optimization
+numba>=0.60.0
+cython>=3.0.0
+
+# Modern Development Tools
+ruff>=0.6.0
+pytest>=8.0.0
+memory-profiler
+
+# Additional Utilities
+pillow>=10.4.0
+pyinstaller>=6.0.0
