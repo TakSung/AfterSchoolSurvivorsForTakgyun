@@ -65,8 +65,28 @@ class ISystem(ABC):
 # 주요 시스템들
 class ICollisionSystem(ISystem): pass    # 충돌감지 (최우선 최적화)
 class IRenderSystem(ISystem): pass       # 렌더링 (2순위 최적화)  
+class ICameraSystem(ISystem): pass       # 카메라 시스템 (플레이어 추적 및 맵 오프셋)
+class IMapSystem(ISystem): pass          # 맵 렌더링 시스템 (카메라 오프셋 적용)
 class IAISystem(ISystem): pass           # AI 계산 (3순위 최적화)
 class IPhysicsSystem(ISystem): pass      # 물리 시뮬레이션 (4순위)
+
+# 카메라 시스템 구현 예시
+class CameraSystem(ICameraSystem):
+    def update(self, entities: List[Entity], delta_time: float) -> None:
+        # 플레이어의 이동 방향에 따라 카메라 오프셋 업데이트
+        for camera_entity in entities.with_component(CameraComponent):
+            camera = camera_entity.get_component(CameraComponent)
+            if camera.follow_target:
+                player_movement = camera.follow_target.get_component(PlayerMovementComponent)
+                
+                # 플레이어 이동의 역방향으로 카메라 오프셋 적용
+                camera.offset -= player_movement.direction * player_movement.speed * delta_time
+                
+                # 카메라 경계 처리
+                camera.offset.x = max(camera.world_bounds[0], 
+                                    min(camera.world_bounds[2], camera.offset.x))
+                camera.offset.y = max(camera.world_bounds[1], 
+                                    min(camera.world_bounds[3], camera.offset.y))
 ```
 
 ### Entity-Component 구조
@@ -85,6 +105,21 @@ class MovementComponent:
     acceleration: float
 
 @dataclass
+class PlayerMovementComponent:
+    # 카메라 시스템과 연동되는 플레이어 전용 이동 컴포넌트
+    direction: Vector2
+    speed: float
+    rotation_angle: float
+    angular_velocity_limit: float = 5.0
+
+@dataclass
+class CameraComponent:
+    # 카메라 오프셋 정보
+    offset: Vector2
+    world_bounds: tuple[int, int, int, int]  # (min_x, min_y, max_x, max_y)
+    follow_target: Optional[Entity] = None
+
+@dataclass
 class WeaponComponent:
     damage: int
     attack_speed: float  # 초 단위 (FPS 독립적)
@@ -94,8 +129,12 @@ class WeaponComponent:
 # 엔티티 조합 예시
 PlayerEntity = Entity([
     HealthComponent(100, 100, 0.0),
-    MovementComponent(Vector2(0,0), 200.0, 800.0), 
+    PlayerMovementComponent(Vector2(0,0), 200.0, 0.0, 5.0),
     WeaponComponent(10, 0.5, 100.0, "basic")
+])
+
+CameraEntity = Entity([
+    CameraComponent(Vector2(0,0), (-1000, -1000, 1000, 1000), player_entity)
 ])
 ```
 
@@ -192,17 +231,41 @@ class PlayerComponent:
     # 현재 디버프 상태
     active_debuffs: List[DebuffEffect] = field(default_factory=list)
 
+@dataclass
+class PlayerMovementComponent:
+    # 이동 방향과 속도 (카메라 시스템과 연동)
+    direction: Vector2
+    speed: float
+    rotation_angle: float  # 플레이어가 바라보는 방향 (라디안)
+    angular_velocity_limit: float = 5.0  # 부드러운 회전을 위한 각속도 제한
+
 class PlayerMovementSystem(ISystem):
     def update(self, entities, delta_time):
         for entity in entities.with_component(PlayerComponent):
-            # 마우스 위치 추적
+            # 마우스 위치 추적 및 회전 방향 계산
             mouse_pos = pygame.mouse.get_pos()
-            player_pos = entity.get_component(PositionComponent)
+            screen_center = (pygame.display.get_surface().get_width() // 2, 
+                           pygame.display.get_surface().get_height() // 2)
             
-            # 자동 이동 (마우스 커서 따라가기)
-            direction = normalize(mouse_pos - player_pos.position)
-            movement = entity.get_component(MovementComponent)
-            movement.velocity = direction * movement.max_speed
+            # 플레이어는 화면 중앙에 고정, 마우스 방향을 바라봄
+            direction = normalize(Vector2(mouse_pos) - Vector2(screen_center))
+            target_angle = math.atan2(direction.y, direction.x)
+            
+            movement = entity.get_component(PlayerMovementComponent)
+            
+            # 부드러운 회전 전환
+            angle_diff = target_angle - movement.rotation_angle
+            if angle_diff > math.pi:
+                angle_diff -= 2 * math.pi
+            elif angle_diff < -math.pi:
+                angle_diff += 2 * math.pi
+            
+            rotation_speed = min(movement.angular_velocity_limit * delta_time, abs(angle_diff))
+            movement.rotation_angle += rotation_speed * (1 if angle_diff > 0 else -1)
+            
+            # 이동 방향과 속도 저장 (카메라 시스템에서 사용)
+            movement.direction = direction
+            movement.speed = movement.max_speed if direction.length() > 0 else 0
 ```
 
 ### 자동 공격 시스템
@@ -763,7 +826,9 @@ python_functions = test_*
 **목표**: 플레이어 조작 + 적 AI + 경험치 시스템
 
 **🎮 개발 항목**:
-- [ ] 플레이어 마우스 이동 시스템
+- [ ] 플레이어 마우스 이동 시스템 (카메라 중심 고정 + 맵 역방향 이동)
+- [ ] 카메라 시스템 (플레이어 중앙 고정, 맵 오프셋 렌더링)
+- [ ] 시각적 맵 시스템 (타일/그리드 배경, 경계 처리)
 - [ ] 자동 공격 시스템 (시간 기반)
 - [ ] 기본 적 1종 + 간단 AI (추격 + 공격)
 - [ ] 투사체 시스템 
@@ -771,7 +836,9 @@ python_functions = test_*
 - [ ] 기본 UI (체력, 경험치 바)
 
 **✅ 완료 조건**:
-- 플레이어가 마우스로 이동 가능
+- 플레이어가 마우스 방향을 바라보며 화면 중앙에 고정
+- 맵이 플레이어 이동의 역방향으로 자연스럽게 움직임
+- 카메라 경계 처리로 맵 밖으로 나가지 않음
 - 적을 자동으로 공격하여 처치 가능
 - 경험치 획득으로 레벨업 가능
 - 적 20마리 동시 존재 시 40+ FPS 유지
