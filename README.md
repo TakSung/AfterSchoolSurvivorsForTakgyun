@@ -93,11 +93,16 @@ task-master update-subtask --id=<서브태스크_ID> --prompt="<변경할 내용
 ```bash
 task-master update-subtask --id=<서브태스크_ID> --prompt="<변경할 내용>" # 서브태스크를 변경
 task-master remove-subtask --id=<서브태스크_ID> # 서브태스크 삭제
-task-master add-subtask --parent-id=<부모태스크_ID> --prompt="<새로운 내용>" # 새로운 서브태스크 추가
+task-master add-subtask --parent=<부모태스크_ID> --prompt="<새로운 내용>" # 새로운 서브태스크 추가
 ```
 
-task-master update-subtask --id=1.6 --prompt="1.1 이후로 순서를 옮겨줘. uv 툴을.@docs/game-dependency.md 를 참고하여 종속성을 세팅해줘."
+서브 도메인 분할 예시 (feat 유닛테스트 추가):
+```bash
+task-master update-subtask --id=1.7 --prompt="1.1로 순서를 옮겨줘. 설계문서는 모든 작업 이전에 가장 먼저할 일이야. ECS 프레임워크 기반 구조를 디자인하고, 머메이드를 사용해서 시각적으로 구조를 표현해줘. 코드는 삽입할 필요 없고 설명을 위해 필요하다면 간략화한 수도코드 정도로만 표현해줘"
+task-master add-subtask --parent=1 --prompt="docs/design.md 문서를 작성해줘. ECS 프레임워크 기반 구조를 디자인하고, 머메이드를 사용해서 시각적으로 구조를 표현해줘. 코드는 삽입할 필요 없고 설명을 위해 필요하다면 간략화한 수도코드 정도로만 표현해줘." # 새로운 서브태스크 추가
+```
 
+유닛테스트 구현을 위한 인터뷰를 진행하고(@.claude/commands/interview-for-unit-test.md), 인터뷰에서 추출한 테스트 시나리오를 바탕으로 테스트 케이스를 작성합니다. 마지막으로 앞서 작성한 기능이 정상적으로 작동하는지 테스트 하며 테스트가 통과할 때까지 반복합니다. 단 같은 오류가 3번 이상 반복되면, 잠시 멈추고 사용자와 소통하며 오류를 고쳐 나가세요.
 ---
 
 ## 코딩 스타일 및 Linter 설정 (Coding Style & Linter Setup)
