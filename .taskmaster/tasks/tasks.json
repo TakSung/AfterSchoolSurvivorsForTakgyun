@@ -789,7 +789,50 @@
         "priority": "high",
         "dependencies": [],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "ICoordinateTransformer 인터페이스 및 Vector2 수학 클래스 설계",
+            "description": "좌표 변환 시스템의 핵심 인터페이스와 수학적 연산을 담당하는 Vector2 클래스를 설계하고 구현한다",
+            "dependencies": [],
+            "details": "src/core/coordinate_transformer.py에 ICoordinateTransformer ABC 클래스를 정의하여 world_to_screen(), screen_to_world(), get_camera_offset(), invalidate_cache() 메서드를 포함한다. src/utils/vector2.py에 Vector2 클래스를 구현하여 좌표 계산, 벡터 연산, 거리 계산 등을 지원한다. 모든 좌표 변환은 Vector2 타입으로 처리하며, 성능을 위한 __slots__ 최적화를 적용한다. 타입 힌트를 완전히 적용하고 IntEnum으로 좌표 타입을 정의한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "CameraBasedTransformer 기본 구현",
+            "description": "ICoordinateTransformer 인터페이스를 구현하는 CameraBasedTransformer 클래스를 개발한다",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "src/core/camera_based_transformer.py에 CameraBasedTransformer 클래스를 구현한다. 카메라 오프셋을 기반으로 한 기본적인 world_to_screen, screen_to_world 변환 로직을 구현한다. 카메라 중심점, 줌 레벨, 화면 크기를 고려한 변환 수식을 적용한다. 변환 매트릭스 개념을 도입하여 확장 가능성을 고려한다. 기존 PlayerMovementSystem, CameraSystem과의 통합을 위해 PositionComponent와 호환되는 구조로 설계한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "좌표 변환 캐싱 메커니즘 구현",
+            "description": "성능 최적화를 위한 좌표 변환 결과 캐싱 시스템을 구현한다",
+            "dependencies": [
+              "13.2"
+            ],
+            "details": "CameraBasedTransformer에 LRU 캐시를 적용하여 자주 사용되는 좌표 변환 결과를 저장한다. 카메라 위치나 줌 레벨 변경 시 캐시를 무효화하는 cache_dirty 플래그를 관리한다. 캐시 히트율 추적 기능을 구현하여 성능 모니터링을 지원한다. 메모리 사용량을 제한하는 최대 캐시 크기를 설정한다. 향후 Task 22의 성능 최적화와 연계하여 40+ FPS 목표 달성에 기여한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "좌표 변환 시스템 통합 테스트 및 기존 시스템 영향도 분석",
+            "description": "구현된 좌표 변환 시스템의 정확성을 검증하고 기존 시스템과의 통합 영향을 분석한다",
+            "dependencies": [
+              "13.3"
+            ],
+            "details": "tests/test_coordinate_transformer.py에 단위 테스트를 작성하여 world_to_screen과 screen_to_world의 왕복 변환 정확성을 검증한다. 다양한 카메라 오프셋과 줌 레벨에서의 경계값 테스트를 수행한다. 캐싱 메커니즘의 동작과 무효화 로직을 테스트한다. PlayerMovementSystem, EnemyAISystem, AutoAttackSystem에서 좌표 변환 사용 시 발생할 수 있는 영향을 분석하고 호환성을 확인한다. RenderSystem과의 연동을 위한 인터페이스 검증을 수행한다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 14,
@@ -802,7 +845,39 @@
           13
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "CoordinateManager 싱글톤 패턴 구현",
+            "description": "스레드 안전한 싱글톤 패턴으로 CoordinateManager 클래스를 구현하고, ICoordinateTransformer 인스턴스 관리 기능을 추가한다.",
+            "dependencies": [],
+            "details": "CoordinateManager 클래스에 싱글톤 패턴을 적용하여 전역 인스턴스 관리를 구현한다. _instance 클래스 변수와 threading.Lock을 사용하여 스레드 안전성을 보장한다. get_instance() 클래스 메서드로 싱글톤 인스턴스에 접근하고, _transformer 필드로 현재 좌표 변환기를 저장한다. 테스트를 위한 의존성 주입을 위해 set_instance() 메서드도 제공한다. world_to_screen, screen_to_world 래퍼 메서드를 구현하여 내부 변환기에 위임한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "런타임 변환기 교체 시스템 구현",
+            "description": "set_transformer() 메서드를 구현하여 런타임에 ICoordinateTransformer 구현체를 안전하게 교체할 수 있는 시스템을 구현한다.",
+            "dependencies": [
+              "14.1"
+            ],
+            "details": "set_transformer(transformer: ICoordinateTransformer) 메서드를 구현하여 현재 좌표 변환기를 교체한다. 변환기 교체 시 캐시 무효화 처리를 수행하고, 유효성 검사를 통해 올바른 ICoordinateTransformer 인터페이스 구현체인지 확인한다. get_transformer() 메서드로 현재 변환기 접근을 제공하며, 변환기가 설정되지 않은 경우 기본값으로 CameraBasedTransformer를 사용한다. 변환기 교체 과정에서 스레드 안전성을 보장한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "옵저버 패턴 기반 알림 메커니즘 구현",
+            "description": "변환기 변경 시 관련 시스템들에게 알림을 보내는 옵저버 패턴을 구현하고, CameraComponent와 MapRenderSystem 등의 좌표 의존 시스템과 연동한다.",
+            "dependencies": [
+              "14.2"
+            ],
+            "details": "ICoordinateObserver 인터페이스를 정의하고 on_transformer_changed() 메서드를 포함한다. CoordinateManager에 _observers 리스트를 추가하고, add_observer(), remove_observer() 메서드를 구현한다. set_transformer() 호출 시 모든 등록된 옵저버에게 notify_observers()를 통해 변경 사항을 알린다. CameraSystem과 MapRenderSystem이 옵저버로 등록하여 좌표 변환기 변경에 대응할 수 있도록 한다. 옵저버 알림 시 예외 처리를 포함하여 한 옵저버의 오류가 다른 옵저버에 영향을 주지 않도록 한다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 15,
@@ -815,7 +890,39 @@
           14
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "CameraComponent 데이터 구조 설계 및 구현",
+            "description": "카메라 시스템의 핵심 데이터를 저장하는 CameraComponent를 dataclass로 구현합니다.",
+            "dependencies": [],
+            "details": "CameraComponent는 world_offset(tuple[float, float]), screen_center(tuple[int, int]), world_bounds(dict), follow_target(Optional[Entity]) 필드를 포함합니다. world_offset은 월드 좌표계에서의 카메라 오프셋을, screen_center는 화면 중앙 좌표(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)를 저장합니다. world_bounds는 카메라 이동 제한 영역을 정의하고, follow_target은 추적 대상 엔티티를 참조합니다. 타입 힌트와 기본값을 완전히 지정하여 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "CameraSystem 업데이트 로직 구현",
+            "description": "ISystem을 구현하는 CameraSystem 클래스를 작성하여 카메라 오프셋 업데이트 로직을 구현합니다.",
+            "dependencies": [
+              "15.1"
+            ],
+            "details": "CameraSystem은 플레이어 이동의 역방향으로 world_offset을 업데이트하여 플레이어가 화면 중앙에 고정되도록 합니다. 마우스 추적을 위한 10픽셀 데드존 처리를 구현하고, world_bounds를 사용한 월드 경계 제한을 적용합니다. update() 메서드에서 delta_time을 받아 부드러운 카메라 이동을 지원하며, 플레이어 위치 변화에 따른 즉시 오프셋 계산을 수행합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "CoordinateManager 연동 및 캐시 관리 구현",
+            "description": "CameraSystem과 CoordinateManager 간의 연동을 구현하고 좌표 변환 캐시 무효화 메커니즘을 구축합니다.",
+            "dependencies": [
+              "15.2"
+            ],
+            "details": "CameraSystem에서 world_offset이 변경될 때 CoordinateManager의 캐시 무효화를 호출하여 좌표 변환 정확성을 보장합니다. screen_to_world(), world_to_screen() 변환 함수와의 연동을 구현하고, 카메라 이동 시 영향받는 모든 렌더링 시스템에 변경사항을 전파합니다. 성능 최적화를 위해 오프셋 변화량이 임계값(1픽셀) 미만일 경우 캐시 무효화를 생략하는 로직을 추가합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 16,
@@ -828,7 +935,39 @@
           15
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "PlayerMovementComponent 데이터 구조 설계 및 구현",
+            "description": "새로운 좌표계에 맞춘 PlayerMovementComponent를 dataclass로 구현하고, 필요한 데이터 필드들을 정의합니다.",
+            "dependencies": [],
+            "details": "dataclass 기반으로 PlayerMovementComponent를 구현하며, world_position(tuple[float, float]), direction(tuple[float, float]), speed(float), rotation_angle(float), angular_velocity_limit(float) 필드를 포함합니다. 타입 힌트를 완전히 적용하고, 초기값 설정과 데이터 검증 로직을 추가합니다. 좌표계 변화로 인한 추가 필드(이전 위치 추적, 가속도 등)도 고려하여 설계합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "마우스 추적 및 방향 계산 로직 구현",
+            "description": "pygame.mouse.get_pos()를 활용한 마우스 위치 추적과 화면 중앙 기준 방향 계산 로직을 구현합니다.",
+            "dependencies": [
+              "16.1"
+            ],
+            "details": "PlayerMovementSystem에서 pygame.mouse.get_pos()로 실시간 마우스 위치를 추적하고, CoordinateManager를 통해 화면 중앙(플레이어 고정 위치) 기준으로 방향을 계산합니다. math.atan2를 사용한 정확한 각도 계산과 벡터 정규화(normalize()) 로직을 구현합니다. 좌표계 변환이 마우스 입력 처리에 미치는 영향을 고려하여 world-screen 좌표 변환을 적절히 적용합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "부드러운 회전 및 데드존 처리 시스템 구현",
+            "description": "각속도 제한을 통한 부드러운 회전과 10픽셀 데드존 처리 로직을 구현하고 테스트합니다.",
+            "dependencies": [
+              "16.2"
+            ],
+            "details": "angular_velocity_limit을 적용한 부드러운 회전 로직을 구현하여 급작스러운 방향 전환을 방지합니다. 마우스 커서가 화면 중앙에서 10픽셀 이내일 때 움직임을 정지시키는 데드존 처리를 구현합니다. 회전 보간(interpolation) 알고리즘을 적용하여 자연스러운 회전 효과를 달성하고, 좌표계 변화로 인한 회전 계산의 정확성을 검증합니다. 성능 최적화를 위한 회전 계산 캐싱도 고려합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 17,
@@ -841,7 +980,39 @@
           14
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "가시 타일 범위 계산 알고리즘 구현",
+            "description": "CoordinateManager와 연동하여 현재 카메라 위치에서 보이는 타일 범위를 계산하는 알고리즘을 구현합니다.",
+            "dependencies": [],
+            "details": "CoordinateManager.get_camera_bounds()를 사용해 현재 화면 영역을 가져오고, 64x64 타일 크기를 기준으로 가시 타일의 시작/끝 인덱스를 계산합니다. 화면 밖 1-2타일 여유분을 포함한 확장 영역도 계산하여 부드러운 스크롤을 구현합니다. calculate_visible_tiles() 메서드로 (start_x, start_y, end_x, end_y) 튜플을 반환하도록 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "체스판 패턴 타일 생성 및 렌더링 구현",
+            "description": "체스판 형태의 타일 패턴을 생성하고 pygame.draw.rect로 타일과 경계선을 렌더링하는 기능을 구현합니다.",
+            "dependencies": [
+              "17.1"
+            ],
+            "details": "밝은 회색(240,240,240)과 어두운 회색(220,220,220)을 (x+y) % 2 조건으로 교대 배치하는 체스판 패턴을 생성합니다. 각 타일을 64x64 픽셀로 그리고, 1픽셀 검은색 경계선을 추가합니다. world_to_screen 좌표 변환을 적용하여 올바른 화면 위치에 렌더링하며, 화면 밖 타일은 그리지 않도록 클리핑을 적용합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "visible_tiles 세트 기반 성능 최적화 및 메모리 관리",
+            "description": "visible_tiles set을 사용한 렌더링 최적화와 메모리 효율적인 타일 관리 시스템을 구현합니다.",
+            "dependencies": [
+              "17.2"
+            ],
+            "details": "현재 가시 영역의 타일들을 visible_tiles set으로 관리하여 중복 렌더링을 방지합니다. 카메라 이동 시 새로 보이는 타일은 추가하고, 화면을 벗어난 타일은 제거하여 메모리 사용량을 최적화합니다. 타일 캐싱 시스템을 구현하여 동일한 패턴의 타일은 재사용하도록 하며, FPS 모니터링을 통해 40+ FPS 목표 달성을 검증합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 18,
@@ -854,7 +1025,51 @@
           16
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "좌표 변환 시스템 통합 및 world_to_screen 적용",
+            "description": "EntityRenderSystem에 CoordinateManager.world_to_screen() 메서드를 통합하여 월드 좌표를 스크린 좌표로 변환하는 기능을 구현합니다.",
+            "dependencies": [],
+            "details": "EntityRenderSystem 클래스에서 CoordinateManager 인스턴스를 받아 초기화하고, render() 메서드에서 PositionComponent를 가진 모든 엔티티의 월드 좌표를 world_to_screen()으로 변환합니다. 변환된 좌표로 스프라이트를 정확한 스크린 위치에 렌더링하며, 좌표 변환 과정에서 발생할 수 있는 부동소수점 오차를 처리합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "화면 밖 컬링 최적화 시스템 구현",
+            "description": "_is_on_screen() 메서드를 구현하여 렌더링할 엔티티를 선별하고 성능을 최적화합니다.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "화면 경계에서 50픽셀 여유분을 두고 엔티티가 화면 내에 있는지 판단하는 _is_on_screen() 메서드를 구현합니다. 엔티티의 크기(sprite 크기 또는 CollisionComponent)를 고려하여 정확한 컬링을 수행하며, 화면 밖 엔티티는 렌더링 과정에서 제외합니다. 컬링 결과를 통계로 수집하여 성능 모니터링이 가능하도록 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "플레이어 중앙 고정 렌더링 시스템",
+            "description": "플레이어를 항상 화면 중앙에 고정하여 렌더링하는 별도 로직을 구현합니다.",
+            "dependencies": [
+              "18.1"
+            ],
+            "details": "PlayerComponent를 가진 엔티티를 식별하여 월드 좌표와 관계없이 항상 화면 중앙(screen_width/2, screen_height/2)에 렌더링하도록 _render_player() 메서드를 구현합니다. 플레이어의 회전 각도(RotationComponent)를 pygame.transform.rotate()로 적용하고, 회전으로 인한 스프라이트 크기 변화를 중앙 정렬로 보정합니다. 플레이어 렌더링은 다른 엔티티보다 우선순위를 높여 항상 최상단에 표시합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "깊이 정렬 및 회전 처리 시스템 구현",
+            "description": "Y좌표 기반 깊이 정렬과 엔티티별 회전 각도 적용을 구현합니다.",
+            "dependencies": [
+              "18.2",
+              "18.3"
+            ],
+            "details": "모든 렌더링 대상 엔티티를 Y좌표 기준으로 정렬하여 깊이감을 구현하고, RotationComponent를 가진 엔티티는 pygame.transform.rotate()로 회전을 적용합니다. 회전된 스프라이트의 중심점을 유지하기 위한 offset 계산을 수행하며, 회전으로 인한 성능 저하를 최소화하기 위해 회전 각도가 변경된 경우에만 재계산하는 캐싱 시스템을 구현합니다. 정렬과 회전 처리 과정의 성능을 모니터링할 수 있는 디버그 정보를 제공합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 19,
@@ -867,7 +1082,39 @@
           18
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "시간 기반 공격 쿨다운 시스템 구현",
+            "description": "FPS 독립적인 시간 기반 공격 쿨다운을 관리하는 시스템을 구현합니다.",
+            "dependencies": [],
+            "details": "AutoAttackSystem 클래스에서 WeaponComponent의 attack_speed를 초 단위로 처리하고, delta_time을 사용해 쿨다운 시간을 누적 관리합니다. 각 무기별 공격 속도에 따른 쿨다운 계산 로직을 구현하고, 쿨다운 완료 시 공격 가능 상태로 전환하는 메서드를 작성합니다. 좌표계 변경으로 인해 공격 타이밍이 화면 이동에 독립적으로 유지되도록 합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "월드 좌표 기반 타겟 탐색 시스템 구현",
+            "description": "플레이어 월드 위치를 기준으로 weapon_range 내의 가장 가까운 적을 탐색하는 시스템을 구현합니다.",
+            "dependencies": [
+              "19.1"
+            ],
+            "details": "_find_nearest_enemy_in_world() 메서드를 구현하여 CoordinateManager를 통해 플레이어의 월드 좌표를 가져옵니다. 모든 적 엔티티의 월드 좌표와 플레이어 사이의 Vector2.length() 거리 계산을 수행하고, weapon_range 내에서 가장 가까운 적을 선택합니다. 좌표계 확장으로 인해 넓어진 게임 월드에서도 정확한 거리 기반 타겟팅이 가능하도록 최적화합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "월드 좌표 기반 투사체 생성 및 방향 계산 시스템 구현",
+            "description": "월드 좌표를 기준으로 투사체의 생성 위치와 이동 방향을 계산하는 시스템을 구현합니다.",
+            "dependencies": [
+              "19.2"
+            ],
+            "details": "플레이어와 타겟의 월드 좌표를 사용하여 정규화된 방향 벡터를 계산하고, 투사체의 초기 월드 위치와 속도를 설정합니다. ProjectileComponent에 월드 좌표 기반 위치와 방향 정보를 저장하고, 투사체가 화면 밖으로 이동하더라도 월드 좌표에서 추적 가능하도록 구현합니다. 좌표계 변경으로 인한 투사체 궤적의 일관성과 정확성을 보장하는 로직을 추가합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 20,
@@ -880,7 +1127,39 @@
           19
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "월드 좌표 기반 거리 계산 및 상태 전환 로직 구현",
+            "description": "좌표계 추가로 인한 AI 시스템의 거리 계산을 월드 좌표 기준으로 재구현하고, attack_range와 chase_range를 활용한 상태 전환 로직을 구현합니다.",
+            "dependencies": [],
+            "details": "CoordinateSystem을 활용하여 월드 좌표에서 적과 플레이어 간의 거리를 계산하는 로직을 구현합니다. EnemyAIComponent에 attack_range, chase_range, movement_speed 필드를 추가하고, 이를 기반으로 IDLE, CHASE, ATTACK 상태를 전환하는 로직을 작성합니다. 좌표계 변환이 필요한 부분에서 ICoordinateTransformer 인터페이스를 활용하여 화면-월드 간 변환을 처리합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "월드 좌표 기반 방향 벡터 계산 및 정규화 구현",
+            "description": "좌표계 변경에 따른 방향 계산을 월드 좌표 기준으로 재구현하고, Vector2 클래스를 활용한 정규화 처리를 구현합니다.",
+            "dependencies": [
+              "20.1"
+            ],
+            "details": "월드 좌표에서 적의 현재 위치와 플레이어 위치를 기반으로 방향 벡터를 계산합니다. Vector2.normalize() 메서드를 사용하여 단위 벡터를 생성하고, 8방향 이동 제한이나 대각선 이동 속도 보정 등의 게임 로직을 구현합니다. 좌표계 변환 시 발생할 수 있는 정밀도 손실이나 성능 문제를 고려하여 최적화된 계산 방식을 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "월드 좌표 기반 적 이동 처리 및 AI 시스템 통합 테스트",
+            "description": "좌표계 기반 이동 로직을 구현하고, 전체 AI 시스템이 새로운 좌표계에서 정상 동작하는지 통합 테스트를 수행합니다.",
+            "dependencies": [
+              "20.2"
+            ],
+            "details": "delta_time을 활용한 월드 좌표 기반 위치 업데이트 로직을 구현합니다. EnemyAISystem에서 CoordinateSystem과 연동하여 적의 월드 위치를 업데이트하고, 화면 렌더링을 위한 스크린 좌표 변환을 처리합니다. AI 상태별 동작 테스트, 좌표 변환 정확성 테스트, 다양한 AI 타입별 동작 검증을 포함한 통합 테스트를 구현하여 기존 AI 로직이 새로운 좌표계에서 올바르게 작동하는지 확인합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 21,
@@ -893,7 +1172,50 @@
           20
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "좌표 변환 정확성 단위 테스트 구현",
+            "description": "월드-스크린 변환, 왕복 변환 일관성, 경계값 테스트를 포함한 수학적 정확성 검증",
+            "dependencies": [],
+            "details": "tests/unit/test_coordinates.py 구현. WorldToScreenTransformer, ScreenToWorldTransformer의 변환 정확성 테스트. @pytest.mark.parametrize를 사용한 다양한 좌표값 테스트(정수, 부동소수점, 음수, 0, 극값). 왕복 변환 일관성 검증: world → screen → world 변환 후 원래 좌표와의 오차 허용범위(1픽셀) 내 확인. 카메라 이동, 줌 레벨 변경에 따른 변환 정확성 테스트.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "다형성 인터페이스 호환성 테스트 구현",
+            "description": "ICoordinateTransformer 인터페이스를 구현한 모든 변환기 클래스의 호환성 검증",
+            "dependencies": [
+              "21.1"
+            ],
+            "details": "다형성 테스트 구현으로 모든 변환기 클래스가 ICoordinateTransformer 인터페이스를 올바르게 구현하는지 검증. WorldToScreenTransformer, ScreenToWorldTransformer, CachedCoordinateTransformer 등 모든 구현체 테스트. 인터페이스 메서드 시그니처 호환성과 반환값 타입 검증. 변환기 교체 시 동작 일관성 테스트.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "성능 벤치마크 테스트 구현",
+            "description": "1000개 좌표 변환을 100ms 이내 처리하는 성능 요구사항 검증 및 최적화 효과 측정",
+            "dependencies": [],
+            "details": "tests/performance/test_coordinate_performance.py 구현. 1000개 좌표 변환 성능 벤치마크: 기본 변환기와 캐시된 변환기 성능 비교. 시간 측정을 위한 time.perf_counter() 사용. 메모리 사용량 프로파일링으로 GC 압박 측정. 다양한 카메라 위치와 줌 레벨에서 성능 일관성 테스트. 프레임당 변환 호출 수 시뮬레이션 테스트.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "통합 시나리오 테스트 구현",
+            "description": "실제 게임 상황을 시뮬레이션한 좌표계 시스템 통합 테스트 및 영향도 검증",
+            "dependencies": [
+              "21.1",
+              "21.2",
+              "21.3"
+            ],
+            "details": "CoordinateManager와 CameraSystem, PlayerMovementSystem, EnemyAISystem 간 통합 테스트. 플레이어 이동에 따른 카메라 추적과 월드-스크린 좌표 동기화 검증. 적 AI의 월드 좌표 기반 추적 동작과 화면 렌더링 위치 일치성 테스트. 투사체 시스템의 궤적 계산과 충돌 감지 정확성 검증. 실제 게임 루프 환경에서 좌표계 안정성과 일관성 테스트. 다중 엔티티 상호작용 시나리오에서 좌표 변환 정확성 검증.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 22,
@@ -906,7 +1228,62 @@
           21
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "SystemOrchestrator 실행 순서 최적화 구현",
+            "description": "좌표계 시스템을 포함한 전체 시스템의 실행 순서를 최적화하여 CameraSystem → CoordinateManager → PlayerMovementSystem → EnemyAISystem → AutoAttackSystem → CollisionSystem → RenderSystem 순으로 처리하도록 SystemOrchestrator를 수정한다.",
+            "dependencies": [],
+            "details": "SystemOrchestrator.update() 메서드에서 시스템 실행 순서를 명시적으로 정의하고, 좌표 변환이 필요한 시스템들 간의 의존성을 고려한 실행 순서를 구현한다. ExecutionPhase enum(COORDINATE_UPDATE, MOVEMENT, AI_LOGIC, COLLISION, RENDER)을 정의하여 각 단계별로 시스템을 분류하고 순차 실행한다. 시스템 간 데이터 흐름을 최적화하여 불필요한 좌표 변환을 최소화한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "좌표 변환 캐시 관리 시스템 구현",
+            "description": "CoordinateManager의 캐시 무효화 타이밍을 최적화하고, 프레임별 캐시 관리 전략을 구현하여 좌표 변환 성능을 극대화한다.",
+            "dependencies": [
+              "22.1"
+            ],
+            "details": "CoordinateManager에 frame_begin()과 frame_end() 메서드를 추가하여 프레임 단위 캐시 관리를 구현한다. 카메라 이동이나 줌 변경 시에만 캐시를 무효화하는 스마트 캐시 전략을 적용한다. 변환 빈도가 높은 좌표는 LRU 캐시로 관리하고, 프레임당 최대 캐시 엔트리 수를 제한하여 메모리 사용량을 조절한다. 캐시 히트율과 변환 호출 수를 추적하는 디버그 정보를 제공한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "성능 모니터링 시스템 구현",
+            "description": "FPS 카운터, 좌표 변환 호출 수, 시스템별 처리 시간을 추적하는 성능 모니터링 시스템을 구현한다.",
+            "dependencies": [
+              "22.1"
+            ],
+            "details": "PerformanceMonitor 클래스를 구현하여 각 시스템의 실행 시간을 측정하고, 좌표 변환 호출 횟수와 캐시 히트율을 추적한다. FPS 계산과 평균/최소/최대 FPS 통계를 제공한다. 성능 데이터를 JSON 형태로 저장하여 분석할 수 있도록 한다. 디버그 모드에서 화면에 실시간 성능 정보를 표시하는 UI를 구현한다. 성능 임계값을 설정하여 경고를 출력하는 기능을 포함한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "FPS 안정성 확보 및 프레임 제한 구현",
+            "description": "40+ FPS 목표 달성을 위한 프레임 제한과 안정화 메커니즘을 구현하여 다양한 게임 상황에서 일정한 성능을 보장한다.",
+            "dependencies": [
+              "22.2",
+              "22.3"
+            ],
+            "details": "pygame.time.Clock을 사용한 프레임 제한을 구현하고, 적응적 품질 조정 시스템을 추가한다. 적이 20마리 이상이거나 투사체가 많을 때 자동으로 렌더링 품질을 조정하는 기능을 구현한다. delta_time 기반의 시간 독립적인 업데이트 로직을 모든 시스템에 적용한다. 프레임 드랍이 발생할 때 비필수적인 시각 효과를 일시적으로 비활성화하는 성능 보호 기능을 추가한다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "메모리 사용량 최적화 및 통합 테스트",
+            "description": "전체 시스템의 메모리 사용량을 최적화하고, 통합 테스트를 통해 40+ FPS 목표 달성과 시스템 안정성을 검증한다.",
+            "dependencies": [
+              "22.4"
+            ],
+            "details": "메모리 풀링을 사용하여 Entity와 Component 객체 생성/소멸 비용을 최소화한다. 불필요한 객체 참조를 제거하고 가비지 컬렉션 부하를 줄이는 메모리 관리를 구현한다. 적 20마리, 투사체 50개, 아이템 10개가 동시에 존재하는 상황에서 40+ FPS를 유지하는지 통합 테스트를 수행한다. memory_profiler를 사용한 메모리 사용량 분석과 성능 병목 지점을 식별하는 프로파일링을 실시한다. 전체 시스템의 안정성과 성능 목표 달성을 종합적으로 검증한다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
