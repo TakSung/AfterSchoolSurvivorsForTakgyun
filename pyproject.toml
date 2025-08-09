@@ -1,9 +1,38 @@
-# pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "afterschool-survivors"
+version = "0.1.0"
+description = "10분 하이퍼 캐주얼 로그라이크 게임 - 방과 후 생존"
+authors = [{name = "Takgyun", email = "takgyun@example.com"}]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pygame>=2.6.0",
+    "numpy>=2.2.4", 
+    "pymunk>=6.8.1",
+    "pygame-menu>=4.5.2",
+    "pygame-gui>=0.6.14",
+    "pydantic>=2.0.0",
+    "numba>=0.60.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.0",
+    "pytest>=8.0.0",
+    "memory_profiler>=0.61.0",
+    "mypy>=1.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 # 검사할 파일 및 디렉터리 지정
-# 현재 프로젝트 구조에 맞게 'src' 또는 다른 폴더를 추가할 수 있습니다.
-include = ["*.py", "ai/**/*.py", "docs/**/*.py", "todo/**/*.py"]
+include = ["*.py", "src/**/*.py", "tests/**/*.py", "ai/**/*.py", "docs/**/*.py", "todo/**/*.py"]
 
 # 제외할 파일 및 디렉터리
 exclude = [
@@ -28,9 +57,8 @@ exclude = [
     "venv",
 ]
 
-# Python 3.12 버전을 기준으로 코드를 검사합니다.
-# 프로젝트의 Python 버전에 맞게 수정하세요.
-target-version = "py312"
+# Python 3.13 버전을 기준으로 코드를 검사합니다.
+target-version = "py313"
 
 [tool.ruff.format]
 # 포맷터 설정 (인터뷰 기반)

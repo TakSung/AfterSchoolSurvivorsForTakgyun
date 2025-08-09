@@ -17,7 +17,7 @@
             "description": "src/core/, src/systems/, tests/ 등 ECS 아키텍처에 맞는 프로젝트 디렉토리 구조를 생성하고 초기 설정 파일들을 구성합니다.",
             "dependencies": [],
             "details": "src/core/, src/systems/, src/components/, src/entities/, tests/ 디렉토리를 생성하고, __init__.py 파일들을 추가합니다. pyproject.toml에 프로젝트 메타데이터와 의존성을 정의하고, .gitignore와 기본 설정 파일들을 생성합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-09T06:22:11.675Z",
+      "updated": "2025-08-09T07:34:12.421Z",
       "description": "Tasks for master context"
     }
   }
