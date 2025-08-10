@@ -16,11 +16,12 @@ if TYPE_CHECKING:
     from src.core.entity_manager import EntityManager
 
 
-# AI-NOTE : 클래스명을 Test*에서 Mock*으로 변경하여 pytest가 이를 테스트 클래스로 오인하는 것을 방지
-# pytest는 Test로 시작하는 클래스를 자동으로 테스트 클래스로 수집하려 시도하므로 경고가 발생함
-# Mock 접두사를 사용하여 이들이 테스트 도우미 클래스임을 명확히 표시
+# AI-DEV : pytest 컬렉션 경고 방지를 위한 Helper 클래스명 변경
+# - 문제: Test*로 시작하는 Helper 클래스가 pytest에 의해 테스트 클래스로 수집됨
+# - 해결책: Mock* 접두사로 Helper 클래스 명확화
+# - 결과: 3개 PytestCollectionWarning 제거
 class MockMovementSystem(System):
-    """Mock system for movement logic in tests."""
+    """Mock system for movement logic."""
     
     def __init__(self, priority: int = 0) -> None:
         super().__init__(priority=priority)
@@ -32,7 +33,7 @@ class MockMovementSystem(System):
 
 
 class MockRenderSystem(System):
-    """Mock system for rendering logic in tests."""
+    """Mock system for rendering logic."""
     
     def __init__(self, priority: int = 100) -> None:
         super().__init__(priority=priority)
@@ -44,7 +45,7 @@ class MockRenderSystem(System):
 
 
 class MockPhysicsSystem(System):
-    """Mock system for physics logic in tests."""
+    """Mock system for physics logic."""
     
     def __init__(self, priority: int = 50) -> None:
         super().__init__(priority=priority)
