@@ -844,7 +844,7 @@
         "dependencies": [
           13
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -852,7 +852,7 @@
             "description": "스레드 안전한 싱글톤 패턴으로 CoordinateManager 클래스를 구현하고, ICoordinateTransformer 인스턴스 관리 기능을 추가한다.",
             "dependencies": [],
             "details": "CoordinateManager 클래스에 싱글톤 패턴을 적용하여 전역 인스턴스 관리를 구현한다. _instance 클래스 변수와 threading.Lock을 사용하여 스레드 안전성을 보장한다. get_instance() 클래스 메서드로 싱글톤 인스턴스에 접근하고, _transformer 필드로 현재 좌표 변환기를 저장한다. 테스트를 위한 의존성 주입을 위해 set_instance() 메서드도 제공한다. world_to_screen, screen_to_world 래퍼 메서드를 구현하여 내부 변환기에 위임한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -863,7 +863,7 @@
               "14.1"
             ],
             "details": "set_transformer(transformer: ICoordinateTransformer) 메서드를 구현하여 현재 좌표 변환기를 교체한다. 변환기 교체 시 캐시 무효화 처리를 수행하고, 유효성 검사를 통해 올바른 ICoordinateTransformer 인터페이스 구현체인지 확인한다. get_transformer() 메서드로 현재 변환기 접근을 제공하며, 변환기가 설정되지 않은 경우 기본값으로 CameraBasedTransformer를 사용한다. 변환기 교체 과정에서 스레드 안전성을 보장한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -874,7 +874,7 @@
               "14.2"
             ],
             "details": "ICoordinateObserver 인터페이스를 정의하고 on_transformer_changed() 메서드를 포함한다. CoordinateManager에 _observers 리스트를 추가하고, add_observer(), remove_observer() 메서드를 구현한다. set_transformer() 호출 시 모든 등록된 옵저버에게 notify_observers()를 통해 변경 사항을 알린다. CameraSystem과 MapRenderSystem이 옵저버로 등록하여 좌표 변환기 변경에 대응할 수 있도록 한다. 옵저버 알림 시 예외 처리를 포함하여 한 옵저버의 오류가 다른 옵저버에 영향을 주지 않도록 한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T22:36:52.383Z",
+      "updated": "2025-08-10T22:47:11.307Z",
       "description": "Tasks for master context"
     }
   }
