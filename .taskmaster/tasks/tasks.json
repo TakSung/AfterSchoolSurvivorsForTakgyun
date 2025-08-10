@@ -9,7 +9,7 @@
         "testStrategy": "각 ECS 컴포넌트의 기본 인터페이스가 정상 동작하는지 단위 테스트를 작성합니다. EntityManager의 엔티티 생성/삭제, ComponentRegistry의 컴포넌트 추가/제거, SystemOrchestrator의 시스템 등록/실행 순서를 검증합니다.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -788,7 +788,7 @@
         "testStrategy": "단위 테스트로 world_to_screen과 screen_to_world 변환의 정확성을 검증하고, 왕복 변환 시 좌표 일관성을 확인한다. 다양한 카메라 오프셋 값에 대한 경계값 테스트를 수행하며, 캐싱 동작 테스트를 포함한다.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -796,7 +796,7 @@
             "description": "좌표 변환 시스템의 핵심 인터페이스와 수학적 연산을 담당하는 Vector2 클래스를 설계하고 구현한다",
             "dependencies": [],
             "details": "src/core/coordinate_transformer.py에 ICoordinateTransformer ABC 클래스를 정의하여 world_to_screen(), screen_to_world(), get_camera_offset(), invalidate_cache() 메서드를 포함한다. src/utils/vector2.py에 Vector2 클래스를 구현하여 좌표 계산, 벡터 연산, 거리 계산 등을 지원한다. 모든 좌표 변환은 Vector2 타입으로 처리하며, 성능을 위한 __slots__ 최적화를 적용한다. 타입 힌트를 완전히 적용하고 IntEnum으로 좌표 타입을 정의한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -807,7 +807,7 @@
               "13.1"
             ],
             "details": "src/core/camera_based_transformer.py에 CameraBasedTransformer 클래스를 구현한다. 카메라 오프셋을 기반으로 한 기본적인 world_to_screen, screen_to_world 변환 로직을 구현한다. 카메라 중심점, 줌 레벨, 화면 크기를 고려한 변환 수식을 적용한다. 변환 매트릭스 개념을 도입하여 확장 가능성을 고려한다. 기존 PlayerMovementSystem, CameraSystem과의 통합을 위해 PositionComponent와 호환되는 구조로 설계한다.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T05:18:24.801Z",
+      "updated": "2025-08-10T11:22:03.784Z",
       "description": "Tasks for master context"
     }
   }
