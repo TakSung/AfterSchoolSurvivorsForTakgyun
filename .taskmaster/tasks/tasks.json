@@ -25,7 +25,7 @@
             "title": "전체 시스템 구조 docs/design.md 문서를 작성",
             "description": "",
             "details": "<info added on 2025-08-07T19:17:29.270Z>\nECS 프레임워크의 전체 시스템 구조를 설계하고 docs/design.md에 문서화합니다. Entity-Component-System 아키텍처의 핵심 개념과 클래스 관계를 정의하며, 각 시스템 간의 상호작용을 머메이드 다이어그램으로 시각화합니다. 구현 전 모든 개발자가 참조할 수 있는 설계 청사진을 제공하여 일관된 아키텍처 구현을 보장합니다.\n</info added on 2025-08-07T19:17:29.270Z>",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 1
           },
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-09T07:34:12.421Z",
+      "updated": "2025-08-09T07:47:42.196Z",
       "description": "Tasks for master context"
     }
   }

@@ -45,12 +45,27 @@ graph TB
         RenderComponent[RenderComponent<br/>- sprite: Surface<br/>- layer: int]
     end
     
+    subgraph "Core Systems"
+        CameraSystem[CameraSystem<br/>플레이어 중앙 고정 및 월드 오프셋]
+        CoordinateManager[CoordinateManager<br/>전역 좌표 변환 관리]
+        CollisionSystem[CollisionSystem<br/>충돌감지 최우선 최적화]
+        RenderSystem[RenderSystem<br/>좌표변환 적용 렌더링]
+        MapSystem[MapSystem<br/>무한 스크롤 맵 렌더링]
+    end
+    
     subgraph "Game Systems"
         MovementSystem[MovementSystem<br/>위치와 속도 기반 이동]
-        CollisionSystem[CollisionSystem<br/>물리 기반 충돌 감지]
-        RenderSystem[RenderSystem<br/>화면 렌더링]
         InputSystem[InputSystem<br/>마우스 키보드 입력 처리]
         WeaponSystem[WeaponSystem<br/>무기 공격 로직]
+        AISystem[AISystem<br/>AI 계산 월드좌표 기반]
+        PhysicsSystem[PhysicsSystem<br/>물리 시뮬레이션]
+    end
+    
+    subgraph "Coordinate System"
+        ICoordinateTransformer[ICoordinateTransformer<br/>ABC 좌표 변환 인터페이스]
+        CameraBasedTransformer[CameraBasedTransformer<br/>단순 카메라 오프셋 방식]
+        OptimizedTransformer[OptimizedTransformer<br/>캐싱 배치 처리 최적화]
+        SpatialOptimizedTransformer[SpatialOptimizedTransformer<br/>공간 분할 기반 최적화]
     end
     
     EntityManager --> Entity
@@ -63,12 +78,23 @@ graph TB
     WeaponComponent --> Component
     RenderComponent --> Component
     
+    CameraSystem --> System
     MovementSystem --> System
     CollisionSystem --> System
     RenderSystem --> System
     InputSystem --> System
     WeaponSystem --> System
+    AISystem --> System
+    PhysicsSystem --> System
+    MapSystem --> System
     
+    CoordinateManager --> ICoordinateTransformer
+    CameraBasedTransformer --> ICoordinateTransformer
+    OptimizedTransformer --> ICoordinateTransformer
+    SpatialOptimizedTransformer --> ICoordinateTransformer
+    
+    CameraSystem -.-> CoordinateManager
+    RenderSystem -.-> CoordinateManager
     MovementSystem -.-> PositionComponent
     MovementSystem -.-> VelocityComponent
     CollisionSystem -.-> PositionComponent
@@ -106,19 +132,27 @@ class Component(ABC):
         """컴포넌트 초기화 후 검증"""
 ```
 
-### 3. System 추상 클래스
+### 3. System 추상 클래스 (업데이트됨)
 ```python
 from abc import ABC, abstractmethod
 from typing import list
 
-class System(ABC):
+class ISystem(ABC):
     @abstractmethod
     def update(self, entities: list[Entity], delta_time: float) -> None:
         """매 프레임마다 호출되는 업데이트 메서드"""
         
     @abstractmethod
-    def initialize(self) -> None:
-        """시스템 초기화"""
+    def initialize(self, coordinate_manager: 'CoordinateManager') -> None:
+        """시스템 초기화 - 좌표 관리자 주입"""
+        
+    @abstractmethod
+    def cleanup(self) -> None:
+        """시스템 정리"""
+
+# 기존 System 클래스는 ISystem을 상속
+class System(ISystem):
+    pass
 ```
 
 ### 4. EntityManager 클래스
@@ -169,10 +203,14 @@ from enum import IntEnum
 
 class SystemPriority(IntEnum):
     INPUT = 0
-    MOVEMENT = 1
-    COLLISION = 2
-    WEAPON = 3
-    RENDER = 4
+    CAMERA = 1
+    MOVEMENT = 2
+    COLLISION = 3
+    WEAPON = 4
+    AI = 5
+    PHYSICS = 6
+    MAP = 7
+    RENDER = 8
 
 class SystemOrchestrator:
     def __init__(self) -> None:
@@ -186,6 +224,133 @@ class SystemOrchestrator:
         
     def update_systems(self, entities: list[Entity], delta_time: float) -> None:
         """등록된 모든 시스템을 우선순위 순서로 업데이트"""
+```
+
+## 7. 좌표계 변환 시스템 (신규)
+
+### 좌표 변환 인터페이스
+```python
+from abc import ABC, abstractmethod
+
+class ICoordinateTransformer(ABC):
+    """좌표 변환 시스템의 다형성 인터페이스"""
+    
+    @abstractmethod
+    def world_to_screen(self, world_pos: Vector2) -> Vector2:
+        """월드 좌표를 스크린 좌표로 변환"""
+        pass
+    
+    @abstractmethod 
+    def screen_to_world(self, screen_pos: Vector2) -> Vector2:
+        """스크린 좌표를 월드 좌표로 변환"""
+        pass
+    
+    @abstractmethod
+    def get_camera_offset(self) -> Vector2:
+        """현재 카메라 오프셋 반환"""
+        pass
+
+class CameraBasedTransformer(ICoordinateTransformer):
+    """초기 구현: 단순한 카메라 오프셋 방식"""
+    
+    def __init__(self, camera_component: CameraComponent):
+        self.camera = camera_component
+        self._cached_offset = Vector2(0, 0)
+        self._cache_dirty = True
+    
+    def world_to_screen(self, world_pos: Vector2) -> Vector2:
+        offset = self.get_camera_offset()
+        return Vector2(world_pos.x - offset.x, world_pos.y - offset.y)
+    
+    def screen_to_world(self, screen_pos: Vector2) -> Vector2:
+        offset = self.get_camera_offset()
+        return Vector2(screen_pos.x + offset.x, screen_pos.y + offset.y)
+    
+    def get_camera_offset(self) -> Vector2:
+        if self._cache_dirty:
+            self._cached_offset = self.camera.world_offset.copy()
+            self._cache_dirty = False
+        return self._cached_offset
+
+class OptimizedTransformer(ICoordinateTransformer):
+    """향후 최적화: 캐싱, 배치 처리 등 적용된 버전"""
+    pass
+
+class SpatialOptimizedTransformer(ICoordinateTransformer):
+    """향후 확장: 공간 분할 기반 최적화 버전"""
+    pass
+```
+
+### 좌표계 통합 관리자
+```python
+class CoordinateManager:
+    """전역 좌표 변환 관리자"""
+    
+    def __init__(self):
+        self.transformer: ICoordinateTransformer | None = None
+        self.observers: list[ICoordinateObserver] = []
+    
+    def set_transformer(self, transformer: ICoordinateTransformer) -> None:
+        """좌표 변환 구현체 교체 (런타임 최적화 가능)"""
+        self.transformer = transformer
+        self._notify_observers()
+    
+    def world_to_screen(self, world_pos: Vector2) -> Vector2:
+        if not self.transformer:
+            return world_pos
+        return self.transformer.world_to_screen(world_pos)
+    
+    def screen_to_world(self, screen_pos: Vector2) -> Vector2:
+        if not self.transformer:
+            return screen_pos
+        return self.transformer.screen_to_world(screen_pos)
+    
+    def _notify_observers(self) -> None:
+        """옵저버들에게 좌표계 변경 알림"""
+        for observer in self.observers:
+            observer.on_coordinate_system_changed(self.transformer)
+```
+
+## 8. 핵심 시스템 재설계
+
+### 카메라 시스템 (핵심 시스템으로 승격)
+```python
+class ICameraSystem(ISystem):
+    """플레이어 중앙 고정 및 월드 오프셋 관리"""
+    pass
+
+class CameraSystem(ICameraSystem):
+    def __init__(self, coordinate_manager: CoordinateManager):
+        self.coordinate_manager = coordinate_manager
+        self.screen_center = Vector2(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+    
+    def update(self, entities: list[Entity], delta_time: float) -> None:
+        for camera_entity in entities.with_component(CameraComponent):
+            camera = camera_entity.get_component(CameraComponent)
+            
+            if camera.follow_target:
+                player_movement = camera.follow_target.get_component(PlayerMovementComponent)
+                
+                # 핵심: 플레이어 이동의 역방향으로 월드 이동
+                if player_movement.direction.length() > 0.1:  # 데드존
+                    movement_delta = player_movement.direction * player_movement.speed * delta_time
+                    camera.world_offset -= movement_delta
+                
+                # 월드 경계 처리
+                camera.world_offset.x = max(camera.world_bounds[0], 
+                                          min(camera.world_bounds[2], camera.world_offset.x))
+                camera.world_offset.y = max(camera.world_bounds[1], 
+                                          min(camera.world_bounds[3], camera.world_offset.y))
+                
+                # 좌표 변환기 업데이트
+                if hasattr(self.coordinate_manager.transformer, '_cache_dirty'):
+                    self.coordinate_manager.transformer._cache_dirty = True
+    
+    def initialize(self, coordinate_manager: CoordinateManager) -> None:
+        self.coordinate_manager = coordinate_manager
+    
+    def cleanup(self) -> None:
+        pass
 ```
 
 ## 게임별 컴포넌트 설계
@@ -249,28 +414,77 @@ class RenderComponent(Component):
     sprite: pygame.Surface | None = None
     layer: int = 0
     visible: bool = True
+
+@dataclass
+class CameraComponent(Component):
+    follow_target: Entity | None = None
+    world_offset: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+    world_bounds: tuple[float, float, float, float] = (0, 0, 1000, 1000)  # min_x, min_y, max_x, max_y
+
+@dataclass
+class PlayerMovementComponent(Component):
+    direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+    speed: float = 200.0
+
+# 좌표 시스템을 위한 Vector2 클래스
+@dataclass
+class Vector2:
+    x: float = 0.0
+    y: float = 0.0
+    
+    def length(self) -> float:
+        return (self.x ** 2 + self.y ** 2) ** 0.5
+    
+    def copy(self) -> 'Vector2':
+        return Vector2(self.x, self.y)
+    
+    def __add__(self, other: 'Vector2') -> 'Vector2':
+        return Vector2(self.x + other.x, self.y + other.y)
+    
+    def __sub__(self, other: 'Vector2') -> 'Vector2':
+        return Vector2(self.x - other.x, self.y - other.y)
+    
+    def __mul__(self, scalar: float) -> 'Vector2':
+        return Vector2(self.x * scalar, self.y * scalar)
 ```
 
-## 시스템 실행 순서
+## 시스템 실행 순서 (업데이트됨)
 
+### 핵심 시스템 우선순위
 1. **InputSystem** (우선순위: 0)
    - 마우스/키보드 입력 처리
    - 플레이어 이동 방향 결정
 
-2. **MovementSystem** (우선순위: 1)
+2. **CameraSystem** (우선순위: 1) - **새로 추가**
+   - 플레이어 중앙 고정 및 월드 오프셋 관리
+   - 좌표 변환 시스템과 연동
+
+3. **MovementSystem** (우선순위: 2)
    - PositionComponent와 VelocityComponent 기반 이동
    - 경계 확인 및 충돌 전 위치 업데이트
 
-3. **CollisionSystem** (우선순위: 2)
+4. **CollisionSystem** (우선순위: 3) - **최우선 최적화**
    - pymunk 물리 엔진을 사용한 충돌 감지
    - 충돌 해결 및 이벤트 발생
 
-4. **WeaponSystem** (우선순위: 3)
+5. **WeaponSystem** (우선순위: 4)
    - 자동 공격 로직
    - 발사체 생성 및 관리
 
-5. **RenderSystem** (우선순위: 4)
-   - pygame 기반 화면 렌더링
+6. **AISystem** (우선순위: 5) - **새로 추가**
+   - AI 계산 (월드 좌표 기반)
+   - 적 행동 패턴 처리
+
+7. **PhysicsSystem** (우선순위: 6) - **새로 추가**
+   - 물리 시뮬레이션
+   - 객체 간 상호작용
+
+8. **MapSystem** (우선순위: 7) - **새로 추가**
+   - 무한 스크롤 맵 렌더링
+   - 타일 기반 배경 관리
+
+9. **RenderSystem** (우선순위: 8) - **좌표변환 적용**
+   - CoordinateManager를 통한 좌표 변환
    - 레이어 순서에 따른 스프라이트 그리기
 
 ## 성능 최적화 전략
