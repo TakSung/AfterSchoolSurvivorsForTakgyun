@@ -140,7 +140,7 @@
               "2.3"
             ],
             "details": "GameStateManager 클래스로 게임 상태 전환을 관리하고, JSON 기반 설정 파일(config.json)에서 화면 해상도, FPS, 키 바인딩 등을 로드합니다. 런타임 중 설정 변경 기능과 설정 저장 기능을 구현하며, 상태별 렌더링 및 입력 처리 분기를 지원합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "유닛테스트 구현을 위한 인터뷰를 진행하고(@.claude/commands/interview-for-unit-test.md), 인터뷰에서 추출한 테스트 시나리오를 바탕으로 테스트 케이스를 작성합니다. 마지막으로 앞서 작성한 기능이 정상적으로 작동하는지 테스트 하며 테스트가 통과할 때까지 반복합니다. 단 같은 오류가 3번 이상 반복되면, 잠시 멈추고 사용자와 소통하며 오류를 고쳐 나가세요."
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T16:07:22.147Z",
+      "updated": "2025-08-10T16:16:47.656Z",
       "description": "Tasks for master context"
     }
   }
