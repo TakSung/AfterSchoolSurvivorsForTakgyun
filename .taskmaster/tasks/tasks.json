@@ -48,7 +48,7 @@
               "1.2"
             ],
             "details": "src/core/entity_manager.py에 EntityManager 클래스를 구현합니다. create_entity(), destroy_entity(), get_entity(), get_entities_with_component() 등의 메서드를 포함하며, 엔티티 ID 할당과 생명주기를 관리합니다. 약한 참조를 사용한 메모리 관리를 구현합니다.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T04:21:35.826Z",
+      "updated": "2025-08-10T04:22:45.078Z",
       "description": "Tasks for master context"
     }
   }
