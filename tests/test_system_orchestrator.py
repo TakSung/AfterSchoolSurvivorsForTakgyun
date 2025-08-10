@@ -16,9 +16,11 @@ if TYPE_CHECKING:
     from src.core.entity_manager import EntityManager
 
 
-# Test Systems
-class TestMovementSystem(System):
-    """Test system for movement logic."""
+# AI-NOTE : 클래스명을 Test*에서 Mock*으로 변경하여 pytest가 이를 테스트 클래스로 오인하는 것을 방지
+# pytest는 Test로 시작하는 클래스를 자동으로 테스트 클래스로 수집하려 시도하므로 경고가 발생함
+# Mock 접두사를 사용하여 이들이 테스트 도우미 클래스임을 명확히 표시
+class MockMovementSystem(System):
+    """Mock system for movement logic in tests."""
     
     def __init__(self, priority: int = 0) -> None:
         super().__init__(priority=priority)
@@ -29,8 +31,8 @@ class TestMovementSystem(System):
         self.update_count += 1
 
 
-class TestRenderSystem(System):
-    """Test system for rendering logic."""
+class MockRenderSystem(System):
+    """Mock system for rendering logic in tests."""
     
     def __init__(self, priority: int = 100) -> None:
         super().__init__(priority=priority)
@@ -41,8 +43,8 @@ class TestRenderSystem(System):
         self.update_count += 1
 
 
-class TestPhysicsSystem(System):
-    """Test system for physics logic."""
+class MockPhysicsSystem(System):
+    """Mock system for physics logic in tests."""
     
     def __init__(self, priority: int = 50) -> None:
         super().__init__(priority=priority)
@@ -111,24 +113,24 @@ class TestSystemOrchestrator:
         return EntityManager()
     
     @pytest.fixture
-    def movement_system(self) -> TestMovementSystem:
+    def movement_system(self) -> MockMovementSystem:
         """Create a test movement system."""
-        return TestMovementSystem(priority=10)
+        return MockMovementSystem(priority=10)
     
     @pytest.fixture
-    def render_system(self) -> TestRenderSystem:
+    def render_system(self) -> MockRenderSystem:
         """Create a test render system."""
-        return TestRenderSystem(priority=100)
+        return MockRenderSystem(priority=100)
     
     @pytest.fixture
-    def physics_system(self) -> TestPhysicsSystem:
+    def physics_system(self) -> MockPhysicsSystem:
         """Create a test physics system."""
-        return TestPhysicsSystem(priority=50)
+        return MockPhysicsSystem(priority=50)
     
     def test_시스템_등록_성공_시나리오(
         self, 
         orchestrator: SystemOrchestrator, 
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """1. 시스템 등록 성공 시나리오
         
@@ -150,7 +152,7 @@ class TestSystemOrchestrator:
     def test_중복_시스템_등록_실패_시나리오(
         self, 
         orchestrator: SystemOrchestrator, 
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """2. 중복 시스템 등록 실패 시나리오
         
@@ -163,7 +165,7 @@ class TestSystemOrchestrator:
         orchestrator.register_system(movement_system, "MovementSystem")
         
         # When & Then - 같은 이름으로 시스템 재등록 시 예외 발생
-        duplicate_system = TestMovementSystem()
+        duplicate_system = MockMovementSystem()
         with pytest.raises(ValueError, match="already registered"):
             orchestrator.register_system(duplicate_system, "MovementSystem")
     
@@ -192,7 +194,7 @@ class TestSystemOrchestrator:
     def test_시스템_등록_해제_성공_시나리오(
         self, 
         orchestrator: SystemOrchestrator, 
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """4. 시스템 등록 해제 성공 시나리오
         
@@ -244,9 +246,9 @@ class TestSystemOrchestrator:
         기대되는 안정성: 낮은 우선순위 값을 가진 시스템이 먼저 실행되어야 함
         """
         # Given - 다른 우선순위를 가진 시스템들 등록
-        movement_system = TestMovementSystem(priority=10)
-        physics_system = TestPhysicsSystem(priority=50) 
-        render_system = TestRenderSystem(priority=100)
+        movement_system = MockMovementSystem(priority=10)
+        physics_system = MockPhysicsSystem(priority=50) 
+        render_system = MockRenderSystem(priority=100)
         
         # 의도적으로 등록 순서를 우선순위와 다르게 함
         orchestrator.register_system(render_system, "RenderSystem")
@@ -271,7 +273,7 @@ class TestSystemOrchestrator:
         self, 
         orchestrator: SystemOrchestrator,
         entity_manager: EntityManager,
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """7. 비활성 시스템 실행 제외 검증
         
@@ -296,7 +298,7 @@ class TestSystemOrchestrator:
         self, 
         orchestrator: SystemOrchestrator,
         entity_manager: EntityManager,
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """8. 시스템 업데이트 오류 처리 검증
         
@@ -320,7 +322,7 @@ class TestSystemOrchestrator:
     def test_시스템_우선순위_변경_기능(
         self, 
         orchestrator: SystemOrchestrator,
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """9. 시스템 우선순위 변경 기능
         
@@ -348,7 +350,7 @@ class TestSystemOrchestrator:
     def test_시스템_활성화_비활성화_기능(
         self, 
         orchestrator: SystemOrchestrator,
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """10. 시스템 활성화/비활성화 기능
         
@@ -377,8 +379,8 @@ class TestSystemOrchestrator:
     def test_시스템_그룹_관리_기능(
         self, 
         orchestrator: SystemOrchestrator,
-        movement_system: TestMovementSystem,
-        physics_system: TestPhysicsSystem
+        movement_system: MockMovementSystem,
+        physics_system: MockPhysicsSystem
     ) -> None:
         """11. 시스템 그룹 관리 기능
         
@@ -415,7 +417,7 @@ class TestSystemOrchestrator:
         self, 
         orchestrator: SystemOrchestrator,
         entity_manager: EntityManager,
-        movement_system: TestMovementSystem
+        movement_system: MockMovementSystem
     ) -> None:
         """12. 실행 통계 수집 기능
         
@@ -474,8 +476,8 @@ class TestSystemOrchestrator:
     def test_모든_시스템_일괄_정리_기능(
         self, 
         orchestrator: SystemOrchestrator,
-        movement_system: TestMovementSystem,
-        physics_system: TestPhysicsSystem
+        movement_system: MockMovementSystem,
+        physics_system: MockPhysicsSystem
     ) -> None:
         """14. 모든 시스템 일괄 정리 기능
         
@@ -502,8 +504,8 @@ class TestSystemOrchestrator:
     def test_시스템_조회_및_상태_확인_기능(
         self, 
         orchestrator: SystemOrchestrator,
-        movement_system: TestMovementSystem,
-        physics_system: TestPhysicsSystem
+        movement_system: MockMovementSystem,
+        physics_system: MockPhysicsSystem
     ) -> None:
         """15. 시스템 조회 및 상태 확인 기능
         

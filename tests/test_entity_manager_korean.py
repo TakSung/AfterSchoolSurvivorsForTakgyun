@@ -14,21 +14,23 @@ from src.core.entity import Entity
 from src.core.component import Component
 
 
-# 테스트용 컴포넌트 클래스들
+# AI-NOTE : 클래스명을 Test*에서 Mock*으로 변경하여 pytest가 이를 테스트 클래스로 오인하는 것을 방지
+# pytest는 Test로 시작하는 클래스를 자동으로 테스트 클래스로 수집하려 시도하므로 경고가 발생함
+# Mock 접두사를 사용하여 이들이 테스트 도우미 클래스임을 명확히 표시
 @dataclass
-class TestPositionComponent(Component):
+class MockPositionComponent(Component):
     x: float
     y: float
 
 
 @dataclass
-class TestHealthComponent(Component):
+class MockHealthComponent(Component):
     current: int
     maximum: int
 
 
 @dataclass
-class TestVelocityComponent(Component):
+class MockVelocityComponent(Component):
     dx: float
     dy: float
 
@@ -92,7 +94,7 @@ class TestEntityManager:
         # Given - 엔티티와 컴포넌트 생성
         manager = EntityManager()
         entity = manager.create_entity()
-        component = TestPositionComponent(x=10.0, y=20.0)
+        component = MockPositionComponent(x=10.0, y=20.0)
         manager.add_component(entity, component)
         entity_id = entity.entity_id
 
@@ -107,7 +109,7 @@ class TestEntityManager:
             '삭제된 엔티티는 매니저에 존재하지 않아야 함'
         )
         assert entity.active is False, '삭제된 엔티티는 비활성 상태여야 함'
-        assert not manager.has_component(entity, TestPositionComponent), (
+        assert not manager.has_component(entity, MockPositionComponent), (
             '삭제된 엔티티의 컴포넌트도 제거되어야 함'
         )
 
@@ -241,16 +243,16 @@ class TestEntityManager:
         # Given - 엔티티와 컴포넌트 준비
         manager = EntityManager()
         entity = manager.create_entity()
-        component = TestPositionComponent(x=100.0, y=200.0)
+        component = MockPositionComponent(x=100.0, y=200.0)
 
         # When - 컴포넌트 추가
         manager.add_component(entity, component)
 
         # Then - 컴포넌트가 올바르게 등록되어야 함
-        assert manager.has_component(entity, TestPositionComponent), (
+        assert manager.has_component(entity, MockPositionComponent), (
             '추가된 컴포넌트를 가지고 있어야 함'
         )
-        stored_component = manager.get_component(entity, TestPositionComponent)
+        stored_component = manager.get_component(entity, MockPositionComponent)
         assert stored_component is component, (
             '조회된 컴포넌트는 원본과 동일해야 함'
         )
@@ -270,7 +272,7 @@ class TestEntityManager:
         # Given - EntityManager와 등록되지 않은 엔티티
         manager = EntityManager()
         fake_entity = Entity.create()  # 매니저에 등록되지 않은 엔티티
-        component = TestPositionComponent(x=50.0, y=75.0)
+        component = MockPositionComponent(x=50.0, y=75.0)
 
         # When & Then - 존재하지 않는 엔티티에 컴포넌트 추가 시 ValueError 발생해야 함
         with pytest.raises(ValueError, match='does not exist'):
@@ -287,17 +289,17 @@ class TestEntityManager:
         # Given - 엔티티와 컴포넌트 추가
         manager = EntityManager()
         entity = manager.create_entity()
-        component = TestPositionComponent(x=30.0, y=40.0)
+        component = MockPositionComponent(x=30.0, y=40.0)
         manager.add_component(entity, component)
 
         # When - 컴포넌트 제거
-        manager.remove_component(entity, TestPositionComponent)
+        manager.remove_component(entity, MockPositionComponent)
 
         # Then - 컴포넌트가 완전히 제거되어야 함
-        assert not manager.has_component(entity, TestPositionComponent), (
+        assert not manager.has_component(entity, MockPositionComponent), (
             '제거된 컴포넌트를 가지고 있으면 안 됨'
         )
-        assert manager.get_component(entity, TestPositionComponent) is None, (
+        assert manager.get_component(entity, MockPositionComponent) is None, (
             '제거된 컴포넌트 조회 시 None 반환해야 함'
         )
 
@@ -318,21 +320,21 @@ class TestEntityManager:
         entity_with_both = manager.create_entity()
 
         manager.add_component(
-            entity_with_position, TestPositionComponent(x=1.0, y=2.0)
+            entity_with_position, MockPositionComponent(x=1.0, y=2.0)
         )
         manager.add_component(
-            entity_with_health, TestHealthComponent(current=100, maximum=100)
+            entity_with_health, MockHealthComponent(current=100, maximum=100)
         )
         manager.add_component(
-            entity_with_both, TestPositionComponent(x=3.0, y=4.0)
+            entity_with_both, MockPositionComponent(x=3.0, y=4.0)
         )
         manager.add_component(
-            entity_with_both, TestHealthComponent(current=50, maximum=100)
+            entity_with_both, MockHealthComponent(current=50, maximum=100)
         )
 
         # When - Position 컴포넌트를 가진 엔티티들 조회
         entities_with_position = manager.get_entities_with_component(
-            TestPositionComponent
+            MockPositionComponent
         )
 
         # Then - Position 컴포넌트를 가진 엔티티들만 반환되어야 함
@@ -367,30 +369,30 @@ class TestEntityManager:
         entity_all_three = manager.create_entity()
 
         manager.add_component(
-            entity_position_only, TestPositionComponent(x=1.0, y=2.0)
+            entity_position_only, MockPositionComponent(x=1.0, y=2.0)
         )
         manager.add_component(
-            entity_health_only, TestHealthComponent(current=80, maximum=100)
-        )
-
-        manager.add_component(entity_both, TestPositionComponent(x=3.0, y=4.0))
-        manager.add_component(
-            entity_both, TestHealthComponent(current=60, maximum=100)
+            entity_health_only, MockHealthComponent(current=80, maximum=100)
         )
 
+        manager.add_component(entity_both, MockPositionComponent(x=3.0, y=4.0))
         manager.add_component(
-            entity_all_three, TestPositionComponent(x=5.0, y=6.0)
+            entity_both, MockHealthComponent(current=60, maximum=100)
+        )
+
+        manager.add_component(
+            entity_all_three, MockPositionComponent(x=5.0, y=6.0)
         )
         manager.add_component(
-            entity_all_three, TestHealthComponent(current=40, maximum=100)
+            entity_all_three, MockHealthComponent(current=40, maximum=100)
         )
         manager.add_component(
-            entity_all_three, TestVelocityComponent(dx=1.5, dy=2.5)
+            entity_all_three, MockVelocityComponent(dx=1.5, dy=2.5)
         )
 
         # When - Position과 Health 컴포넌트를 모두 가진 엔티티들 조회
         entities_with_both = manager.get_entities_with_components(
-            TestPositionComponent, TestHealthComponent
+            MockPositionComponent, MockHealthComponent
         )
 
         # Then - 두 컴포넌트를 모두 가진 엔티티들만 반환되어야 함
@@ -424,10 +426,10 @@ class TestEntityManager:
         for i in range(5):
             entity = manager.create_entity()
             manager.add_component(
-                entity, TestPositionComponent(x=float(i), y=float(i * 2))
+                entity, MockPositionComponent(x=float(i), y=float(i * 2))
             )
             manager.add_component(
-                entity, TestHealthComponent(current=100 - i * 10, maximum=100)
+                entity, MockHealthComponent(current=100 - i * 10, maximum=100)
             )
             entities.append(entity)
 
@@ -451,7 +453,7 @@ class TestEntityManager:
             assert manager.get_entity(entity.entity_id) is None, (
                 '모든 엔티티가 조회되지 않아야 함'
             )
-            assert not manager.has_component(entity, TestPositionComponent), (
+            assert not manager.has_component(entity, MockPositionComponent), (
                 '모든 컴포넌트가 제거되어야 함'
             )
 
@@ -472,7 +474,7 @@ class TestEntityManager:
             entities = [manager.create_entity() for _ in range(10)]
 
             for entity in entities:
-                component = TestPositionComponent(x=1.0, y=1.0)
+                component = MockPositionComponent(x=1.0, y=1.0)
                 manager.add_component(entity, component)
 
             for entity in entities:
@@ -504,17 +506,17 @@ class TestEntityManager:
         for i in range(3):
             entity = manager.create_entity()
             manager.add_component(
-                entity, TestPositionComponent(x=float(i), y=float(i))
+                entity, MockPositionComponent(x=float(i), y=float(i))
             )
             if i < 2:  # 처음 2개만 Health 컴포넌트 추가
                 manager.add_component(
-                    entity, TestHealthComponent(current=100, maximum=100)
+                    entity, MockHealthComponent(current=100, maximum=100)
                 )
 
         # When - 각 컴포넌트 타입별 개수 조회
-        position_count = manager.get_component_count(TestPositionComponent)
-        health_count = manager.get_component_count(TestHealthComponent)
-        velocity_count = manager.get_component_count(TestVelocityComponent)
+        position_count = manager.get_component_count(MockPositionComponent)
+        health_count = manager.get_component_count(MockHealthComponent)
+        velocity_count = manager.get_component_count(MockVelocityComponent)
 
         # Then - 정확한 개수가 반환되어야 함
         assert position_count == 3, 'Position 컴포넌트 개수는 3개여야 함'
@@ -586,7 +588,7 @@ class TestEntityManager:
         active_entity = manager.create_entity()
         inactive_entity = manager.create_entity()
         manager.add_component(
-            active_entity, TestPositionComponent(x=10.0, y=20.0)
+            active_entity, MockPositionComponent(x=10.0, y=20.0)
         )
         manager.destroy_entity(inactive_entity)
 

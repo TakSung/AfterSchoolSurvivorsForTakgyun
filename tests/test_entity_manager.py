@@ -10,24 +10,26 @@ from src.core.component import Component
 from src.core.entity_manager import EntityManager
 
 
-# Test components for testing purposes
+# AI-NOTE : 클래스명을 Test*에서 Mock*으로 변경하여 pytest가 이를 테스트 클래스로 오인하는 것을 방지
+# pytest는 Test로 시작하는 클래스를 자동으로 테스트 클래스로 수집하려 시도하므로 경고가 발생함
+# Mock 접두사를 사용하여 이들이 테스트 도우미 클래스임을 명확히 표시
 @dataclass
-class TestPositionComponent(Component):
-    """Test position component."""
+class MockPositionComponent(Component):
+    """Mock position component for testing."""
     x: float = 0.0
     y: float = 0.0
 
 
 @dataclass
-class TestHealthComponent(Component):
-    """Test health component."""
+class MockHealthComponent(Component):
+    """Mock health component for testing."""
     current: int = 100
     maximum: int = 100
 
 
 @dataclass
-class TestVelocityComponent(Component):
-    """Test velocity component."""
+class MockVelocityComponent(Component):
+    """Mock velocity component for testing."""
     dx: float = 0.0
     dy: float = 0.0
 
@@ -126,11 +128,11 @@ class TestEntityManager:
     def test_add_component(self) -> None:
         """Test adding components to entities."""
         entity = self.entity_manager.create_entity()
-        position = TestPositionComponent(x=10.0, y=20.0)
+        position = MockPositionComponent(x=10.0, y=20.0)
         
         self.entity_manager.add_component(entity, position)
         
-        retrieved = self.entity_manager.get_component(entity, TestPositionComponent)
+        retrieved = self.entity_manager.get_component(entity, MockPositionComponent)
         assert retrieved is position
         assert retrieved.x == 10.0
         assert retrieved.y == 20.0
@@ -138,7 +140,7 @@ class TestEntityManager:
     def test_add_component_to_nonexistent_entity(self) -> None:
         """Test adding component to non-existent entity."""
         entity = Entity.create()  # Create without adding to manager
-        position = TestPositionComponent()
+        position = MockPositionComponent()
         
         with pytest.raises(ValueError):
             self.entity_manager.add_component(entity, position)
@@ -146,39 +148,39 @@ class TestEntityManager:
     def test_remove_component(self) -> None:
         """Test removing components from entities."""
         entity = self.entity_manager.create_entity()
-        position = TestPositionComponent(x=10.0, y=20.0)
-        health = TestHealthComponent(current=50)
+        position = MockPositionComponent(x=10.0, y=20.0)
+        health = MockHealthComponent(current=50)
         
         self.entity_manager.add_component(entity, position)
         self.entity_manager.add_component(entity, health)
         
-        assert self.entity_manager.has_component(entity, TestPositionComponent)
-        assert self.entity_manager.has_component(entity, TestHealthComponent)
+        assert self.entity_manager.has_component(entity, MockPositionComponent)
+        assert self.entity_manager.has_component(entity, MockHealthComponent)
         
-        self.entity_manager.remove_component(entity, TestPositionComponent)
+        self.entity_manager.remove_component(entity, MockPositionComponent)
         
-        assert not self.entity_manager.has_component(entity, TestPositionComponent)
-        assert self.entity_manager.has_component(entity, TestHealthComponent)
-        assert self.entity_manager.get_component(entity, TestPositionComponent) is None
+        assert not self.entity_manager.has_component(entity, MockPositionComponent)
+        assert self.entity_manager.has_component(entity, MockHealthComponent)
+        assert self.entity_manager.get_component(entity, MockPositionComponent) is None
     
     def test_remove_component_from_nonexistent_entity(self) -> None:
         """Test removing component from non-existent entity."""
         entity = Entity.create()
         
         # Should not raise an error
-        self.entity_manager.remove_component(entity, TestPositionComponent)
+        self.entity_manager.remove_component(entity, MockPositionComponent)
     
     def test_has_component(self) -> None:
         """Test checking if entity has component."""
         entity = self.entity_manager.create_entity()
-        position = TestPositionComponent()
+        position = MockPositionComponent()
         
-        assert not self.entity_manager.has_component(entity, TestPositionComponent)
+        assert not self.entity_manager.has_component(entity, MockPositionComponent)
         
         self.entity_manager.add_component(entity, position)
         
-        assert self.entity_manager.has_component(entity, TestPositionComponent)
-        assert not self.entity_manager.has_component(entity, TestHealthComponent)
+        assert self.entity_manager.has_component(entity, MockPositionComponent)
+        assert not self.entity_manager.has_component(entity, MockHealthComponent)
     
     def test_get_entities_with_component(self) -> None:
         """Test getting entities with specific component."""
@@ -186,12 +188,12 @@ class TestEntityManager:
         entity2 = self.entity_manager.create_entity()
         entity3 = self.entity_manager.create_entity()
         
-        self.entity_manager.add_component(entity1, TestPositionComponent())
-        self.entity_manager.add_component(entity2, TestPositionComponent())
-        self.entity_manager.add_component(entity3, TestHealthComponent())
+        self.entity_manager.add_component(entity1, MockPositionComponent())
+        self.entity_manager.add_component(entity2, MockPositionComponent())
+        self.entity_manager.add_component(entity3, MockHealthComponent())
         
-        position_entities = self.entity_manager.get_entities_with_component(TestPositionComponent)
-        health_entities = self.entity_manager.get_entities_with_component(TestHealthComponent)
+        position_entities = self.entity_manager.get_entities_with_component(MockPositionComponent)
+        health_entities = self.entity_manager.get_entities_with_component(MockHealthComponent)
         
         assert len(position_entities) == 2
         assert entity1 in position_entities
@@ -207,31 +209,31 @@ class TestEntityManager:
         entity2 = self.entity_manager.create_entity()
         entity3 = self.entity_manager.create_entity()
         
-        self.entity_manager.add_component(entity1, TestPositionComponent())
-        self.entity_manager.add_component(entity1, TestHealthComponent())
+        self.entity_manager.add_component(entity1, MockPositionComponent())
+        self.entity_manager.add_component(entity1, MockHealthComponent())
         
-        self.entity_manager.add_component(entity2, TestPositionComponent())
+        self.entity_manager.add_component(entity2, MockPositionComponent())
         
-        self.entity_manager.add_component(entity3, TestHealthComponent())
-        self.entity_manager.add_component(entity3, TestVelocityComponent())
+        self.entity_manager.add_component(entity3, MockHealthComponent())
+        self.entity_manager.add_component(entity3, MockVelocityComponent())
         
         # Entity with both Position and Health
         entities = self.entity_manager.get_entities_with_components(
-            TestPositionComponent, TestHealthComponent
+            MockPositionComponent, MockHealthComponent
         )
         assert len(entities) == 1
         assert entity1 in entities
         
         # Entity with Health and Velocity
         entities = self.entity_manager.get_entities_with_components(
-            TestHealthComponent, TestVelocityComponent
+            MockHealthComponent, MockVelocityComponent
         )
         assert len(entities) == 1
         assert entity3 in entities
         
         # No entity has all three components
         entities = self.entity_manager.get_entities_with_components(
-            TestPositionComponent, TestHealthComponent, TestVelocityComponent
+            MockPositionComponent, MockHealthComponent, MockVelocityComponent
         )
         assert len(entities) == 0
     
@@ -248,8 +250,8 @@ class TestEntityManager:
     def test_get_components_for_entity(self) -> None:
         """Test getting all components for a specific entity."""
         entity = self.entity_manager.create_entity()
-        position = TestPositionComponent(x=5.0, y=10.0)
-        health = TestHealthComponent(current=75)
+        position = MockPositionComponent(x=5.0, y=10.0)
+        health = MockHealthComponent(current=75)
         
         self.entity_manager.add_component(entity, position)
         self.entity_manager.add_component(entity, health)
@@ -257,27 +259,27 @@ class TestEntityManager:
         components = self.entity_manager.get_components_for_entity(entity)
         
         assert len(components) == 2
-        assert TestPositionComponent in components
-        assert TestHealthComponent in components
-        assert components[TestPositionComponent] is position
-        assert components[TestHealthComponent] is health
+        assert MockPositionComponent in components
+        assert MockHealthComponent in components
+        assert components[MockPositionComponent] is position
+        assert components[MockHealthComponent] is health
     
     def test_clear_all(self) -> None:
         """Test clearing all entities and components."""
         entity1 = self.entity_manager.create_entity()
         entity2 = self.entity_manager.create_entity()
         
-        self.entity_manager.add_component(entity1, TestPositionComponent())
-        self.entity_manager.add_component(entity2, TestHealthComponent())
+        self.entity_manager.add_component(entity1, MockPositionComponent())
+        self.entity_manager.add_component(entity2, MockHealthComponent())
         
         assert len(self.entity_manager) == 2
-        assert self.entity_manager.get_component_count(TestPositionComponent) == 1
+        assert self.entity_manager.get_component_count(MockPositionComponent) == 1
         
         self.entity_manager.clear_all()
         
         assert len(self.entity_manager) == 0
-        assert self.entity_manager.get_component_count(TestPositionComponent) == 0
-        assert self.entity_manager.get_component_count(TestHealthComponent) == 0
+        assert self.entity_manager.get_component_count(MockPositionComponent) == 0
+        assert self.entity_manager.get_component_count(MockHealthComponent) == 0
         assert not entity1.active
         assert not entity2.active
     
@@ -306,31 +308,31 @@ class TestEntityManager:
         entity2 = self.entity_manager.create_entity()
         entity3 = self.entity_manager.create_entity()
         
-        self.entity_manager.add_component(entity1, TestPositionComponent())
-        self.entity_manager.add_component(entity2, TestPositionComponent())
-        self.entity_manager.add_component(entity3, TestHealthComponent())
+        self.entity_manager.add_component(entity1, MockPositionComponent())
+        self.entity_manager.add_component(entity2, MockPositionComponent())
+        self.entity_manager.add_component(entity3, MockHealthComponent())
         
-        assert self.entity_manager.get_component_count(TestPositionComponent) == 2
-        assert self.entity_manager.get_component_count(TestHealthComponent) == 1
-        assert self.entity_manager.get_component_count(TestVelocityComponent) == 0
+        assert self.entity_manager.get_component_count(MockPositionComponent) == 2
+        assert self.entity_manager.get_component_count(MockHealthComponent) == 1
+        assert self.entity_manager.get_component_count(MockVelocityComponent) == 0
     
     def test_destroy_entity_removes_components(self) -> None:
         """Test that destroying an entity removes all its components."""
         entity = self.entity_manager.create_entity()
         
-        self.entity_manager.add_component(entity, TestPositionComponent())
-        self.entity_manager.add_component(entity, TestHealthComponent())
-        self.entity_manager.add_component(entity, TestVelocityComponent())
+        self.entity_manager.add_component(entity, MockPositionComponent())
+        self.entity_manager.add_component(entity, MockHealthComponent())
+        self.entity_manager.add_component(entity, MockVelocityComponent())
         
-        assert self.entity_manager.get_component_count(TestPositionComponent) == 1
-        assert self.entity_manager.get_component_count(TestHealthComponent) == 1
-        assert self.entity_manager.get_component_count(TestVelocityComponent) == 1
+        assert self.entity_manager.get_component_count(MockPositionComponent) == 1
+        assert self.entity_manager.get_component_count(MockHealthComponent) == 1
+        assert self.entity_manager.get_component_count(MockVelocityComponent) == 1
         
         self.entity_manager.destroy_entity(entity)
         
-        assert self.entity_manager.get_component_count(TestPositionComponent) == 0
-        assert self.entity_manager.get_component_count(TestHealthComponent) == 0
-        assert self.entity_manager.get_component_count(TestVelocityComponent) == 0
+        assert self.entity_manager.get_component_count(MockPositionComponent) == 0
+        assert self.entity_manager.get_component_count(MockHealthComponent) == 0
+        assert self.entity_manager.get_component_count(MockVelocityComponent) == 0
     
     def test_iterator_protocol(self) -> None:
         """Test EntityManager iterator protocol."""
