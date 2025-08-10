@@ -148,7 +148,7 @@
             "title": "고정 시간 간격 처리 시스템이 테스트",
             "description": "고정 시간 간격 처리 시스템이 60fps/40fps 모두 동일한 스팩으로 동작하는지 유닛 테스트를 진행합니다.",
             "details": "delta time 계산이 정확한지 테스트 케이스를 작성합니다. 테스트 케이스는 60fps, 40fps 모두 동일한 스팩으로 동작하는지 테스트합니다.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               "2.2"
             ],
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T11:56:03.767Z",
+      "updated": "2025-08-10T16:07:22.147Z",
       "description": "Tasks for master context"
     }
   }
