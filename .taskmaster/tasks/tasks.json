@@ -117,7 +117,7 @@
               "2.1"
             ],
             "details": "delta time을 활용한 시간 기반 계산 유틸리티를 구현합니다. 고정 시간 간격(fixed timestep)과 가변 시간 간격(variable timestep) 처리 옵션을 제공하며, 시간 스케일링 기능(일시정지, 슬로우모션 등)을 지원합니다. TimeManager 클래스로 게임 내 시간 흐름을 중앙 관리합니다.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T11:43:43.005Z",
+      "updated": "2025-08-10T11:50:42.193Z",
       "description": "Tasks for master context"
     }
   }
