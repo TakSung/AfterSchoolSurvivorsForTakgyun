@@ -37,7 +37,7 @@
               "1.1"
             ],
             "details": "src/core/entity.py에 Entity 클래스, src/core/component.py에 Component 추상 클래스, src/core/system.py에 System 추상 클래스를 정의합니다. 각 클래스는 고유 ID, 생명주기 관리, 상속 가능한 인터페이스를 포함해야 합니다.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-09T07:47:42.196Z",
+      "updated": "2025-08-10T03:56:39.335Z",
       "description": "Tasks for master context"
     }
   }
