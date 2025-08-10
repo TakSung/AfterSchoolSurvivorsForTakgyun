@@ -94,11 +94,18 @@ task-master expand --id=<id> --research --force
 
 ## Development Commands
 
+### Python Environment
+```bash
+# Use conda environment Python directly (as-game environment)
+/opt/homebrew/anaconda3/envs/as-game/bin/python    # Python interpreter
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest  # Run tests
+```
+
 ### Code Quality
 ```bash
-ruff check .          # Lint code
-ruff format .         # Format code
-pytest                # Run tests
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff check .    # Lint code
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff format .   # Format code
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest          # Run tests
 memory_profiler       # Profile memory usage
 ```
 
