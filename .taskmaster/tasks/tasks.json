@@ -788,7 +788,7 @@
         "testStrategy": "단위 테스트로 world_to_screen과 screen_to_world 변환의 정확성을 검증하고, 왕복 변환 시 좌표 일관성을 확인한다. 다양한 카메라 오프셋 값에 대한 경계값 테스트를 수행하며, 캐싱 동작 테스트를 포함한다.",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -829,7 +829,7 @@
               "13.3"
             ],
             "details": "tests/test_coordinate_transformer.py에 단위 테스트를 작성하여 world_to_screen과 screen_to_world의 왕복 변환 정확성을 검증한다. 다양한 카메라 오프셋과 줌 레벨에서의 경계값 테스트를 수행한다. 캐싱 메커니즘의 동작과 무효화 로직을 테스트한다. PlayerMovementSystem, EnemyAISystem, AutoAttackSystem에서 좌표 변환 사용 시 발생할 수 있는 영향을 분석하고 호환성을 확인한다. RenderSystem과의 연동을 위한 인터페이스 검증을 수행한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T11:33:59.069Z",
+      "updated": "2025-08-10T11:38:20.954Z",
       "description": "Tasks for master context"
     }
   }
