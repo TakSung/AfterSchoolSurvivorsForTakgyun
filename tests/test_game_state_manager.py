@@ -122,15 +122,23 @@ class TestGameStateManager:
             assert manager.get_config('audio.music_volume') == 0.8, "기본 음악 볼륨이 유지되어야 함"
             assert manager.get_config('custom_section.custom_value') == "test", "커스텀 설정이 추가되어야 함"
 
-            # 설정 변경 및 저장
-            manager.set_config('display.fullscreen', True)
+            # 설정 변경 및 저장 (기본값이 아닌 다른 설정을 변경)
+            manager.set_config('display.vsync', False)  # 기본값: True
             manager.set_config('custom_section.new_value', 42)
+
+            # 먼저 변경사항 확인
+            assert manager.get_config('display.vsync') is False, "변경 직후 vsync 설정이 False여야 함"
+            assert manager.get_config('custom_section.new_value') == 42, "변경 직후 커스텀 값이 42여야 함"
 
             assert manager.save_config(), "설정 저장이 성공해야 함"
 
-            # 새 인스턴스로 검증 (auto_save=True to match original)
-            manager2 = GameStateManager(config_path=config_path)
-            assert manager2.get_config('display.fullscreen') is True, "저장된 풀스크린 설정이 로딩되어야 함"
+            # 파일이 제대로 저장되었는지 확인
+            assert config_path.exists(), "설정 파일이 존재해야 함"
+            assert config_path.stat().st_size > 0, "설정 파일이 비어있지 않아야 함"
+
+            # 새 인스턴스로 검증
+            manager2 = GameStateManager(config_path=config_path, auto_save=False)
+            assert manager2.get_config('display.vsync') is False, "저장된 vsync 설정이 로딩되어야 함"
             assert manager2.get_config('custom_section.new_value') == 42, "저장된 커스텀 값이 로딩되어야 함"
 
     def test_런타임_설정_변경_및_자동_저장_검증_성공_시나리오(self) -> None:

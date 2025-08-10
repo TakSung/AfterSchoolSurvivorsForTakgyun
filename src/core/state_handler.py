@@ -21,10 +21,10 @@ class IStateHandler(ABC):
 
 class StateDispatcher:
     __slots__ = (
-        '_state_manager',
         '_handlers',
         '_input_processors',
         '_render_processors',
+        '_state_manager',
         '_update_processors',
     )
 

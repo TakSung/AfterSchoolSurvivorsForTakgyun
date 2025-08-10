@@ -23,14 +23,14 @@ class GameState(IntEnum):
 
 class GameStateManager:
     __slots__ = (
+        '_auto_save',
+        '_config_data',
+        '_config_lock',
+        '_config_path',
         '_current_state',
         '_previous_state',
         '_state_callbacks',
         '_transition_callbacks',
-        '_config_path',
-        '_config_data',
-        '_config_lock',
-        '_auto_save',
     )
 
     def __init__(
@@ -231,7 +231,7 @@ class GameStateManager:
         try:
             with self._config_lock:
                 if self._config_path.exists():
-                    with open(self._config_path, 'r', encoding='utf-8') as f:
+                    with open(self._config_path, encoding='utf-8') as f:
                         loaded_data = json.load(f)
 
                     # Merge loaded data into defaults to preserve all keys
