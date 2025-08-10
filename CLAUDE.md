@@ -320,22 +320,39 @@ def apply_boss_debuff(
 
 ### Testing Pattern
 
+**MANDATORY: Follow Korean testing conventions when using /write-unit-test command**
+
 ```python
 import pytest
 
 class TestWeaponComponent:
-    def test_synergy_damage_calculation(self) -> None:
+    def test_무기_시너지_데미지_계산_정확성_성공_시나리오(self) -> None:
+        """1. 무기 시너지 적용 시 데미지 계산 정확성 검증 (성공 시나리오)
+        
+        목적: 시너지 아이템 조합 시 데미지 배율 계산 검증
+        테스트할 범위: WeaponComponent의 damage_multiplier 연동
+        커버하는 함수 및 데이터: weapon_type 속성들
+        기대되는 안정성: 일관된 데미지 배율 계산 보장
+        """
+        # Given - 축구공과 축구화 조합 설정
         weapon = WeaponComponent(
             weapon_type=WeaponType.SOCCER_BALL,
             damage=10,
             synergy_items=[ItemType.SOCCER_SHOES]
         )
         
-        # Test enum layers
-        assert weapon.weapon_type.value == 0  # Performance 
-        assert weapon.weapon_type.display_name == "축구공"  # Display
-        assert weapon.weapon_type.damage_multiplier == 1.2  # Business logic
+        # When - 각 레이어 데이터 조회
+        performance_value = weapon.weapon_type.value
+        display_name = weapon.weapon_type.display_name  
+        damage_multiplier = weapon.weapon_type.damage_multiplier
+        
+        # Then - 정확한 값 반환 확인
+        assert performance_value == 0, "축구공의 성능 인덱스는 0이어야 함"
+        assert display_name == "축구공", "축구공의 표시명이 정확해야 함" 
+        assert damage_multiplier == 1.2, "축구공의 데미지 배율이 1.2여야 함"
 ```
+
+**Testing Command Reference:** @/.claude/commands/write-unit-test.md
 
 ## Task Master AI Instructions
 

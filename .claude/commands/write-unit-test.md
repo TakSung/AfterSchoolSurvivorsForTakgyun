@@ -496,3 +496,167 @@ class TestPlayerMovementSystem:
 - Python 3.13+ 새 기능 활용 방안 검토
 - ECS 패턴 발전에 따른 테스트 패턴 업데이트
 - 게임 개발 특화 테스트 도구 도입 검토
+
+## Command Compliance & Anti-Pattern Prevention
+
+### Mandatory Compliance Checklist
+**CRITICAL: This section prevents repeating common mistakes when using /write-unit-test**
+
+Before generating any test code, ALWAYS verify:
+
+```python
+# ✅ REQUIRED PATTERNS:
+# 1. Korean method names: test_대상_상황_결과_시나리오
+# 2. Korean Given-When-Then comments
+# 3. 5-part Korean docstring structure
+# 4. Korean assertion messages
+# 5. ECS-specific patterns for game architecture
+
+# ❌ ANTI-PATTERNS TO AVOID:
+# 1. English method names (test_create_entity)
+# 2. Missing Given-When-Then structure
+# 3. Generic docstrings without Korean format
+# 4. Silent assertions without Korean messages
+# 5. Non-ECS testing for game components
+```
+
+### Self-Validation Protocol
+```python
+def validate_korean_test_compliance(test_method: str) -> bool:
+    """테스트 메서드가 한국어 명명 규칙을 준수하는지 검증"""
+    required_patterns = {
+        'method_name': r'^test_[가-힣_]+_시나리오\(',
+        'docstring_parts': ['목적:', '테스트할 범위:', '기대되는 안정성:'],
+        'gwt_comments': ['# Given -', '# When -', '# Then -'],
+        'korean_assertions': r'assert .+, "[가-힣].*"'
+    }
+    
+    # Validate each pattern...
+    return all_patterns_match
+```
+
+### Context-Aware Generation Rules
+
+#### For AfterSchoolSurvivors ECS Architecture:
+```python
+# MANDATORY: When testing ECS components, always include:
+class TestEntityManager:
+    """엔티티 매니저 테스트 - ECS 아키텍처 핵심 구성요소"""
+    
+    def test_엔티티_생성_고유ID_할당_정상_동작_성공_시나리오(self):
+        """1. 엔티티 생성 시 고유 ID 할당이 정상적으로 동작 (성공 시나리오)
+        
+        목적: EntityManager의 create_entity() 메서드가 고유 ID를 할당하는지 검증
+        테스트할 범위: create_entity() 메서드와 entity.entity_id 속성
+        커버하는 함수 및 데이터: Entity.create(), WeakValueDictionary 저장
+        기대되는 안정성: 중복 없는 고유 ID 생성과 메모리 안전 관리 보장
+        """
+        # Given - 엔티티 매니저 초기화 및 기본 상태 확인
+        entity_manager = EntityManager()
+        initial_count = len(entity_manager)
+        
+        # When - 새로운 엔티티 생성 실행
+        created_entity = entity_manager.create_entity()
+        
+        # Then - 생성된 엔티티가 올바른 속성을 가져야 함
+        assert created_entity.entity_id is not None, "생성된 엔티티는 고유 ID를 가져야 함"
+        assert created_entity.active is True, "새로 생성된 엔티티는 활성 상태여야 함"
+        assert len(entity_manager) == initial_count + 1, "엔티티 매니저의 총 개수가 증가해야 함"
+        assert created_entity in entity_manager, "생성된 엔티티가 매니저에 등록되어야 함"
+```
+
+#### Memory Management Testing for Game Performance:
+```python
+def test_대량_엔티티_생성_메모리_누수_없음_성능_시나리오(self):
+    """6. 대량 엔티티 생성 및 삭제 시 메모리 누수 발생 없음 (성능 시나리오)
+    
+    목적: 게임 플레이 중 대량 엔티티 처리 시 메모리 안정성 검증
+    테스트할 범위: EntityManager의 create/destroy 반복 실행
+    커버하는 함수 및 데이터: WeakValueDictionary, GC 동작, 메모리 해제
+    기대되는 안정성: 40+ FPS 유지를 위한 메모리 누수 방지 보장
+    """
+    # Given - 메모리 사용량 측정 준비
+    entity_manager = EntityManager()
+    created_entities = []
+    
+    # When - 1000개 엔티티 생성 후 즉시 삭제
+    for i in range(1000):
+        entity = entity_manager.create_entity()
+        created_entities.append(entity)
+    
+    for entity in created_entities:
+        entity_manager.destroy_entity(entity)
+    
+    # Then - 메모리가 정상적으로 정리되어야 함
+    assert len(entity_manager) == 0, "모든 엔티티가 정리되어야 함"
+    assert entity_manager.get_active_entity_count() == 0, "활성 엔티티 수가 0이어야 함"
+```
+
+### Chain-of-Thought for Korean Test Generation
+
+```python
+# MANDATORY: Before writing ANY test, follow this thought process:
+
+"""
+1. 🎯 COMMAND RECOGNITION:
+   - Is this /write-unit-test command?
+   - Must follow Korean conventions
+   - AfterSchoolSurvivors ECS project context
+
+2. 🌐 KOREAN NAMING ANALYSIS:
+   - Class: TestEntityManager (English OK for class names)
+   - Method: test_엔티티_생성_고유ID_할당_성공_시나리오 (Korean required)
+   - Comments: # Given - 엔티티 매니저 초기화 (Korean required)
+
+3. 📋 DOCSTRING STRUCTURE CHECK:
+   - [ ] 1. 번호와 시나리오명 (성공/실패 시나리오)
+   - [ ] 목적: 구체적인 테스트 목표
+   - [ ] 테스트할 범위: 대상 메서드/기능
+   - [ ] 커버하는 함수 및 데이터: 실제 호출 메서드
+   - [ ] 기대되는 안정성: 보장되는 안정성
+
+4. ⚡ ECS PATTERN APPLICATION:
+   - Entity/Component/System 상호작용
+   - 게임 성능 고려 (40+ FPS 목표)
+   - 메모리 관리 (WeakRef 등)
+"""
+```
+
+### Anti-Pattern Detection System
+
+```python
+COMMON_MISTAKES_TO_AVOID = {
+    'english_method_names': {
+        'wrong': 'def test_create_entity(self):',
+        'correct': 'def test_엔티티_생성_정상_동작_성공_시나리오(self):'
+    },
+    'missing_gwt_structure': {
+        'wrong': '# Test entity creation\nentity = manager.create()',
+        'correct': '''# Given - 엔티티 매니저 초기화
+        # When - 새 엔티티 생성
+        # Then - 결과 검증'''
+    },
+    'generic_docstring': {
+        'wrong': '"""Test entity creation."""',
+        'correct': '''"""1. 엔티티 생성 시 고유 ID 할당 (성공 시나리오)
+        
+        목적: create_entity() 메서드의 ID 할당 검증
+        테스트할 범위: EntityManager.create_entity()
+        커버하는 함수 및 데이터: entity_id 속성
+        기대되는 안정성: 중복 없는 고유 ID 보장
+        """'''
+    },
+    'silent_assertions': {
+        'wrong': 'assert entity is not None',
+        'correct': 'assert entity is not None, "생성된 엔티티는 None이 아니어야 함"'
+    }
+}
+
+def prevent_common_mistakes():
+    """일반적인 실수 방지를 위한 체크리스트"""
+    return """
+    ❌ AVOID: English method names, generic docstrings, silent assertions
+    ✅ USE: Korean naming, 5-part docstrings, descriptive Korean assertions
+    🎮 REMEMBER: This is AfterSchoolSurvivors ECS game architecture
+    """
+```
