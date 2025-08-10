@@ -23,6 +23,7 @@ class GameState(IntEnum):
 
 class GameStateManager:
     __slots__ = (
+        '_async_save_event',
         '_auto_save',
         '_config_data',
         '_config_lock',
@@ -51,6 +52,8 @@ class GameStateManager:
         self._config_data: dict[str, Any] = {}
         self._config_lock = threading.RLock()
         self._auto_save = auto_save
+        self._async_save_event = threading.Event()
+        self._async_save_event.set()  # Initially no async save in progress
 
         # Load default configuration
         self._load_default_config()
@@ -244,6 +247,10 @@ class GameStateManager:
         return False
 
     def save_config(self) -> bool:
+        # Wait for any ongoing async save to complete
+        if not self._async_save_event.is_set():
+            self._async_save_event.wait(timeout=0.1)  # Wait max 100ms
+
         try:
             with self._config_lock:
                 # Ensure parent directory exists
@@ -259,7 +266,23 @@ class GameStateManager:
 
     def _save_config_async(self) -> None:
         def _save() -> None:
-            self.save_config()
+            # Clear event to indicate async save is starting
+            self._async_save_event.clear()
+            try:
+                # Use direct file save instead of calling save_config() to avoid recursion
+                with self._config_lock:
+                    # Ensure parent directory exists
+                    self._config_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    with open(self._config_path, 'w', encoding='utf-8') as f:
+                        json.dump(
+                            self._config_data, f, indent=2, ensure_ascii=False
+                        )
+            except (OSError, ValueError):
+                pass  # Log error in real implementation
+            finally:
+                # Set event to indicate async save is complete
+                self._async_save_event.set()
 
         thread = threading.Thread(target=_save, daemon=True)
         thread.start()
