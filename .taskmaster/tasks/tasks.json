@@ -807,7 +807,7 @@
               "13.1"
             ],
             "details": "src/core/camera_based_transformer.py에 CameraBasedTransformer 클래스를 구현한다. 카메라 오프셋을 기반으로 한 기본적인 world_to_screen, screen_to_world 변환 로직을 구현한다. 카메라 중심점, 줌 레벨, 화면 크기를 고려한 변환 수식을 적용한다. 변환 매트릭스 개념을 도입하여 확장 가능성을 고려한다. 기존 PlayerMovementSystem, CameraSystem과의 통합을 위해 PositionComponent와 호환되는 구조로 설계한다.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-10T11:22:03.784Z",
+      "updated": "2025-08-10T11:25:15.579Z",
       "description": "Tasks for master context"
     }
   }
