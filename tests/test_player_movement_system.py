@@ -9,6 +9,7 @@ import math
 from unittest.mock import Mock, patch
 
 from src.components.player_movement_component import PlayerMovementComponent
+from src.components.position_component import PositionComponent
 from src.core.entity_manager import EntityManager
 from src.systems.player_movement_system import PlayerMovementSystem
 
@@ -80,7 +81,9 @@ class TestPlayerMovementSystem:
         non_player_entity = entity_manager.create_entity()
 
         movement_component = PlayerMovementComponent()
+        position_component = PositionComponent(x=0.0, y=0.0)
         entity_manager.add_component(player_entity, movement_component)
+        entity_manager.add_component(player_entity, position_component)
 
         # When - 엔티티 필터링
         filtered_entities = movement_system.filter_entities(entity_manager)
@@ -277,7 +280,9 @@ class TestPlayerMovementSystem:
         movement_component = PlayerMovementComponent(
             dead_zone_radius=10.0, speed=100.0
         )
+        position_component = PositionComponent(x=0.0, y=0.0)
         entity_manager.add_component(player_entity, movement_component)
+        entity_manager.add_component(player_entity, position_component)
 
         initial_position = movement_component.world_position
 
