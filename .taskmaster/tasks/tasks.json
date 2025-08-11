@@ -281,7 +281,7 @@
         "id": 5,
         "title": "플레이어 마우스 이동 시스템",
         "description": "마우스 커서를 향해 플레이어가 바라보지만 플레이어는 중앙에 고정되고 맵이 플레이어 반대 방향으로 움직이는 카메라 시스템을 구현합니다.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           2,
           3
@@ -294,7 +294,7 @@
             "id": 1,
             "title": "마우스 위치 추적 및 플레이어 회전 구현",
             "description": "pygame을 사용해 마우스 위치를 실시간으로 추적하고, 플레이어가 마우스 방향을 바라보도록 회전시키는 시스템을 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "details": "pygame.mouse.get_pos()를 사용하여 마우스 좌표를 획득하고, 플레이어 위치(화면 중앙)와의 방향각을 계산합니다. math.atan2를 활용한 각도 계산과 플레이어 스프라이트 회전 로직을 src/systems/movement_system.py에 구현합니다. 플레이어 회전 시 부드러운 회전 전환을 위한 각속도 제한을 적용합니다. 추가적으로 플레이어 위치를 획득하는 부분과 계산하는 부분을 분리하여 유닛테스트를 만들기 유용하게 작성합니다.",
             "testStrategy": "유닛테스트 구현을 위한 인터뷰를 진행하고(@.claude/commands/interview-for-unit-test.md), 인터뷰에서 추출한 테스트 시나리오를 바탕으로 테스트 케이스를 작성합니다. 마지막으로 앞서 작성한 기능이 정상적으로 작동하는지 테스트 하며 테스트가 통과할 때까지 반복합니다. 단 같은 오류가 3번 이상 반복되면, 잠시 멈추고 사용자와 소통하며 오류를 고쳐 나가세요."
@@ -303,7 +303,7 @@
             "id": 2,
             "title": "카메라 시스템과 맵 역방향 이동 구현",
             "description": "플레이어를 화면 중앙에 고정하고 맵이 플레이어 이동의 역방향으로 움직이는 카메라 시스템을 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               1
             ],
@@ -314,7 +314,7 @@
             "id": 3,
             "title": "시각적 맵 시스템 및 경계 처리",
             "description": "맵 움직임을 확인할 수 있는 시각적 배경과 카메라 경계 처리 시스템을 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               2
             ],
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-11T13:47:29.123Z",
+      "updated": "2025-08-11T14:08:14.895Z",
       "description": "Tasks for master context"
     }
   }

@@ -23,7 +23,7 @@ class PlayerMovementSystem(System):
     """
     System that manages player movement based on mouse tracking.
 
-    The PlayerMovementSystem processes entities with PlayerMovementComponent to:
+    The PlayerMovementSystem processes entities with PlayerMovementComponent:
     - Track mouse position using pygame.mouse.get_pos()
     - Calculate direction from screen center to mouse cursor
     - Apply smooth rotation with angular velocity limits
@@ -71,14 +71,12 @@ class PlayerMovementSystem(System):
 
         # pygame 마우스 시스템 초기화 확인
         if not pygame.get_init():
-            print('Warning: pygame not initialized in PlayerMovementSystem')
+            pass  # pygame 초기화 상태 확인만
 
         # 좌표 변환기 확인
         transformer = self._coordinate_manager.get_transformer()
         if transformer is None:
-            print(
-                'Warning: No coordinate transformer found in PlayerMovementSystem'
-            )
+            pass  # 좌표 변환기 상태 확인만
 
     def get_required_components(
         self,
@@ -87,7 +85,7 @@ class PlayerMovementSystem(System):
         Get the required component types for this system.
 
         Returns:
-            List containing PlayerMovementComponent and PositionComponent types.
+            PlayerMovementComponent and PositionComponent types.
         """
         return (PlayerMovementComponent, PositionComponent)
 
@@ -98,7 +96,7 @@ class PlayerMovementSystem(System):
         Update player movement based on mouse position.
 
         Args:
-            entity_manager: Entity manager for accessing entities and components
+            entity_manager: Entity manager for accessing entities/components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
@@ -125,15 +123,13 @@ class PlayerMovementSystem(System):
 
             # 월드 위치 업데이트
             self._update_world_position(movement_comp, delta_time)
-            
+
             # PositionComponent에 위치 동기화
             position_comp.x = movement_comp.world_position[0]
             position_comp.y = movement_comp.world_position[1]
 
     def _update_mouse_position(self) -> None:
-        """
-        Update cached mouse position from pygame.
-        """
+        """Update cached mouse position from pygame."""
         try:
             # pygame에서 마우스 위치 가져오기
             self._cached_mouse_pos = pygame.mouse.get_pos()
@@ -310,9 +306,7 @@ class PlayerMovementSystem(System):
         return self._cached_mouse_pos
 
     def force_mouse_update(self) -> None:
-        """
-        Force update of mouse position cache.
-        """
+        """Force update of mouse position cache."""
         self._mouse_pos_dirty = True
         self._update_mouse_position()
 
@@ -321,7 +315,7 @@ class PlayerMovementSystem(System):
         Set rotation smoothing factor.
 
         Args:
-            factor: Smoothing factor (0.0 = no rotation, 1.0 = instant rotation)
+            factor: Smoothing factor (0.0 = no rotate, 1.0 = instant)
         """
         self._rotation_smoothing_factor = max(0.0, min(1.0, factor))
 

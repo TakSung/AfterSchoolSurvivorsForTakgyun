@@ -9,6 +9,8 @@ import math
 from typing import TYPE_CHECKING
 
 from ..components.camera_component import CameraComponent
+from ..components.map_component import MapComponent
+from ..components.position_component import PositionComponent
 from ..core.coordinate_manager import CoordinateManager
 from ..core.system import System
 
@@ -56,9 +58,7 @@ class CameraSystem(System):
         # 카메라 시스템 초기화 시 좌표 변환기 설정 확인
         transformer = self._coordinate_manager.get_transformer()
         if transformer is None:
-            print(
-                'Warning: No coordinate transformer found in CoordinateManager'
-            )
+            pass  # 좌표 변환기 상태 확인만
 
     def get_required_components(self) -> list[type]:
         """
@@ -94,6 +94,9 @@ class CameraSystem(System):
 
             # 추적 대상이 있는 경우 카메라 업데이트
             if camera_comp.follow_target is not None:
+                # 맵 컴포넌트가 있으면 경계 정보 동기화
+                self._sync_map_boundaries(entity_manager, camera_comp)
+                
                 self._update_camera_for_target(
                     entity_manager,
                     camera_comp,
@@ -224,19 +227,15 @@ class CameraSystem(System):
         Returns:
             Entity position as (x, y) tuple, or None if no position component
         """
-        # AI-DEV : 위치 컴포넌트 인터페이스 가정
-        # - 문제: PositionComponent가 아직 구현되지 않음
-        # - 해결책: 임시로 더미 위치 반환, 실제 구현 시 교체 필요
-        # - 주의사항: PositionComponent 구현 후 이 메서드 수정 필요
-
-        # 임시 구현: 실제로는 PositionComponent를 확인해야 함
-        # position_comp = entity_manager.get_component(entity, PositionComponent)
-        # if position_comp is None:
-        #     return None
-        # return (position_comp.x, position_comp.y)
-
-        # 임시로 (0, 0) 반환
-        return (0.0, 0.0)
+        # AI-NOTE : 2025-08-11 실제 PositionComponent와의 연동 구현
+        # - 이유: 카메라가 실제 엔티티 위치를 추적해야 함
+        # - 요구사항: PositionComponent의 x, y 좌표 활용
+        # - 히스토리: 더미 구현에서 실제 컴포넌트 연동으로 변경
+        
+        position_comp = entity_manager.get_component(entity, PositionComponent)
+        if position_comp is None:
+            return None
+        return (position_comp.x, position_comp.y)
 
     def _should_invalidate_cache(
         self, old_offset: tuple[float, float], new_offset: tuple[float, float]
@@ -298,6 +297,51 @@ class CameraSystem(System):
             return None
 
         return camera_comp.world_offset
+
+    def _sync_map_boundaries(
+        self, entity_manager: 'EntityManager', camera_comp: CameraComponent
+    ) -> None:
+        """
+        Synchronize camera boundaries with map component if available.
+
+        Args:
+            entity_manager: Entity manager for component access
+            camera_comp: Camera component to update boundaries for
+        """
+        # AI-NOTE : 2025-08-11 맵과 카메라 경계 동기화 시스템
+        # - 이유: 맵 경계에 맞춰 카메라 이동 제한 자동 설정
+        # - 요구사항: MapComponent의 world_width/height를 카메라 경계로 활용
+        # - 히스토리: 수동 경계 설정에서 맵 기반 자동 동기화로 개선
+        
+        # 맵 엔티티 찾기
+        map_entities = []
+        for entity in entity_manager.get_all_entities():
+            if entity_manager.has_component(entity, MapComponent):
+                map_entities.append(entity)
+        
+        if not map_entities:
+            return  # 맵 컴포넌트가 없으면 기본 경계 사용
+            
+        # 첫 번째 맵 컴포넌트 사용
+        map_entity = map_entities[0]
+        map_comp = entity_manager.get_component(map_entity, MapComponent)
+        if map_comp is None:
+            return
+            
+        # 화면 크기의 절반을 고려한 카메라 경계 계산
+        half_screen_width = camera_comp.screen_center[0]
+        half_screen_height = camera_comp.screen_center[1]
+        
+        # 카메라가 맵 밖을 보지 않도록 경계 설정
+        min_offset_x = half_screen_width - map_comp.world_width
+        max_offset_x = half_screen_width
+        min_offset_y = half_screen_height - map_comp.world_height  
+        max_offset_y = half_screen_height
+        
+        # 카메라 경계 업데이트
+        camera_comp.set_world_bounds(
+            min_offset_x, max_offset_x, min_offset_y, max_offset_y
+        )
 
     def cleanup(self) -> None:
         """Clean up camera system resources."""

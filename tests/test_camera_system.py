@@ -320,31 +320,43 @@ class TestCameraSystem:
         )
 
     @patch('src.systems.camera_system.CoordinateManager.get_instance')
-    def test_엔티티_위치_가져오기_임시_구현_검증_성공_시나리오(
+    def test_엔티티_위치_가져오기_실제_컴포넌트_연동_검증_성공_시나리오(
         self, mock_coord_manager
     ) -> None:
-        """9. 엔티티 위치 가져오기 임시 구현 검증 (성공 시나리오)
+        """9. 엔티티 위치 가져오기 실제 컴포넌트 연동 검증 (성공 시나리오)
 
-        목적: _get_entity_position 메서드의 임시 구현이 동작하는지 검증
-        테스트할 범위: _get_entity_position, 임시 반환값
-        커버하는 함수 및 데이터: _get_entity_position (temporary implementation)
-        기대되는 안정성: 위치 컴포넌트 구현 전까지의 안정적 동작
+        목적: _get_entity_position 메서드가 PositionComponent와 올바르게 연동되는지 검증
+        테스트할 범위: _get_entity_position, PositionComponent 연동
+        커버하는 함수 및 데이터: _get_entity_position with PositionComponent
+        기대되는 안정성: 실제 컴포넌트가 있을 때와 없을 때 모두 안전한 동작
         """
         # Given - Mock 설정 및 카메라 시스템
         mock_coord_manager.return_value.get_transformer.return_value = Mock()
         camera_system = CameraSystem()
         entity_manager = EntityManager()
-        test_entity = Entity.create()
+        
+        # PositionComponent가 있는 엔티티
+        from src.components.position_component import PositionComponent
+        entity_with_position = entity_manager.create_entity()
+        position_comp = PositionComponent(100.0, 200.0)
+        entity_manager.add_component(entity_with_position, position_comp)
+        
+        # PositionComponent가 없는 엔티티
+        entity_without_position = entity_manager.create_entity()
 
-        # When - 엔티티 위치 조회
+        # When & Then - 위치 컴포넌트가 있는 경우
         position = camera_system._get_entity_position(
-            entity_manager, test_entity
+            entity_manager, entity_with_position
         )
-
-        # Then - 임시 구현값 확인
-        assert position == (0.0, 0.0), '임시 구현은 (0.0, 0.0)을 반환해야 함'
+        assert position == (100.0, 200.0), '위치 컴포넌트가 있으면 해당 좌표를 반환해야 함'
         assert isinstance(position[0], float), 'X 좌표는 float 타입이어야 함'
         assert isinstance(position[1], float), 'Y 좌표는 float 타입이어야 함'
+        
+        # When & Then - 위치 컴포넌트가 없는 경우
+        position_none = camera_system._get_entity_position(
+            entity_manager, entity_without_position
+        )
+        assert position_none is None, '위치 컴포넌트가 없으면 None을 반환해야 함'
 
     @patch('src.systems.camera_system.CoordinateManager.get_instance')
     def test_카메라_시스템_정리_기능_검증_성공_시나리오(
