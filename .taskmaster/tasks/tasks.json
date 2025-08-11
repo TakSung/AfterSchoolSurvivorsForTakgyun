@@ -1024,7 +1024,7 @@
         "dependencies": [
           16
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1032,7 +1032,7 @@
             "description": "EntityRenderSystem에 CoordinateManager.world_to_screen() 메서드를 통합하여 월드 좌표를 스크린 좌표로 변환하는 기능을 구현합니다.",
             "dependencies": [],
             "details": "EntityRenderSystem 클래스에서 CoordinateManager 인스턴스를 받아 초기화하고, render() 메서드에서 PositionComponent를 가진 모든 엔티티의 월드 좌표를 world_to_screen()으로 변환합니다. 변환된 좌표로 스프라이트를 정확한 스크린 위치에 렌더링하며, 좌표 변환 과정에서 발생할 수 있는 부동소수점 오차를 처리합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1043,7 +1043,7 @@
               "18.1"
             ],
             "details": "화면 경계에서 50픽셀 여유분을 두고 엔티티가 화면 내에 있는지 판단하는 _is_on_screen() 메서드를 구현합니다. 엔티티의 크기(sprite 크기 또는 CollisionComponent)를 고려하여 정확한 컬링을 수행하며, 화면 밖 엔티티는 렌더링 과정에서 제외합니다. 컬링 결과를 통계로 수집하여 성능 모니터링이 가능하도록 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1054,7 +1054,7 @@
               "18.1"
             ],
             "details": "PlayerComponent를 가진 엔티티를 식별하여 월드 좌표와 관계없이 항상 화면 중앙(screen_width/2, screen_height/2)에 렌더링하도록 _render_player() 메서드를 구현합니다. 플레이어의 회전 각도(RotationComponent)를 pygame.transform.rotate()로 적용하고, 회전으로 인한 스프라이트 크기 변화를 중앙 정렬로 보정합니다. 플레이어 렌더링은 다른 엔티티보다 우선순위를 높여 항상 최상단에 표시합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1066,7 +1066,7 @@
               "18.3"
             ],
             "details": "모든 렌더링 대상 엔티티를 Y좌표 기준으로 정렬하여 깊이감을 구현하고, RotationComponent를 가진 엔티티는 pygame.transform.rotate()로 회전을 적용합니다. 회전된 스프라이트의 중심점을 유지하기 위한 offset 계산을 수행하며, 회전으로 인한 성능 저하를 최소화하기 위해 회전 각도가 변경된 경우에만 재계산하는 캐싱 시스템을 구현합니다. 정렬과 회전 처리 과정의 성능을 모니터링할 수 있는 디버그 정보를 제공합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-11T03:35:22.153Z",
+      "updated": "2025-08-11T03:47:12.765Z",
       "description": "Tasks for master context"
     }
   }
