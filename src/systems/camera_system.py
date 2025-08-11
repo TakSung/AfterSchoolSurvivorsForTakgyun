@@ -140,11 +140,20 @@ class CameraSystem(System):
         # 월드 경계 제한 적용하여 오프셋 업데이트
         offset_changed = camera_comp.update_world_offset(new_offset)
 
+        # 좌표 변환기에 카메라 오프셋 업데이트
+        from ..utils.vector2 import Vector2
+        transformer = self._coordinate_manager.get_transformer()
+        if transformer and hasattr(transformer, 'set_camera_offset'):
+            # 플레이어를 중앙에 고정하기 위해 카메라를 반대방향으로 이동
+            camera_offset = Vector2(-target_position[0], -target_position[1])
+            transformer.set_camera_offset(camera_offset)
+            
         # 캐시 무효화 (임계값 기반 최적화)
         if offset_changed and self._should_invalidate_cache(
             camera_comp.world_offset, new_offset
         ):
-            self._coordinate_manager.get_transformer().invalidate_cache()
+            if hasattr(transformer, 'invalidate_cache'):
+                transformer.invalidate_cache()
 
     def _handle_mouse_tracking(
         self, camera_comp: CameraComponent, delta_time: float

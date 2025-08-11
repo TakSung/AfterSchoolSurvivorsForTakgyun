@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pygame
 
 from ..components.player_movement_component import PlayerMovementComponent
+from ..components.position_component import PositionComponent
 from ..core.coordinate_manager import CoordinateManager
 from ..core.system import System
 
@@ -79,14 +80,16 @@ class PlayerMovementSystem(System):
                 'Warning: No coordinate transformer found in PlayerMovementSystem'
             )
 
-    def get_required_components(self) -> list[type]:
+    def get_required_components(
+        self,
+    ) -> tuple[PlayerMovementComponent, PositionComponent]:
         """
         Get the required component types for this system.
 
         Returns:
-            List containing PlayerMovementComponent type.
+            List containing PlayerMovementComponent and PositionComponent types.
         """
-        return [PlayerMovementComponent]
+        return (PlayerMovementComponent, PositionComponent)
 
     def update(
         self, entity_manager: 'EntityManager', delta_time: float
@@ -111,7 +114,10 @@ class PlayerMovementSystem(System):
             movement_comp = entity_manager.get_component(
                 player_entity, PlayerMovementComponent
             )
-            if movement_comp is None:
+            position_comp = entity_manager.get_component(
+                player_entity, PositionComponent
+            )
+            if movement_comp is None or position_comp is None:
                 continue
 
             # 마우스 기반 이동 처리
@@ -119,6 +125,10 @@ class PlayerMovementSystem(System):
 
             # 월드 위치 업데이트
             self._update_world_position(movement_comp, delta_time)
+            
+            # PositionComponent에 위치 동기화
+            position_comp.x = movement_comp.world_position[0]
+            position_comp.y = movement_comp.world_position[1]
 
     def _update_mouse_position(self) -> None:
         """
@@ -160,13 +170,13 @@ class PlayerMovementSystem(System):
             self._stop_movement(movement_comp)
             return
 
-        # AI-NOTE : 2025-08-11 좌표계 변환 고려사항
-        # - 이유: pygame 좌표계(Y 아래 방향)와 수학적 좌표계(Y 위 방향) 차이
-        # - 요구사항: 마우스 위치를 올바른 방향으로 변환
-        # - 히스토리: 좌표계 통일을 위한 Y축 반전 적용
+        # AI-NOTE : 2025-08-11 pygame 좌표계에서의 올바른 각도 계산
+        # - 이유: pygame에서 Y축 아래쪽이 양수이므로 그대로 사용
+        # - 요구사항: 마우스 위치에 따른 자연스러운 플레이어 방향
+        # - 히스토리: Y축 반전에서 pygame 좌표계 직접 사용으로 수정
 
-        # Y축 반전 (pygame 좌표계 -> 수학적 좌표계)
-        target_angle = math.atan2(-dy, dx)
+        # pygame 좌표계에서 직접 각도 계산 (Y축 아래쪽이 양수)
+        target_angle = math.atan2(dy, dx)
 
         # 부드러운 회전 적용
         self._apply_smooth_rotation(movement_comp, target_angle, delta_time)
