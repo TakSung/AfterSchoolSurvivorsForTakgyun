@@ -1890,7 +1890,7 @@
         "description": "ProjectileSystem의 책임 분리를 위한 옵저버 패턴 적용의 첫 단계로, 이벤트 기반 아키텍처의 기초가 되는 이벤트 정의와 데이터 구조를 설계하고 구현",
         "details": "BaseEvent 추상 클래스를 구현하여 모든 이벤트의 기본 구조를 정의합니다. EnemyDeathEvent 클래스를 생성하여 적 사망 시 발행되는 이벤트 데이터 구조를 설계하며, enemy_entity_id 필드만 포함하여 최소한의 데이터 전달 원칙을 따릅니다. 이벤트 타입을 구분하기 위한 EventType Enum을 구현하고, 각 이벤트 클래스에 타입 식별자를 추가합니다. 구독자가 EntityManager를 통해 필요한 컴포넌트를 조회할 수 있도록 일관된 데이터 접근 패턴을 설계합니다. src/core/events/ 디렉토리 구조를 생성하고 base_event.py, enemy_death_event.py, event_types.py 파일로 모듈을 분리합니다.",
         "testStrategy": "EnemyDeathEvent 생성 및 데이터 접근 테스트를 작성하여 이벤트 객체가 올바른 enemy_entity_id를 보유하는지 검증합니다. 이벤트 타입 검증 및 데이터 무결성 테스트로 EventType Enum이 올바르게 할당되고 타입 체크가 작동하는지 확인합니다. 잘못된 데이터로 이벤트 생성 시 예외 처리 테스트를 구현하여 None이나 빈 문자열 등의 잘못된 entity_id 처리를 검증합니다. BaseEvent 추상 클래스의 상속 구조 테스트로 모든 이벤트가 올바른 기본 구조를 따르는지 확인합니다. tests/unit/test_events.py에 포괄적인 단위 테스트를 작성하여 이벤트 구조의 안정성을 보장합니다.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": [
@@ -1900,7 +1900,7 @@
             "description": "모든 이벤트의 기본 구조를 정의하는 BaseEvent 추상 클래스를 구현합니다.",
             "dependencies": [],
             "details": "src/core/events/base_event.py 파일을 생성하고 BaseEvent 추상 클래스를 구현합니다. 이벤트의 기본 속성인 event_type(EventType), timestamp(float), source_system(Optional[str])을 정의합니다. 추상 메서드 validate_data()를 선언하여 각 이벤트가 데이터 유효성 검증을 구현하도록 강제합니다. __init__ 메서드에서 timestamp를 자동으로 현재 시간으로 설정하고, __repr__ 메서드를 구현하여 디버깅을 지원합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1909,7 +1909,7 @@
             "description": "이벤트 타입을 구분하기 위한 EventType Enum을 구현합니다.",
             "dependencies": [],
             "details": "src/core/events/event_types.py 파일을 생성하고 IntEnum을 상속받는 EventType 클래스를 구현합니다. ENEMY_DEATH = 0, PROJECTILE_HIT = 1, PLAYER_LEVEL_UP = 2 등의 이벤트 타입을 정의합니다. 각 타입의 display_name 속성을 구현하여 한글 표시명을 제공하고, _type_descriptions 딕셔너리로 각 이벤트 타입의 설명을 관리합니다. 성능 최적화를 위해 _type_priorities 배열로 인덱스 기반 우선순위 조회를 지원합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1921,7 +1921,7 @@
               "33.2"
             ],
             "details": "src/core/events/enemy_death_event.py 파일을 생성하고 BaseEvent를 상속받는 EnemyDeathEvent 클래스를 구현합니다. enemy_entity_id(str) 필드만 포함하여 최소한의 데이터 전달 원칙을 따릅니다. validate_data() 메서드에서 enemy_entity_id가 None이거나 빈 문자열인지 검증하고, 유효하지 않은 경우 ValueError를 발생시킵니다. 클래스 메서드 create_from_entity()를 제공하여 Entity 객체로부터 간편하게 이벤트를 생성할 수 있도록 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1932,7 +1932,7 @@
               "33.3"
             ],
             "details": "src/core/events/ 디렉토리를 생성하고 __init__.py 파일을 작성하여 모듈로 인식되도록 합니다. __init__.py에서 BaseEvent, EventType, EnemyDeathEvent를 from .base_event import BaseEvent 형태로 임포트하여 외부에서 간편하게 사용할 수 있도록 합니다. __all__ 리스트를 정의하여 공개 API를 명시하고, 타입 힌팅을 위한 TYPE_CHECKING 블록을 추가합니다. 각 모듈 파일의 독립성을 검증하고 순환 임포트가 발생하지 않도록 확인합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-12T22:42:14.897Z",
+      "updated": "2025-08-12T22:51:49.624Z",
       "description": "Tasks for master context"
     }
   }
