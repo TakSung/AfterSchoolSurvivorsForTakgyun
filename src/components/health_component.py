@@ -80,6 +80,12 @@ class HealthComponent(Component):
         Returns:
             Actual damage dealt (may be 0 if invulnerable or immune)
         """
+        assert damage is not None, "damage cannot be None"
+        assert damage >= 0, "damage cannot be negative"
+        assert current_time is not None, "current_time cannot be None"
+        assert current_time >= 0, "current_time cannot be negative"
+        assert isinstance(current_time, (int, float)), "current_time must be numeric"
+        
         # 무적 상태이거나 데미지 면역 시간 내에 있으면 데미지 무시
         if self.is_invulnerable:
             return 0
@@ -92,7 +98,7 @@ class HealthComponent(Component):
             return 0
 
         # 데미지 적용
-        actual_damage = min(damage, self.current_health)
+        actual_damage = min(int(damage), self.current_health)
         self.current_health -= actual_damage
         self.last_damage_time = current_time
 
@@ -108,12 +114,15 @@ class HealthComponent(Component):
         Returns:
             Actual amount healed (limited by max health)
         """
+        assert amount is not None, "amount cannot be None"
+        assert amount >= 0, "amount cannot be negative"
+        
         if amount <= 0:
             return 0
 
         old_health = self.current_health
         self.current_health = min(
-            self.current_health + amount, self.max_health
+            self.current_health + int(amount), self.max_health
         )
         return self.current_health - old_health
 
@@ -124,10 +133,10 @@ class HealthComponent(Component):
         Args:
             new_max_health: New maximum health value
         """
-        if new_max_health <= 0:
-            return
-
-        self.max_health = new_max_health
+        assert new_max_health is not None, "new_max_health cannot be None"
+        assert new_max_health > 0, "new_max_health must be positive"
+        
+        self.max_health = int(new_max_health)
         # 현재 체력이 새로운 최대 체력을 초과하면 조정
         if self.current_health > self.max_health:
             self.current_health = self.max_health
@@ -154,6 +163,10 @@ class HealthComponent(Component):
         Returns:
             True if health ratio is below threshold, False otherwise.
         """
+        assert threshold is not None, "threshold cannot be None"
+        assert threshold >= 0, "threshold cannot be negative"
+        assert isinstance(threshold, (int, float)), "threshold must be numeric"
+        
         return self.get_health_ratio() <= threshold
 
     def update_regeneration(self, delta_time: float) -> int:
@@ -166,6 +179,10 @@ class HealthComponent(Component):
         Returns:
             Amount of health regenerated
         """
+        assert delta_time is not None, "delta_time cannot be None"
+        assert delta_time >= 0, "delta_time cannot be negative"
+        assert isinstance(delta_time, (int, float)), "delta_time must be numeric"
+        
         if self.regeneration_rate <= 0 or self.is_dead():
             return 0
 
