@@ -57,8 +57,22 @@ graph TB
         MovementSystem[MovementSystem<br/>위치와 속도 기반 이동]
         InputSystem[InputSystem<br/>마우스 키보드 입력 처리]
         WeaponSystem[WeaponSystem<br/>무기 공격 로직]
+        ProjectileSystem[ProjectileSystem<br/>투사체 물리 처리 및 이벤트 발행]
         AISystem[AISystem<br/>AI 계산 월드좌표 기반]
         PhysicsSystem[PhysicsSystem<br/>물리 시뮬레이션]
+    end
+    
+    subgraph "Event System"
+        EventBus[EventBus<br/>이벤트 발행/구독 메커니즘]
+        BaseEvent[BaseEvent<br/>이벤트 기본 구조]
+        EnemyDeathEvent[EnemyDeathEvent<br/>적 사망 이벤트]
+        EventType[EventType<br/>이벤트 타입 Enum]
+    end
+    
+    subgraph "Observer Systems"
+        ExperienceSystem[ExperienceSystem<br/>경험치 처리 전용]
+        ItemDropSystem[ItemDropSystem<br/>아이템 드롭 처리]
+        EntityCleanupSystem[EntityCleanupSystem<br/>엔티티 정리 전용]
     end
     
     subgraph "Coordinate System"
@@ -84,9 +98,20 @@ graph TB
     RenderSystem --> System
     InputSystem --> System
     WeaponSystem --> System
+    ProjectileSystem --> System
     AISystem --> System
     PhysicsSystem --> System
     MapSystem --> System
+    ExperienceSystem --> System
+    ItemDropSystem --> System
+    EntityCleanupSystem --> System
+    
+    ProjectileSystem -.-> EventBus
+    ExperienceSystem -.-> EventBus
+    ItemDropSystem -.-> EventBus
+    EntityCleanupSystem -.-> EventBus
+    EventBus --> BaseEvent
+    EnemyDeathEvent --> BaseEvent
     
     CoordinateManager --> ICoordinateTransformer
     CameraBasedTransformer --> ICoordinateTransformer
@@ -207,10 +232,14 @@ class SystemPriority(IntEnum):
     MOVEMENT = 2
     COLLISION = 3
     WEAPON = 4
-    AI = 5
-    PHYSICS = 6
-    MAP = 7
-    RENDER = 8
+    PROJECTILE = 5
+    AI = 6
+    PHYSICS = 7
+    EXPERIENCE = 8
+    ITEM_DROP = 9
+    ENTITY_CLEANUP = 10
+    MAP = 11
+    RENDER = 12
 
 class SystemOrchestrator:
     def __init__(self) -> None:
@@ -471,21 +500,37 @@ class Vector2:
    - 자동 공격 로직
    - 발사체 생성 및 관리
 
-6. **AISystem** (우선순위: 5) - **새로 추가**
+6. **ProjectileSystem** (우선순위: 5) - **리팩토링 완료**
+   - 투사체 물리 처리 및 적 사망 판정
+   - 사망 이벤트 발행 (기존 직접 처리에서 이벤트 방식으로 변경)
+
+7. **AISystem** (우선순위: 6) - **새로 추가**
    - AI 계산 (월드 좌표 기반)
    - 적 행동 패턴 처리
 
-7. **PhysicsSystem** (우선순위: 6) - **새로 추가**
+8. **PhysicsSystem** (우선순위: 7) - **새로 추가**
    - 물리 시뮬레이션
    - 객체 간 상호작용
 
-8. **MapSystem** (우선순위: 7) - **새로 추가**
-   - 무한 스크롤 맵 렌더링
-   - 타일 기반 배경 관리
+9. **ExperienceSystem** (우선순위: 8) - **새로운 옵저버 시스템**
+   - EnemyDeathEvent 구독하여 경험치 처리 전담
+   - 기존 ProjectileSystem에서 분리된 책임
 
-9. **RenderSystem** (우선순위: 8) - **좌표변환 적용**
-   - CoordinateManager를 통한 좌표 변환
-   - 레이어 순서에 따른 스프라이트 그리기
+10. **ItemDropSystem** (우선순위: 9) - **새로운 옵저버 시스템**
+    - EnemyDeathEvent 구독하여 아이템 드롭 처리
+    - 독립적인 아이템 생성 로직
+
+11. **EntityCleanupSystem** (우선순위: 10) - **새로운 옵저버 시스템**
+    - EnemyDeathEvent 구독하여 엔티티 제거 처리
+    - 메모리 관리 및 성능 최적화 담당
+
+12. **MapSystem** (우선순위: 11) - **새로 추가**
+    - 무한 스크롤 맵 렌더링
+    - 타일 기반 배경 관리
+
+13. **RenderSystem** (우선순위: 12) - **좌표변환 적용**
+    - CoordinateManager를 통한 좌표 변환
+    - 레이어 순서에 따른 스프라이트 그리기
 
 ## 성능 최적화 전략
 
@@ -537,5 +582,150 @@ class Vector2:
 - 게임 상태 저장/로드 지원
 - 컴포넌트별 직렬화 인터페이스
 - JSON 기반 설정 파일 지원
+
+## 이벤트 시스템 아키텍처 (신규 추가)
+
+### EventBus 시스템
+ProjectileSystem 옵저버 패턴 리팩토링을 통해 도입된 이벤트 기반 아키텍처입니다.
+
+```python
+from abc import ABC, abstractmethod
+from enum import IntEnum
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Queue
+
+class EventType(IntEnum):
+    ENEMY_DEATH = 0
+    PLAYER_LEVEL_UP = 1
+    ITEM_PICKUP = 2
+    BOSS_SPAWN = 3
+
+@dataclass
+class BaseEvent(ABC):
+    """모든 이벤트의 기본 구조"""
+    event_type: EventType
+    timestamp: float
+    
+    @abstractmethod
+    def get_entity_id(self) -> str:
+        """이벤트 관련 엔티티 ID 반환"""
+        pass
+
+@dataclass
+class EnemyDeathEvent(BaseEvent):
+    """적 사망 시 발행되는 이벤트"""
+    enemy_entity_id: str
+    
+    def __post_init__(self) -> None:
+        super().__init__()
+        self.event_type = EventType.ENEMY_DEATH
+    
+    def get_entity_id(self) -> str:
+        return self.enemy_entity_id
+
+class EventBus:
+    """이벤트 발행/구독 메커니즘 및 큐잉 처리"""
+    
+    def __init__(self) -> None:
+        self._event_queue: Queue[BaseEvent] = Queue()
+        self._subscribers: Dict[EventType, List[Callable[[BaseEvent], None]]] = {}
+    
+    def subscribe(self, event_type: EventType, handler: Callable[[BaseEvent], None]) -> None:
+        """이벤트 타입별 구독자 등록"""
+        if event_type not in self._subscribers:
+            self._subscribers[event_type] = []
+        self._subscribers[event_type].append(handler)
+    
+    def unsubscribe(self, event_type: EventType, handler: Callable[[BaseEvent], None]) -> None:
+        """구독자 등록 해제"""
+        if event_type in self._subscribers:
+            self._subscribers[event_type].remove(handler)
+    
+    def publish(self, event: BaseEvent) -> None:
+        """이벤트 발행 (큐에 저장)"""
+        self._event_queue.put(event)
+    
+    def process_events(self) -> None:
+        """큐에서 이벤트 순차 처리"""
+        while not self._event_queue.empty():
+            event = self._event_queue.get()
+            self._notify_subscribers(event)
+    
+    def _notify_subscribers(self, event: BaseEvent) -> None:
+        """구독자들에게 이벤트 알림"""
+        if event.event_type in self._subscribers:
+            for handler in self._subscribers[event.event_type]:
+                try:
+                    handler(event)
+                except Exception as e:
+                    # 한 시스템의 오류가 다른 시스템에 전파되지 않음
+                    print(f"Event handler error: {e}")
+```
+
+### 옵저버 시스템들
+
+```python
+class ExperienceSystem(System):
+    """경험치 처리 전용 시스템"""
+    
+    def __init__(self, event_bus: EventBus) -> None:
+        self.event_bus = event_bus
+        self.event_bus.subscribe(EventType.ENEMY_DEATH, self._handle_enemy_death)
+    
+    def _handle_enemy_death(self, event: EnemyDeathEvent) -> None:
+        """적 사망 시 경험치 처리"""
+        # EntityManager를 통해 필요한 컴포넌트 조회
+        # 경험치 계산 및 적용 로직
+
+class ItemDropSystem(System):
+    """아이템 드롭 처리 시스템"""
+    
+    def __init__(self, event_bus: EventBus) -> None:
+        self.event_bus = event_bus
+        self.event_bus.subscribe(EventType.ENEMY_DEATH, self._handle_enemy_death)
+    
+    def _handle_enemy_death(self, event: EnemyDeathEvent) -> None:
+        """적 사망 시 아이템 드롭 처리"""
+        # 드롭 확률 계산 및 아이템 생성 로직
+
+class EntityCleanupSystem(System):
+    """엔티티 정리 전용 시스템"""
+    
+    def __init__(self, event_bus: EventBus) -> None:
+        self.event_bus = event_bus
+        self.event_bus.subscribe(EventType.ENEMY_DEATH, self._handle_enemy_death)
+    
+    def _handle_enemy_death(self, event: EnemyDeathEvent) -> None:
+        """적 사망 시 엔티티 제거 처리"""
+        # 엔티티 제거 및 메모리 정리 로직
+```
+
+### ProjectileSystem 리팩토링
+
+```python
+class ProjectileSystem(System):
+    """투사체 물리 처리 및 이벤트 발행자로 역할 변경"""
+    
+    def __init__(self, event_bus: EventBus) -> None:
+        self.event_bus = event_bus
+    
+    def _handle_enemy_death(self, enemy_entity_id: str) -> None:
+        """기존 직접 처리 → 이벤트 발행으로 변경"""
+        # 기존: 경험치 계산, 아이템 드롭, 엔티티 제거 직접 처리
+        # 변경: 이벤트 발행만 담당
+        death_event = EnemyDeathEvent(
+            enemy_entity_id=enemy_entity_id,
+            timestamp=time.time()
+        )
+        self.event_bus.publish(death_event)
+```
+
+### 아키텍처 개선 효과
+
+1. **단일 책임 원칙 준수**: ProjectileSystem은 투사체 물리 처리만 담당
+2. **낮은 결합도**: 시스템 간 직접 의존성 제거
+3. **높은 확장성**: 새로운 사망 관련 로직 추가 시 새 옵저버만 추가
+4. **테스트 용이성**: 각 시스템을 독립적으로 테스트 가능
+5. **예외 안전성**: 한 시스템 오류가 다른 시스템에 영향 없음
 
 이 설계 문서는 "방과 후 생존" 게임의 ECS 프레임워크 구현을 위한 청사진을 제공하며, 모든 개발자가 일관된 아키텍처를 따를 수 있도록 가이드라인을 제시합니다.

@@ -1,189 +1,109 @@
 {
 	"meta": {
-		"generatedAt": "2025-08-09T06:25:04.534Z",
-		"tasksAnalyzed": 22,
-		"totalTasks": 22,
-		"analysisCount": 22,
+		"generatedAt": "2025-08-12T14:18:11.929Z",
+		"tasksAnalyzed": 12,
+		"totalTasks": 33,
+		"analysisCount": 12,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
 		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 1,
-			"taskTitle": "ECS 프레임워크 기반 구조 설정",
-			"complexityScore": 8,
-			"recommendedSubtasks": 7,
-			"expansionPrompt": "ECS 아키텍처의 핵심 구성 요소들을 단계별로 구현하여 견고한 게임 엔진 기반을 구축합니다. Entity, Component, System의 추상 클래스 정의부터 EntityManager, ComponentRegistry, SystemOrchestrator의 구체적인 구현까지 포함하며, 각 단계별로 단위 테스트와 통합 테스트를 작성하여 안정성을 보장합니다.",
-			"reasoning": "ECS 아키텍처는 게임 개발의 핵심 기반이며, 추상 클래스 설계, 메모리 관리, 시스템 간 의존성 등 복잡한 설계 결정이 필요합니다. 이미 7개의 세분화된 서브태스크가 있어 적절합니다."
-		},
-		{
-			"taskId": 2,
-			"taskTitle": "게임 루프 및 기본 렌더링 시스템 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "고정 시간 간격 게임 루프와 렌더링 시스템의 각 구성요소를 단계별로 구현합니다. pygame 게임 루프, 시간 관리 시스템, 스프라이트 렌더링, 게임 상태 관리, 설정 파일 처리를 각각 별도 태스크로 분리하고, 성능 테스트와 통합 테스트를 포함합니다.",
-			"reasoning": "60fps/40fps 성능 목표, pygame 렌더링 최적화, 게임 상태 관리 등 다양한 기술적 요소가 포함되어 있으며, 현재 5개 서브태스크에서 1개 추가하여 설정 파일과 성능 최적화를 분리할 수 있습니다."
-		},
-		{
-			"taskId": 3,
-			"taskTitle": "충돌감지 및 물리 시스템 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "AABB 충돌감지와 기본 물리 시스템을 구현합니다. 충돌감지 알고리즘, 컴포넌트 설계, 물리 연산, 브루트포스 처리, 확장 가능한 인터페이스 설계를 각각 독립적인 구현 단위로 분리하여 테스트 가능성을 높입니다.",
-			"reasoning": "AABB 충돌감지와 물리 시스템은 수학적 정확성이 중요하지만 상대적으로 구현이 명확합니다. 현재 5개 서브태스크가 적절하게 분리되어 있습니다."
-		},
-		{
-			"taskId": 4,
-			"taskTitle": "JSON 데이터 로딩 및 관리 시스템",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "JSON 기반 데이터 관리 시스템의 핵심 구성요소들을 구현합니다. DataLoader 클래스, Pydantic 모델 정의, 스키마 검증 시스템, 런타임 리로딩 기능을 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "데이터 로딩과 검증은 비교적 직관적인 구현이며, Pydantic을 사용하여 타입 안전성을 보장할 수 있어 복잡도가 중간 정도입니다. 현재 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 5,
-			"taskTitle": "플레이어 마우스 이동 시스템",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "플레이어 중앙 고정과 카메라 역방향 이동 시스템을 구현합니다. 마우스 추적 및 회전, 카메라 시스템 구현, 시각적 맵 시스템, 성능 테스트를 각각 독립적인 구현 단위로 분리하여 진행합니다.",
-			"reasoning": "마우스 추적, 카메라 시스템, 좌표 변환 등 다양한 시스템이 연동되어야 하지만, 각 구성요소가 비교적 명확하게 분리되어 있습니다. 현재 3개 서브태스크에서 1개 추가하여 성능 테스트를 분리할 수 있습니다."
-		},
-		{
-			"taskId": 6,
-			"taskTitle": "자동 공격 및 투사체 시스템",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "자동 타겟팅과 투사체 시스템의 핵심 구성요소들을 구현합니다. WeaponComponent와 타겟팅 로직, ProjectileComponent와 물리 처리, 충돌 및 수명 관리, 거리 계산 최적화를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "자동 타겟팅 알고리즘, 투사체 물리, 충돌 처리 등 복잡한 게임 로직이 포함되어 있으며, 성능 최적화도 고려해야 합니다. 현재 4개 서브태스크가 적절히 분리되어 있습니다."
-		},
-		{
-			"taskId": 7,
-			"taskTitle": "기본 적 AI 및 스포너 시스템",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "상태 기반 AI와 적 생성 시스템을 구현합니다. AI 상태 구조, 거리 기반 상태 전환, 스포너 시스템, 난이도 조정, JSON 데이터 관리를 각각 독립적인 구현 단위로 분리하여 테스트 가능성을 높입니다.",
-			"reasoning": "상태 기반 AI 시스템은 복잡한 로직과 다양한 상태 전환 조건을 포함하며, 스포너 시스템과 난이도 조정 메커니즘도 구현해야 합니다. 현재 5개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 8,
-			"taskTitle": "경험치 및 레벨업 시스템",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "경험치와 레벨업 시스템의 핵심 구성요소들을 구현합니다. ExperienceComponent 구조, 이벤트 기반 경험치 부여, 레벨업 공식과 이벤트 처리, UI 렌더링 컴포넌트를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "경험치 계산과 레벨업 로직은 비교적 직관적이지만, 이벤트 시스템과 UI 연동이 필요합니다. 현재 4개 서브태스크가 적절히 분리되어 있습니다."
-		},
-		{
-			"taskId": 9,
-			"taskTitle": "JSON 기반 아이템 시스템 및 인벤토리",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "아이템 시스템과 인벤토리의 복합적인 구성요소들을 구현합니다. JSON 데이터 구조와 로딩, 6슬롯 인벤토리 관리, 아이템 효과 적용, 레벨업 선택 UI, 효과 중첩 계산을 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "아이템 시스템은 데이터 관리, UI 상호작용, 효과 계산 등 다양한 시스템이 복합적으로 연동되어야 하며, 6슬롯 제한과 효과 중첩 로직이 복잡합니다. 현재 5개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 10,
-			"taskTitle": "룰 엔진 기반 시너지 시스템",
-			"complexityScore": 9,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "룰 엔진과 시너지 시스템의 고도화된 구성요소들을 구현합니다. 룰 엔진 아키텍처, 패턴 매칭 알고리즘, JSON 규칙 관리, 실시간 계산 및 적용, 밸런싱 시스템, 성능 최적화를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "룰 엔진은 복잡한 패턴 매칭 알고리즘과 실시간 계산이 필요하며, 성능 최적화와 밸런싱도 고려해야 하는 고난도 시스템입니다. 현재 6개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 11,
-			"taskTitle": "교장선생님 보스 시스템",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "보스 시스템과 패턴 공격의 복합적인 구성요소들을 구현합니다. BossSpawner와 타이밍 관리, BossAI 패턴 시스템, 디버프와 시각적 경고, 미션 기반 해제 메커니즘, 보스 보상 시스템을 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "보스 시스템은 복잡한 AI 패턴, 디버프 시스템, 미션 시스템 등 다양한 게임 메커니즘이 통합되어야 하는 고복잡도 시스템입니다. 현재 5개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 12,
-			"taskTitle": "UI 시스템 및 게임 상태 표시",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "게임 UI 시스템의 핵심 구성요소들을 구현합니다. UISystem 기본 구조, 프로그레스 바들(체력/경험치), 인벤토리와 아이템 선택 모달, 시각적 피드백과 이펙트를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "UI 시스템은 pygame 렌더링과 이벤트 처리가 주된 복잡성이며, 각 UI 요소별로 비교적 명확하게 분리할 수 있습니다. 현재 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 13,
-			"taskTitle": "좌표 변환 시스템 인터페이스 설계 및 기본 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "좌표 변환 시스템의 아키텍처와 기본 구현을 단계별로 개발합니다. ICoordinateTransformer 인터페이스 설계, CameraBasedTransformer 기본 구현, Vector2 기반 수학 연산, 캐싱 메커니즘과 성능 최적화를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "좌표 변환 시스템은 수학적 정확성과 성능 최적화가 중요하며, 다형성 구조와 캐싱 메커니즘 설계가 필요한 중고복잡도 시스템입니다."
-		},
-		{
-			"taskId": 14,
-			"taskTitle": "CoordinateManager 전역 관리자 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "좌표 변환 시스템의 전역 관리자를 구현합니다. CoordinateManager 싱글톤 구현, 런타임 변환기 교체 시스템, 옵저버 패턴 기반 알림 메커니즘을 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "전역 관리자는 싱글톤 패턴과 옵저버 패턴의 적용이 주된 복잡성이며, 디자인 패턴의 올바른 구현이 핵심입니다."
-		},
-		{
-			"taskId": 15,
-			"taskTitle": "CameraComponent와 CameraSystem 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "카메라 시스템의 핵심 구성요소들을 구현합니다. CameraComponent 데이터 구조 설계, CameraSystem 업데이트 로직, CoordinateManager와 연동 및 캐시 관리를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "카메라 시스템은 ECS 패턴 적용과 좌표 변환 시스템 연동이 주된 복잡성이며, 비교적 명확한 구현 범위를 가집니다."
-		},
-		{
-			"taskId": 16,
-			"taskTitle": "PlayerMovementComponent 및 PlayerMovementSystem 재구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "플레이어 이동 시스템을 새로운 좌표계에 맞춰 재구현합니다. PlayerMovementComponent 데이터 구조, 마우스 추적과 방향 계산 로직, 부드러운 회전과 데드존 처리를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "플레이어 이동은 마우스 입력 처리와 수학 연산이 주된 복잡성이며, 기존 시스템의 재구현이므로 복잡도가 상대적으로 낮습니다."
-		},
-		{
-			"taskId": 17,
-			"taskTitle": "MapRenderSystem 무한 스크롤 타일 시스템 구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "무한 스크롤링 배경 렌더링 시스템을 구현합니다. 가시 타일 범위 계산 알고리즘, 타일 패턴 생성과 렌더링, 성능 최적화와 메모리 관리를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "타일 기반 렌더링은 비교적 직관적인 구현이며, 최적화 로직이 주된 복잡성입니다."
-		},
-		{
-			"taskId": 18,
-			"taskTitle": "EntityRenderSystem 좌표 변환 적용 업데이트",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "기존 렌더링 시스템을 새로운 좌표계에 맞춰 업데이트합니다. 좌표 변환 적용, 화면 밖 컬링 최적화, 플레이어 중앙 고정 렌더링, 깊이 정렬과 회전 처리를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "기존 시스템의 업데이트이지만 좌표 변환 로직과 성능 최적화, 다양한 렌더링 기능이 통합되어야 하는 중복잡도 시스템입니다."
-		},
-		{
-			"taskId": 19,
-			"taskTitle": "AutoAttackSystem 월드 좌표 기반 재구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "자동 공격 시스템을 월드 좌표 기준으로 재구현합니다. 시간 기반 공격 쿨다운 관리, 월드 좌표 기반 타겟 탐색, 투사체 생성과 방향 계산을 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "기존 시스템을 새로운 좌표계에 맞춰 재구현하는 작업으로, 로직 자체는 명확하지만 좌표 변환 적용이 필요합니다."
-		},
-		{
-			"taskId": 20,
-			"taskTitle": "EnemyAISystem 월드 좌표 기반 재구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "적 AI 시스템을 월드 좌표 기준으로 재구현합니다. 월드 좌표 기반 거리 계산, AI 상태 전환 로직, 방향 계산과 이동 처리를 각각 독립적으로 구현하고 테스트합니다.",
-			"reasoning": "기존 AI 시스템을 새로운 좌표계에 맞춰 재구현하는 작업으로, 상태 기반 AI 로직은 유지하되 좌표 계산만 변경됩니다."
-		},
-		{
-			"taskId": 21,
-			"taskTitle": "좌표계 테스트 스위트 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "좌표 변환 시스템의 종합적인 테스트 스위트를 구현합니다. 좌표 변환 정확성 단위 테스트, 다형성 인터페이스 호환성 테스트, 성능 벤치마크 테스트, 통합 시나리오 테스트를 각각 독립적으로 구현합니다.",
-			"reasoning": "테스트 스위트는 다양한 테스트 케이스와 성능 벤치마킹을 포함해야 하며, 수학적 정확성 검증과 성능 측정이 핵심입니다."
-		},
-		{
 			"taskId": 22,
 			"taskTitle": "통합 시스템 조정 및 게임 루프 최적화",
+			"complexityScore": 9,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "40+ FPS 달성을 위한 시스템 실행 순서 최적화, 좌표 변환 캐시 관리, 성능 모니터링, FPS 안정화, 메모리 최적화를 각각 독립적인 하위 작업으로 분해하여 구현하세요.",
+			"reasoning": "이미 5개의 세부 하위작업이 존재하며, 시스템 통합, 성능 최적화, 메모리 관리 등 다양한 기술적 도메인을 아우르는 고복잡도 작업입니다. 각 하위작업이 상호 의존적이면서도 독립적인 구현이 가능한 구조로 잘 분해되어 있습니다."
+		},
+		{
+			"taskId": 23,
+			"taskTitle": "이벤트 시스템 기본 인프라 구현",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "BaseEvent 추상 클래스 구현, EventType IntEnum 다층 구조 설계, IEventSubscriber 인터페이스 정의, 타입 힌트 및 dataclass 적용을 각각 분리하여 구현하세요.",
+			"reasoning": "이벤트 시스템의 기본 인프라는 추상 클래스, 인터페이스, Enum 설계 등 아키텍처 설계 요소들을 포함하므로 중간 복잡도입니다. Python 3.13+ 타입 힌트와 다층 Enum 패턴 적용이 필요합니다."
+		},
+		{
+			"taskId": 24,
+			"taskTitle": "EventBus 큐잉 시스템 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "deque 기반 이벤트 큐 구현, 구독자 관리 Dictionary 시스템, publish/process_events 메서드, 구독자 예외 격리 처리, 성능 모니터링 기능을 각각 분리하여 구현하세요.",
+			"reasoning": "큐 기반 이벤트 처리, 구독자 관리, 예외 격리, 재진입 방지 등 복합적인 시스템 설계가 필요하며, 성능과 안정성을 모두 고려해야 하는 중고복잡도 작업입니다."
+		},
+		{
+			"taskId": 25,
+			"taskTitle": "게임 이벤트 타입 정의 및 구현",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "EnemyDeathEvent 클래스 구현, ProjectileCreatedEvent 클래스 구현, 데이터 검증 및 성능 최적화를 각각 분리하여 구현하세요.",
+			"reasoning": "구체적인 이벤트 클래스들을 구현하는 비교적 직관적인 작업이지만, 데이터 검증과 성능 최적화를 고려해야 하므로 중하 복잡도입니다."
+		},
+		{
+			"taskId": 26,
+			"taskTitle": "ProjectileSystem 책임 분리 리팩토링",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "IEventPublisher 인터페이스 구현, 기존 직접 처리 로직 제거, EnemyDeathEvent 발행 로직 구현, 투사체 제거 로직 단순화를 각각 분리하여 구현하세요.",
+			"reasoning": "기존 시스템의 책임을 분리하고 이벤트 기반으로 리팩토링하는 작업으로, 기존 로직 분석과 새로운 아키텍처 적용이 필요한 중간 복잡도입니다."
+		},
+		{
+			"taskId": 27,
+			"taskTitle": "ExperienceSystem 이벤트 구독 시스템 구현",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "IEventSubscriber 인터페이스 구현, EnemyDeathEvent 구독 로직, 경험치 계산 및 적용 시스템, 엔티티 조회 및 예외 처리를 각각 분리하여 구현하세요.",
+			"reasoning": "이벤트 구독 시스템 구현과 경험치 계산 로직을 포함하지만, 비교적 단일 책임을 가진 시스템으로 중간 복잡도입니다."
+		},
+		{
+			"taskId": 28,
+			"taskTitle": "ItemDropSystem 및 EntityCleanupSystem 구현",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "ItemDropSystem 이벤트 구독 및 아이템 드롭 로직, EntityCleanupSystem 엔티티 제거 로직, 확률적 아이템 생성 시스템, 두 시스템의 독립성 보장을 각각 분리하여 구현하세요.",
+			"reasoning": "두 개의 독립적인 시스템을 동시에 구현해야 하며, 확률적 아이템 드롭과 엔티티 생명주기 관리를 다루므로 중간 복잡도입니다."
+		},
+		{
+			"taskId": 29,
+			"taskTitle": "GameLoop 이벤트 시스템 통합",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "GameLoop에 EventBus 통합, 시스템 구독 관계 자동 설정, 이벤트 처리 순서 관리, SystemOrchestrator 시스템 등록을 각각 분리하여 구현하세요.",
+			"reasoning": "전체 게임 루프에 이벤트 시스템을 통합하는 작업으로, 시스템 간 의존성과 실행 순서를 관리해야 하는 중고복잡도입니다."
+		},
+		{
+			"taskId": 30,
+			"taskTitle": "이벤트 시스템 단위 테스트 구현",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "EventBus 단위 테스트, 이벤트 클래스 테스트, 구독자 인터페이스 Mock 테스트, 예외 상황 처리 테스트, pytest fixture 및 마커 설정을 각각 분리하여 구현하세요.",
+			"reasoning": "포괄적인 단위 테스트 작성으로 여러 컴포넌트를 다루며, Mock 객체와 pytest fixture 활용이 필요한 중간 복잡도입니다."
+		},
+		{
+			"taskId": 31,
+			"taskTitle": "이벤트 플로우 통합 테스트 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "전체 이벤트 플로우 시나리오 테스트, 다중 구독자 동시 처리 검증, 성능 요구사항 테스트, 실제 게임 환경 통합 테스트를 각각 분리하여 구현하세요.",
+			"reasoning": "실제 게임 환경에서의 통합 테스트와 성능 요구사항 검증을 포함하여 복합적인 테스트 시나리오가 필요한 중고복잡도입니다."
+		},
+		{
+			"taskId": 32,
+			"taskTitle": "이벤트 시스템 성능 최적화 및 모니터링",
 			"complexityScore": 8,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "모든 시스템을 통합하고 성능 최적화를 수행합니다. 시스템 실행 순서 최적화, 좌표 변환 캐시 관리, 성능 모니터링 시스템, FPS 안정성 확보, 메모리 사용량 최적화를 각각 독립적으로 구현하고 검증합니다.",
-			"reasoning": "전체 시스템 통합과 성능 최적화는 다양한 시스템 간의 상호작용을 고려해야 하며, 40+ FPS 목표 달성을 위한 복합적인 최적화가 필요한 고복잡도 작업입니다."
+			"expansionPrompt": "EventPerformanceMonitor 구현, 프레임당 이벤트 수 제한, 처리 시간 임계값 모니터링, 성능 경고 시스템, 성능 테스트 구현을 각각 분리하여 구현하세요.",
+			"reasoning": "성능 모니터링과 최적화는 실시간 성능 측정, 임계값 관리, 경고 시스템 등 복합적인 성능 엔지니어링이 필요한 고복잡도 작업입니다."
+		},
+		{
+			"taskId": 33,
+			"taskTitle": "ProjectileSystem 옵저버 패턴 리팩토링 - Phase 1: 이벤트 정의 및 데이터 구조 설계",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "BaseEvent 추상 클래스 구현, EnemyDeathEvent 데이터 구조 설계, EventType Enum 구현, src/core/events/ 디렉토리 구조 생성을 각각 분리하여 구현하세요.",
+			"reasoning": "이벤트 시스템의 기초 구조를 설계하는 작업으로, 추상 클래스와 데이터 구조 설계가 주요 과제이지만 비교적 명확한 요구사항을 가진 중간 복잡도입니다."
 		}
 	]
 }
