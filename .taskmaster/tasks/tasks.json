@@ -1305,7 +1305,48 @@
         "priority": "high",
         "dependencies": [],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "BaseEvent 추상 클래스 구현",
+            "description": "모든 게임 이벤트의 기본이 되는 BaseEvent 추상 클래스를 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/events/base_event.py에 BaseEvent 추상 클래스를 구현합니다. event_type(EventType), timestamp(float), created_at(datetime) 필드를 포함하며, @dataclass와 ABC를 활용합니다. timestamp는 time.time()으로 자동 설정되고, Python 3.13+ 타입 힌트를 완전 적용합니다. 추상 메서드 validate()를 정의하여 하위 클래스에서 이벤트 데이터 유효성 검증을 구현하도록 합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "EventType IntEnum 다층 구조 설계",
+            "description": "이벤트 타입을 구분하고 성능과 표시를 위한 다층 EventType IntEnum을 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/events/event_types.py에 EventType IntEnum을 구현합니다. ENEMY_DEATH(0), ITEM_DROP(1), EXPERIENCE_GAIN(2), WEAPON_FIRED(3) 등의 타입을 정의하고, display_name 프로퍼티로 한국어 표시명('적 사망', '아이템 드롭' 등)을 제공합니다. _display_names 딕셔너리와 인덱스 기반 성능 최적화를 적용하며, 향후 확장을 위한 카테고리별 그룹핑도 고려합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "IEventSubscriber 인터페이스 정의",
+            "description": "이벤트 구독자를 위한 표준 인터페이스를 정의합니다.",
+            "dependencies": [],
+            "details": "src/core/events/interfaces.py에 IEventSubscriber ABC 인터페이스를 구현합니다. handle_event(event: BaseEvent) -> None 추상 메서드로 이벤트 처리를 정의하고, get_subscribed_events() -> list[EventType] 추상 메서드로 구독할 이벤트 타입 목록을 반환하도록 합니다. 타입 안전성을 위해 Generic[T] 활용을 검토하고, 예외 처리 가이드라인을 문서화합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "타입 힌트 및 dataclass 통합 적용",
+            "description": "구현된 모든 이벤트 시스템 클래스에 Python 3.13+ 타입 힌트와 dataclass를 완전 적용합니다.",
+            "dependencies": [
+              "23.1",
+              "23.2",
+              "23.3"
+            ],
+            "details": "BaseEvent, EventType, IEventSubscriber에 Python 3.13+ 네이티브 타입 힌트(list[EventType], dict[str, Any] 등)를 완전 적용합니다. @dataclass(frozen=True)를 BaseEvent에 적용하여 불변성을 보장하고, __post_init__ 메서드로 timestamp 자동 설정을 구현합니다. mypy strict 모드 통과를 위한 타입 체크를 수행하고, 모든 메서드의 반환 타입을 명시합니다. ruff를 사용한 코드 포맷팅과 린팅을 적용합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 24,
@@ -1318,7 +1359,61 @@
           23
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "deque 기반 이벤트 큐 구조 구현",
+            "description": "EventBus 클래스에 deque를 사용한 이벤트 큐 자료구조를 구현하고 기본적인 큐 관리 기능을 추가",
+            "dependencies": [],
+            "details": "collections.deque를 사용하여 이벤트 큐를 구현합니다. _event_queue 속성으로 deque 인스턴스를 관리하고, 큐의 기본 조작 메서드(enqueue, dequeue)를 준비합니다. 큐 크기 제한과 오버플로우 방지 로직을 포함하여 메모리 안정성을 보장합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "구독자 관리 Dictionary 시스템 구현",
+            "description": "이벤트 타입별 구독자를 관리하는 Dictionary 기반 시스템을 구현하고 구독/구독해제 기능을 추가",
+            "dependencies": [
+              "24.1"
+            ],
+            "details": "_subscribers: Dict[EventType, Set[IEventSubscriber]] 구조로 구독자 관리 시스템을 구현합니다. subscribe/unsubscribe 메서드를 통해 구독자를 등록/해제하고, 이벤트 타입별로 구독자 Set을 유지관리합니다. 중복 구독 방지와 존재하지 않는 구독자 해제 시 안전한 처리를 포함합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "publish/process_events 메서드 구현",
+            "description": "이벤트 발행과 일괄 처리를 담당하는 핵심 메서드들을 구현하여 큐 기반 이벤트 처리 흐름을 완성",
+            "dependencies": [
+              "24.2"
+            ],
+            "details": "publish 메서드는 이벤트를 큐에 저장하고, process_events는 큐의 모든 이벤트를 순차적으로 처리합니다. 재진입 방지를 위한 _processing_events 플래그를 사용하여 중첩 처리를 방지하고, 큐가 비어있을 때까지 반복 처리하는 안전한 루프를 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "구독자 예외 격리 처리 시스템 구현",
+            "description": "개별 구독자의 예외가 전체 이벤트 처리를 중단시키지 않도록 예외 격리 시스템을 구현",
+            "dependencies": [
+              "24.3"
+            ],
+            "details": "각 구독자의 handle_event 호출을 try-catch 블록으로 래핑하여 개별 구독자 예외를 격리합니다. 예외 발생 시 로깅 처리를 통해 디버깅을 지원하고, 다른 구독자들의 정상 처리를 보장합니다. 예외 통계를 수집하여 모니터링 기능에 활용할 수 있도록 준비합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "성능 모니터링 기능 구현",
+            "description": "이벤트 큐 상태와 처리 성능을 모니터링할 수 있는 기능들을 구현하여 시스템 관찰성을 제공",
+            "dependencies": [
+              "24.4"
+            ],
+            "details": "get_queue_size, get_subscriber_count, get_processing_stats 등의 모니터링 메서드를 구현합니다. 큐 크기, 구독자 수, 처리된 이벤트 수, 예외 발생 횟수 등의 통계를 제공하여 성능 분석과 디버깅을 지원합니다. 선택적으로 처리 시간 측정 기능을 포함하여 성능 최적화에 활용할 수 있도록 합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 25,
@@ -1331,7 +1426,38 @@
           23
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "EnemyDeathEvent 클래스 구현",
+            "description": "적 사망 시 발행되는 EnemyDeathEvent 클래스를 구현하고 데이터 검증 로직을 추가합니다.",
+            "dependencies": [],
+            "details": "BaseEvent를 상속받는 EnemyDeathEvent 클래스를 src/core/events/enemy_death_event.py에 구현합니다. enemy_entity_id 필드를 포함하며, __init__에서 None이나 빈 문자열 검증을 수행합니다. event_type은 EventType.ENEMY_DEATH로 자동 설정되도록 구현합니다. @dataclass 데코레이터를 사용하여 타입 안정성을 보장하고, 최소한의 데이터만 포함하여 성능을 최적화합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "ProjectileCreatedEvent 클래스 구현",
+            "description": "투사체 생성 시 발행되는 ProjectileCreatedEvent 클래스를 구현하고 데이터 검증 로직을 추가합니다.",
+            "dependencies": [],
+            "details": "BaseEvent를 상속받는 ProjectileCreatedEvent 클래스를 src/core/events/projectile_created_event.py에 구현합니다. projectile_entity_id, weapon_type, target_position 필드를 포함하며, __init__에서 각 필드의 유효성 검증을 수행합니다. event_type은 EventType.PROJECTILE_CREATED로 자동 설정되도록 구현합니다. @dataclass 데코레이터를 사용하여 타입 안정성을 보장하고, 필수 데이터만 포함하여 메모리 사용량을 최적화합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "이벤트 데이터 검증 및 성능 최적화",
+            "description": "구현된 이벤트 클래스들의 데이터 검증을 강화하고 성능 최적화를 적용합니다.",
+            "dependencies": [
+              "25.1",
+              "25.2"
+            ],
+            "details": "각 이벤트 클래스에 validate() 메서드를 추가하여 런타임 데이터 검증을 수행합니다. __slots__ 속성을 추가하여 메모리 사용량을 최적화하고, property 메서드를 통해 읽기 전용 필드를 보장합니다. 잘못된 데이터 입력 시 명확한 에러 메시지와 함께 ValueError를 발생시키도록 예외 처리를 구현합니다. 이벤트 객체 생성 성능을 측정하고 최적화합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 26,
@@ -1345,7 +1471,51 @@
           25
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "IEventPublisher 인터페이스 설계 및 구현",
+            "description": "모든 이벤트 발행자가 구현해야 할 공통 인터페이스를 정의하고 ProjectileSystem이 이를 구현하도록 수정",
+            "dependencies": [],
+            "details": "src/core/interfaces/event_publisher.py에 IEventPublisher 인터페이스를 생성하고 publish_event 추상 메서드를 정의합니다. ProjectileSystem 클래스가 이 인터페이스를 구현하도록 수정하고, __init__ 메서드에 event_bus 참조를 추가합니다. 인터페이스의 타입 힌트와 추상 메서드 시그니처를 명확히 정의하여 일관된 이벤트 발행 패턴을 보장합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "기존 직접 처리 로직 제거 및 정리",
+            "description": "ProjectileSystem에서 적 사망과 관련된 직접 처리 로직들을 식별하고 제거",
+            "dependencies": [
+              "26.1"
+            ],
+            "details": "_handle_enemy_death 메서드에서 경험치 계산, 엔티티 제거, 직접적인 적 컴포넌트 조작 로직을 제거합니다. 기존에 EntityManager를 통해 직접 처리하던 적 제거 로직과 경험치 시스템 호출 부분을 정리합니다. 코드 리뷰를 통해 다른 메서드에 숨어있는 직접 처리 로직이 있는지 확인하고 제거합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "EnemyDeathEvent 발행 로직 구현",
+            "description": "투사체와 적의 충돌 시 EnemyDeathEvent를 생성하고 이벤트 버스를 통해 발행하는 로직 구현",
+            "dependencies": [
+              "26.1",
+              "26.2"
+            ],
+            "details": "_handle_enemy_death 메서드를 수정하여 EnemyDeathEvent 객체를 생성하고 publish_event 메서드를 통해 이벤트 버스에 발행합니다. 이벤트 생성 시 필요한 데이터(enemy_entity_id)를 정확히 전달하고, 이벤트 발행 성공/실패에 대한 기본적인 예외 처리를 추가합니다. 이벤트 발행 후의 후처리 로직을 명확히 분리합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "투사체 제거 로직 단순화 및 최적화",
+            "description": "이벤트 발행 후 투사체 제거만을 담당하도록 로직을 단순화하고 성능 최적화",
+            "dependencies": [
+              "26.3"
+            ],
+            "details": "_handle_enemy_death 메서드에서 EnemyDeathEvent 발행 후 해당 투사체만 제거하도록 로직을 단순화합니다. 투사체 제거 시 불필요한 컴포넌트 조회나 추가적인 계산을 제거하여 성능을 최적화합니다. 투사체 제거 로직의 에러 처리를 추가하고, 제거 실패 시의 대응 방안을 구현합니다. 메모리 누수 방지를 위한 적절한 리소스 정리를 보장합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 27,
@@ -1359,7 +1529,50 @@
           25
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "IEventSubscriber 인터페이스 구현",
+            "description": "이벤트 구독을 위한 기본 인터페이스를 정의하고 ExperienceSystem에서 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/event_subscriber.py에 IEventSubscriber 추상 인터페이스를 구현합니다. handle_event 메서드를 추상 메서드로 정의하여 이벤트 처리 구조를 표준화합니다. ExperienceSystem 클래스가 IEventSubscriber를 상속받도록 하고, handle_event 메서드의 기본 구조를 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "EnemyDeathEvent 구독 로직 구현",
+            "description": "EnemyDeathEvent를 구독하고 필터링하는 로직을 구현합니다.",
+            "dependencies": [
+              "27.1"
+            ],
+            "details": "handle_event 메서드에서 이벤트 타입을 검증하여 EnemyDeathEvent만 처리하도록 구현합니다. 이벤트 타입 체크 로직과 잘못된 이벤트 타입에 대한 처리를 추가합니다. 이벤트 데이터 유효성 검증 로직을 구현하여 enemy_entity_id가 올바른지 확인합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "경험치 계산 및 적용 시스템 구현",
+            "description": "적 사망 시 경험치를 계산하고 플레이어에게 적용하는 로직을 구현합니다.",
+            "dependencies": [
+              "27.2"
+            ],
+            "details": "EnemyComponent에서 get_experience_reward 메서드를 호출하여 적절한 경험치를 계산합니다. 플레이어 엔티티를 조회하고 ExperienceComponent에 경험치를 추가하는 로직을 구현합니다. 경험치 적용 후 레벨업 조건 확인 및 처리 로직을 추가합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "엔티티 조회 및 예외 처리 구현",
+            "description": "EntityManager를 통한 안전한 엔티티 조회와 예외 상황 처리를 구현합니다.",
+            "dependencies": [
+              "27.3"
+            ],
+            "details": "EntityManager를 통해 적 엔티티와 플레이어 엔티티를 조회하는 로직을 구현합니다. 존재하지 않는 엔티티나 누락된 컴포넌트에 대한 예외 처리를 추가합니다. 로그 출력을 통해 디버깅과 모니터링이 가능하도록 구현합니다. 엔티티 조회 실패 시 graceful한 처리 방식을 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 28,
@@ -1373,7 +1586,49 @@
           25
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "ItemDropSystem 이벤트 구독 및 기본 구조 구현",
+            "description": "EnemyDeathEvent를 구독하는 ItemDropSystem 클래스를 생성하고 IEventSubscriber 인터페이스를 구현합니다.",
+            "dependencies": [],
+            "details": "src/systems/item_drop_system.py에 ItemDropSystem 클래스를 구현합니다. IEventSubscriber 인터페이스를 상속받아 handle_event() 메서드를 구현하고, EnemyDeathEvent 타입만을 처리하도록 필터링합니다. 시스템 초기화 시 EventManager에 구독을 등록하고, 적 사망 위치 정보를 추출하는 기본 로직을 구현합니다. 시스템의 활성화/비활성화 상태 관리 기능을 포함합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "확률적 아이템 드롭 로직 구현",
+            "description": "적 사망 시 확률에 따라 아이템을 생성하는 드롭 확률 계산 및 아이템 생성 시스템을 구현합니다.",
+            "dependencies": [
+              "28.1"
+            ],
+            "details": "아이템별 드롭 확률을 정의하는 DROP_RATES 상수를 구현하고, 적 타입에 따른 드롭 테이블을 설계합니다. random.random()을 사용한 확률 계산 로직을 구현하여 드롭 여부를 결정합니다. 아이템 타입별 ItemComponent 생성 로직을 구현하고, 적 사망 위치에 아이템 엔티티를 생성하는 _create_item_entity() 메서드를 작성합니다. 드롭된 아이템의 PositionComponent를 적의 최종 위치로 설정합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "EntityCleanupSystem 엔티티 제거 로직 구현",
+            "description": "EnemyDeathEvent를 구독하여 사망한 적 엔티티를 EntityManager에서 안전하게 제거하는 시스템을 구현합니다.",
+            "dependencies": [],
+            "details": "src/systems/entity_cleanup_system.py에 EntityCleanupSystem 클래스를 구현합니다. IEventSubscriber 인터페이스를 상속받아 EnemyDeathEvent 처리 로직을 구현하고, EntityManager.remove_entity()를 호출하여 엔티티를 제거합니다. 엔티티 제거 전 필요한 정리 작업(컴포넌트 해제, 메모리 정리)을 수행하는 _cleanup_entity_resources() 메서드를 구현합니다. 엔티티 제거 과정에서 발생할 수 있는 예외 상황을 처리하는 안전 장치를 포함합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "두 시스템의 독립성 보장 및 통합 테스트",
+            "description": "ItemDropSystem과 EntityCleanupSystem이 서로 독립적으로 동작하면서 올바르게 협력하는지 검증하는 테스트를 작성합니다.",
+            "dependencies": [
+              "28.2",
+              "28.3"
+            ],
+            "details": "각 시스템이 동일한 EnemyDeathEvent에 대해 독립적으로 반응하는지 테스트합니다. 한 시스템의 오류가 다른 시스템의 동작에 영향을 주지 않는지 검증하는 격리 테스트를 작성합니다. 적 사망 시 아이템 드롭과 엔티티 제거가 모두 정상적으로 실행되는지 확인하는 통합 테스트를 구현합니다. 시스템 간 실행 순서에 관계없이 올바른 결과가 나오는지 검증하고, 각 시스템의 성능 영향도를 측정하는 벤치마크 테스트를 포함합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 29,
@@ -1388,7 +1643,50 @@
           28
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "GameLoop에 EventBus 통합 구현",
+            "description": "GameLoop 클래스에 EventBus 인스턴스를 추가하고 초기화 로직을 구현합니다.",
+            "dependencies": [],
+            "details": "GameLoop 클래스의 __init__ 메서드에서 EventBus 인스턴스를 생성하고, 초기화 메서드에서 event_bus.initialize()를 호출합니다. EventBus가 게임 루프의 생명주기와 동기화되도록 start/stop 메서드에서 EventBus 상태를 관리합니다. EventBus 참조를 다른 시스템에서 접근할 수 있도록 getter 메서드를 제공합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "시스템 구독 관계 자동 설정 구현",
+            "description": "_setup_event_subscriptions 메서드를 구현하여 시스템별 이벤트 구독을 자동화합니다.",
+            "dependencies": [
+              "29.1"
+            ],
+            "details": "GameLoop 클래스에 _setup_event_subscriptions 메서드를 추가하여 각 시스템의 이벤트 구독을 자동 설정합니다. SystemOrchestrator에서 관리하는 모든 시스템을 순회하며, IEventSubscriber 인터페이스를 구현한 시스템들을 EventBus에 등록합니다. 시스템별로 관심 있는 이벤트 타입을 자동 감지하여 구독 관계를 설정하고, 구독 실패 시 로그를 남기고 예외를 처리합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "이벤트 처리 순서 관리 구현",
+            "description": "GameLoop의 update 메서드에서 시스템 업데이트와 이벤트 처리 순서를 적절히 관리합니다.",
+            "dependencies": [
+              "29.2"
+            ],
+            "details": "GameLoop.update() 메서드를 수정하여 모든 시스템의 업데이트가 완료된 후 event_bus.process_events()를 호출하도록 합니다. 시스템 업데이트 → 이벤트 처리 → 렌더링 순서로 프레임 처리 플로우를 구성합니다. 이벤트 처리 중 발생하는 새로운 이벤트들이 다음 프레임에서 처리되도록 이벤트 큐 관리를 구현합니다. 성능 모니터링을 위해 이벤트 처리 시간을 측정하고 기록합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "SystemOrchestrator 시스템 등록 구현",
+            "description": "새로운 이벤트 관련 시스템들을 SystemOrchestrator에 적절한 우선순위로 등록합니다.",
+            "dependencies": [
+              "29.3"
+            ],
+            "details": "SystemOrchestrator에 새로 개발된 이벤트 기반 시스템들(ExperienceSystem, ItemDropSystem, EntityCleanupSystem 등)을 등록합니다. 시스템 간 의존성을 고려하여 적절한 priority 값을 설정하고 실행 순서를 보장합니다. 이벤트를 발행하는 시스템(CollisionSystem, ProjectileSystem)과 이벤트를 구독하는 시스템들의 실행 순서를 조정합니다. 시스템 등록 과정에서 발생할 수 있는 의존성 충돌을 검사하고 해결하는 로직을 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 30,
@@ -1402,7 +1700,63 @@
           25
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "EventBus 단위 테스트 구현",
+            "description": "EventBus 클래스의 이벤트 구독, 발행, 구독 해제 등 핵심 기능들에 대한 단위 테스트를 작성합니다.",
+            "dependencies": [],
+            "details": "EventBus의 subscribe/unsubscribe 메소드 테스트, publish 메소드를 통한 이벤트 발행 검증, 여러 구독자가 있을 때 모든 구독자가 이벤트를 받는지 확인, 구독 해제 후 이벤트가 전달되지 않는지 검증하는 테스트를 작성합니다. test_event_bus_subscribe_success, test_event_bus_publish_to_multiple_subscribers, test_event_bus_unsubscribe_success 등의 테스트 메소드를 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "이벤트 클래스 단위 테스트 구현",
+            "description": "BaseEvent, EnemyDeathEvent 등 이벤트 클래스들의 생성, 데이터 접근, 타입 검증에 대한 단위 테스트를 작성합니다.",
+            "dependencies": [],
+            "details": "EnemyDeathEvent 생성 및 enemy_entity_id 데이터 접근 테스트, EventType 열거형 할당 및 타입 검증 테스트, BaseEvent 추상 클래스 상속 구조 테스트를 구현합니다. test_enemy_death_event_creation, test_event_type_validation, test_base_event_inheritance 등의 테스트 메소드를 작성하여 이벤트 객체의 무결성을 검증합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "구독자 인터페이스 Mock 테스트 구현",
+            "description": "이벤트 구독자 인터페이스의 동작을 검증하기 위한 Mock 객체를 활용한 단위 테스트를 구현합니다.",
+            "dependencies": [
+              "30.1"
+            ],
+            "details": "unittest.mock을 사용하여 MockEventSubscriber 클래스를 생성하고, 이벤트 수신 시 호출되는 메소드들을 검증합니다. 구독자가 정확한 이벤트 타입을 받는지, 여러 구독자가 동시에 이벤트를 처리할 수 있는지, 구독자에서 예외 발생 시 다른 구독자에게 영향을 주지 않는지 테스트합니다. test_mock_subscriber_receives_event, test_multiple_subscribers_isolation 등의 테스트를 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "예외 상황 처리 테스트 구현",
+            "description": "이벤트 시스템에서 발생할 수 있는 다양한 예외 상황들에 대한 처리 로직을 검증하는 테스트를 작성합니다.",
+            "dependencies": [
+              "30.2",
+              "30.3"
+            ],
+            "details": "잘못된 데이터로 이벤트 생성 시 예외 처리(None, 빈 문자열 entity_id), 존재하지 않는 이벤트 타입 구독 시도, 구독자에서 예외 발생 시 이벤트 버스의 안정성 보장, 메모리 누수 방지를 위한 약한 참조 처리 등을 테스트합니다. test_invalid_event_data_exception, test_subscriber_exception_isolation, test_memory_leak_prevention 등의 테스트 메소드를 구현합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "pytest fixture 및 마커 설정 구현",
+            "description": "이벤트 시스템 테스트를 위한 pytest fixture들과 테스트 분류를 위한 마커를 설정합니다.",
+            "dependencies": [
+              "30.1",
+              "30.2",
+              "30.3",
+              "30.4"
+            ],
+            "details": "EventBus 인스턴스를 제공하는 event_bus fixture, 테스트용 이벤트 객체들을 생성하는 sample_events fixture, Mock 구독자를 제공하는 mock_subscriber fixture를 구현합니다. @pytest.mark.events 마커로 이벤트 관련 테스트를 분류하고, conftest.py에 공통 fixture들을 정의합니다. 테스트 실행 시 이벤트 관련 테스트만 선별적으로 실행할 수 있도록 설정합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 31,
@@ -1416,7 +1770,51 @@
           30
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "전체 이벤트 플로우 시나리오 테스트 구현",
+            "description": "투사체-적 충돌부터 경험치 획득, 아이템 드롭, 엔티티 제거까지의 완전한 이벤트 체인을 검증하는 시나리오 테스트",
+            "dependencies": [],
+            "details": "tests/integration/test_event_flow_scenarios.py에 실제 게임 플레이 시나리오를 재현하는 통합 테스트를 구현합니다. 투사체가 적과 충돌했을 때 발생하는 모든 이벤트 체인(충돌 감지 -> 적 사망 -> 경험치 지급 -> 레벨업 체크 -> 아이템 드롭 -> 엔티티 정리)이 순서대로 올바르게 처리되는지 검증합니다. EntityManager, CollisionSystem, ExperienceSystem, ItemDropSystem 등 실제 시스템들을 통합하여 이벤트 발행과 구독자 처리를 테스트합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "다중 구독자 동시 처리 검증 테스트",
+            "description": "하나의 이벤트에 대해 여러 시스템이 동시에 구독하고 처리할 때의 안정성과 일관성을 검증하는 테스트",
+            "dependencies": [
+              "31.1"
+            ],
+            "details": "tests/integration/test_multiple_subscribers.py에 하나의 EnemyDeathEvent에 대해 ExperienceSystem, ItemDropSystem, AudioSystem, UISystem 등 여러 구독자가 동시에 반응할 때의 처리 순서와 데이터 일관성을 검증하는 테스트를 구현합니다. 구독자 간 의존성이 없어야 하며, 한 구독자의 오류가 다른 구독자에게 영향을 주지 않아야 함을 확인합니다. 멀티스레딩 환경에서의 동시 접근 안전성도 검증합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "성능 요구사항 테스트 구현",
+            "description": "이벤트 시스템이 성능 요구사항(100개 이벤트 2ms 이내 처리)을 만족하는지 검증하는 성능 테스트",
+            "dependencies": [
+              "31.1"
+            ],
+            "details": "tests/performance/test_event_performance.py에 이벤트 시스템의 성능을 정량적으로 측정하는 테스트를 구현합니다. 100개의 동시 이벤트 발행 시 처리 완료까지 걸리는 시간이 2ms 이내인지 검증하고, 메모리 사용량 모니터링, 구독자별 처리 시간 측정, 이벤트 큐 오버플로우 처리 등을 테스트합니다. 다양한 이벤트 타입과 구독자 수 조합에서의 성능 특성을 분석합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "실제 게임 환경 통합 테스트",
+            "description": "완전한 게임 환경에서 이벤트 시스템이 다른 게임 시스템들과 안정적으로 통합되어 동작하는지 검증하는 통합 테스트",
+            "dependencies": [
+              "31.2",
+              "31.3"
+            ],
+            "details": "tests/integration/test_game_environment_integration.py에 GameLoop, TimeManager, SystemOrchestrator와 함께 동작하는 실제 게임 환경에서의 이벤트 시스템 안정성을 검증하는 테스트를 구현합니다. 게임 일시정지/재개, 상태 전환(메뉴/플레이/게임오버), 프레임 드롭 상황에서의 이벤트 처리 일관성을 테스트합니다. 장시간 실행(30초 이상) 테스트를 통해 메모리 누수나 성능 저하가 없는지 확인합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 32,
@@ -1429,7 +1827,62 @@
           31
         ],
         "status": "pending",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "EventPerformanceMonitor 클래스 기본 구조 구현",
+            "description": "실시간 이벤트 처리 성능을 모니터링하는 EventPerformanceMonitor 클래스의 기본 구조와 인터페이스를 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/performance/event_performance_monitor.py에 EventPerformanceMonitor 클래스를 생성하고, 이벤트 처리 시간 측정, 프레임당 이벤트 수 추적, 성능 통계 데이터 저장을 위한 기본 속성들을 정의합니다. time 모듈을 사용한 고정밀 시간 측정과 collections.deque를 활용한 효율적인 데이터 버퍼링 구조를 구현합니다. 싱글톤 패턴을 적용하여 전역적으로 접근 가능한 성능 모니터링 인스턴스를 보장합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "프레임당 이벤트 수 제한 메커니즘 구현",
+            "description": "프레임당 최대 100개의 이벤트 처리 제한을 적용하는 메커니즘을 구현합니다.",
+            "dependencies": [
+              "32.1"
+            ],
+            "details": "EventPerformanceMonitor에 frame_event_limit(기본값 100) 설정과 현재 프레임의 이벤트 카운터를 추가합니다. check_frame_limit() 메서드로 현재 프레임에서 처리된 이벤트 수가 제한을 초과하는지 검사하고, 초과 시 이벤트 처리를 지연시키는 로직을 구현합니다. 프레임 종료 시 카운터를 리셋하는 reset_frame_counter() 메서드를 추가하여 프레임 단위 제한이 정확히 작동하도록 합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "처리 시간 임계값 모니터링 시스템 구현",
+            "description": "이벤트 처리 시간이 2ms 임계값을 초과하는지 모니터링하는 시스템을 구현합니다.",
+            "dependencies": [
+              "32.1"
+            ],
+            "details": "start_monitoring()과 end_monitoring() 메서드를 구현하여 이벤트 처리 시작과 종료 시점을 측정합니다. processing_time_threshold(기본값 2ms) 설정과 실제 처리 시간을 비교하여 임계값 초과 여부를 판단합니다. 처리 시간 기록을 위한 순환 버퍼를 구현하여 최근 N개 이벤트의 처리 시간 통계를 유지하고, 평균/최대/최소 처리 시간을 계산하는 get_performance_stats() 메서드를 추가합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "성능 경고 시스템 구현",
+            "description": "성능 임계값 초과 시 경고를 발행하고 관리하는 시스템을 구현합니다.",
+            "dependencies": [
+              "32.2",
+              "32.3"
+            ],
+            "details": "PerformanceWarning 데이터 클래스를 정의하여 경고 타입(FRAME_LIMIT_EXCEEDED, PROCESSING_TIME_EXCEEDED), 시간, 측정값, 임계값 정보를 저장합니다. issue_warning() 메서드로 경고를 생성하고 로깅하며, warnings 리스트에 저장합니다. get_recent_warnings()로 최근 경고 조회, clear_warnings()로 경고 기록 정리, has_active_warnings()로 현재 활성 경고 존재 여부를 확인하는 메서드들을 구현합니다. Python logging 모듈을 통해 WARNING 레벨로 성능 이슈를 기록합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "성능 테스트 구현",
+            "description": "이벤트 시스템의 성능 요구사항을 검증하는 종합적인 테스트를 구현합니다.",
+            "dependencies": [
+              "32.4"
+            ],
+            "details": "tests/performance/test_event_performance.py에 EventPerformanceMonitor의 모든 기능을 검증하는 테스트를 작성합니다. 100개 이벤트 처리 시 2ms 이내 완료 검증, 프레임당 이벤트 수 제한 동작 확인, 처리 시간 임계값 초과 시 경고 발행 테스트를 구현합니다. 대량 이벤트(1000개) 처리 부하 테스트로 시스템 안정성을 검증하고, 메모리 사용량이 일정 수준을 유지하는지 확인하는 메모리 누수 테스트를 추가합니다. pytest-benchmark를 사용한 성능 벤치마크 테스트도 포함합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       },
       {
         "id": 33,
@@ -1440,7 +1893,49 @@
         "status": "pending",
         "dependencies": [],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "BaseEvent 추상 클래스 구현",
+            "description": "모든 이벤트의 기본 구조를 정의하는 BaseEvent 추상 클래스를 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/events/base_event.py 파일을 생성하고 BaseEvent 추상 클래스를 구현합니다. 이벤트의 기본 속성인 event_type(EventType), timestamp(float), source_system(Optional[str])을 정의합니다. 추상 메서드 validate_data()를 선언하여 각 이벤트가 데이터 유효성 검증을 구현하도록 강제합니다. __init__ 메서드에서 timestamp를 자동으로 현재 시간으로 설정하고, __repr__ 메서드를 구현하여 디버깅을 지원합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "EventType Enum 구현",
+            "description": "이벤트 타입을 구분하기 위한 EventType Enum을 구현합니다.",
+            "dependencies": [],
+            "details": "src/core/events/event_types.py 파일을 생성하고 IntEnum을 상속받는 EventType 클래스를 구현합니다. ENEMY_DEATH = 0, PROJECTILE_HIT = 1, PLAYER_LEVEL_UP = 2 등의 이벤트 타입을 정의합니다. 각 타입의 display_name 속성을 구현하여 한글 표시명을 제공하고, _type_descriptions 딕셔너리로 각 이벤트 타입의 설명을 관리합니다. 성능 최적화를 위해 _type_priorities 배열로 인덱스 기반 우선순위 조회를 지원합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "EnemyDeathEvent 데이터 구조 설계",
+            "description": "적 사망 시 발행되는 이벤트의 데이터 구조를 설계하고 구현합니다.",
+            "dependencies": [
+              "33.1",
+              "33.2"
+            ],
+            "details": "src/core/events/enemy_death_event.py 파일을 생성하고 BaseEvent를 상속받는 EnemyDeathEvent 클래스를 구현합니다. enemy_entity_id(str) 필드만 포함하여 최소한의 데이터 전달 원칙을 따릅니다. validate_data() 메서드에서 enemy_entity_id가 None이거나 빈 문자열인지 검증하고, 유효하지 않은 경우 ValueError를 발생시킵니다. 클래스 메서드 create_from_entity()를 제공하여 Entity 객체로부터 간편하게 이벤트를 생성할 수 있도록 합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "이벤트 디렉토리 구조 생성 및 모듈 초기화",
+            "description": "src/core/events/ 디렉토리 구조를 생성하고 모듈 초기화를 설정합니다.",
+            "dependencies": [
+              "33.3"
+            ],
+            "details": "src/core/events/ 디렉토리를 생성하고 __init__.py 파일을 작성하여 모듈로 인식되도록 합니다. __init__.py에서 BaseEvent, EventType, EnemyDeathEvent를 from .base_event import BaseEvent 형태로 임포트하여 외부에서 간편하게 사용할 수 있도록 합니다. __all__ 리스트를 정의하여 공개 API를 명시하고, 타입 힌팅을 위한 TYPE_CHECKING 블록을 추가합니다. 각 모듈 파일의 독립성을 검증하고 순환 임포트가 발생하지 않도록 확인합니다.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
       }
     ],
     "metadata": {
