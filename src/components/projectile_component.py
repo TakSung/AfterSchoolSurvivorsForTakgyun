@@ -32,13 +32,34 @@ class ProjectileComponent(Component):
     owner_id: str | None = None  # 투사체를 생성한 엔티티 ID
     piercing: bool = False  # 관통 여부 (True면 적을 관통해서 지나감)
     hit_targets: list[str] = None  # 이미 충돌한 타겟들 (관통 투사체용)
+    max_velocity: float = 1000.0  # 최대 허용 속도
 
     def __post_init__(self) -> None:
         """Initialize default values after dataclass creation."""
+        # AI-DEV : 개발자 가정 - assert 검증으로 잘못된 타입 방지
+        assert isinstance(self.direction, (Vector2, type(None))), (
+            'direction must be Vector2 or None'
+        )
+        assert isinstance(self.velocity, (int, float)), (
+            'velocity must be numeric'
+        )
+        assert self.velocity is not None, 'velocity cannot be None'
+        assert self.velocity >= 0, 'velocity cannot be negative'
+        assert isinstance(self.lifetime, (int, float)), (
+            'lifetime must be numeric'
+        )
+        assert self.lifetime >= 0, 'lifetime cannot be negative'
+
         if self.hit_targets is None:
             self.hit_targets = []
         if self.direction is None:
             self.direction = Vector2.zero()
+
+        # AI-DEV : 최대값 제한 적용
+        if self.velocity > self.max_velocity:
+            self.velocity = self.max_velocity
+        if self.lifetime > self.max_lifetime:
+            self.lifetime = self.max_lifetime
 
     def validate(self) -> bool:
         """
@@ -80,6 +101,12 @@ class ProjectileComponent(Component):
         Args:
             delta_time: Time elapsed since last update in seconds.
         """
+        assert delta_time is not None, 'delta_time cannot be None'
+        assert delta_time >= 0, 'delta_time cannot be negative'
+        assert isinstance(delta_time, (int, float)), (
+            'delta_time must be numeric'
+        )
+
         self.lifetime -= delta_time
 
     def get_lifetime_ratio(self) -> float:
@@ -139,9 +166,33 @@ class ProjectileComponent(Component):
         Returns:
             ProjectileComponent configured to move towards target.
         """
+        # AI-DEV : 개발자 가정 - 입력 파라미터 검증
+        assert start_pos is not None, 'start_pos cannot be None'
+        assert target_pos is not None, 'target_pos cannot be None'
+        assert isinstance(start_pos, tuple) and len(start_pos) == 2, (
+            'start_pos must be tuple of length 2'
+        )
+        assert isinstance(target_pos, tuple) and len(target_pos) == 2, (
+            'target_pos must be tuple of length 2'
+        )
+        assert velocity is not None, 'velocity cannot be None'
+        assert velocity >= 0, 'velocity cannot be negative'
+        assert lifetime >= 0, 'lifetime cannot be negative'
+
         start_vector = Vector2.from_tuple(start_pos)
         target_vector = Vector2.from_tuple(target_pos)
-        direction = (target_vector - start_vector).normalize()
+
+        # AI-NOTE : 2025-01-12 영벡터 정규화 문제 해결 - 게임 개발 트렌드 기반
+        # - 이유: start_pos와 target_pos가 동일할 때 normalize() 실패 방지
+        # - 해결책: 거리 검사 후 기본 방향 벡터(우측) 제공
+        # - 트렌드: 에러 전파보다 기본값 제공이 게임플레이 안정성에 유리
+        direction_vector = target_vector - start_vector
+        if (
+            direction_vector.magnitude < 1e-6
+        ):  # 부동소수점 오차 고려한 영벡터 검사
+            direction = Vector2(1.0, 0.0)  # 기본 방향: 우측
+        else:
+            direction = direction_vector.normalize()
 
         return cls(
             direction=direction,
