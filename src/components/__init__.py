@@ -1,6 +1,9 @@
 """Components package for ECS architecture."""
 
 from .camera_component import CameraComponent
+from .collision_component import CollisionComponent, CollisionLayer
+from .enemy_component import EnemyComponent, EnemyType
+from .health_component import HealthComponent
 from .player_component import PlayerComponent
 from .player_movement_component import PlayerMovementComponent
 from .position_component import PositionComponent
@@ -11,6 +14,11 @@ from .weapon_component import WeaponComponent, WeaponType, ProjectileType
 
 __all__ = [
     'CameraComponent',
+    'CollisionComponent',
+    'CollisionLayer',
+    'EnemyComponent',
+    'EnemyType',
+    'HealthComponent',
     'PlayerComponent', 
     'PlayerMovementComponent',
     'PositionComponent',

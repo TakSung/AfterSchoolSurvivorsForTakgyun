@@ -8,6 +8,7 @@ cooldown management, and projectile creation based on weapon types.
 import time
 from typing import TYPE_CHECKING, Optional
 
+from ..components.collision_component import CollisionComponent, CollisionLayer
 from ..components.position_component import PositionComponent
 from ..components.projectile_component import ProjectileComponent
 from ..components.render_component import RenderComponent, RenderLayer
@@ -73,7 +74,7 @@ class BasicProjectileHandler(IProjectileHandler):
         """
         # AI-NOTE : 2025-08-12 기본 투사체 엔티티 생성 구현
         # - 이유: 실제 투사체 엔티티 생성으로 자동 공격 시스템 완성
-        # - 요구사항: ProjectileComponent, PositionComponent, RenderComponent 조합
+        # - 요구사항: ProjectileComponent, PositionComponent, RenderComponent
         # - 히스토리: 이전 TODO에서 실제 구현으로 변경
         try:
             # 투사체 엔티티 생성
@@ -103,9 +104,20 @@ class BasicProjectileHandler(IProjectileHandler):
             )
             entity_manager.add_component(projectile_entity, render_comp)
 
+            # CollisionComponent 추가 (충돌 감지용)
+            collision_comp = CollisionComponent(
+                width=6.0,
+                height=6.0,
+                layer=CollisionLayer.PROJECTILE,
+                collision_mask={CollisionLayer.ENEMY},  # 적과만 충돌
+                is_trigger=True,  # 트리거 충돌 (관통 가능)
+                is_solid=False,  # 비고체 (다른 객체를 밀어내지 않음)
+            )
+            entity_manager.add_component(projectile_entity, collision_comp)
+
             return projectile_entity
 
-        except Exception as e:
+        except Exception:
             # AI-DEV : 투사체 생성 실패 시 안전한 처리
             # - 문제: 엔티티 생성 중 예외 발생 가능성
             # - 해결책: 예외 캐치하여 None 반환으로 안전한 실패 처리
