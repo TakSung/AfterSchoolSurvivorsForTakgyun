@@ -1,0 +1,37 @@
+# Task ID: 21
+# Title: 좌표계 테스트 스위트 구현
+# Status: pending
+# Dependencies: 20
+# Priority: high
+# Description: 좌표 변환 시스템의 정확성과 성능을 검증하는 포괄적인 테스트 스위트를 구현한다.
+# Details:
+pytest 기반으로 tests/unit/test_coordinates.py와 tests/performance/test_coordinate_performance.py를 구현한다. 좌표 변환 정확성 테스트, 왕복 변환 일관성 테스트, 다형성 인터페이스 호환성 테스트를 포함한다. @pytest.mark.parametrize를 사용한 다양한 변환기 클래스 테스트와 성능 벤치마크를 구현한다. 1000개 좌표 변환을 100ms 이내 처리하는 성능 요구사항을 검증한다.
+
+# Test Strategy:
+모든 좌표 변환 함수의 수학적 정확성을 검증하고, 경계값과 예외 상황을 테스트한다. 성능 벤치마크로 기본 구현체 대비 최적화 구현체의 성능 향상을 측정한다.
+
+# Subtasks:
+## 1. 좌표 변환 정확성 단위 테스트 구현 [pending]
+### Dependencies: None
+### Description: 월드-스크린 변환, 왕복 변환 일관성, 경계값 테스트를 포함한 수학적 정확성 검증
+### Details:
+tests/unit/test_coordinates.py 구현. WorldToScreenTransformer, ScreenToWorldTransformer의 변환 정확성 테스트. @pytest.mark.parametrize를 사용한 다양한 좌표값 테스트(정수, 부동소수점, 음수, 0, 극값). 왕복 변환 일관성 검증: world → screen → world 변환 후 원래 좌표와의 오차 허용범위(1픽셀) 내 확인. 카메라 이동, 줌 레벨 변경에 따른 변환 정확성 테스트.
+
+## 2. 다형성 인터페이스 호환성 테스트 구현 [pending]
+### Dependencies: 21.1
+### Description: ICoordinateTransformer 인터페이스를 구현한 모든 변환기 클래스의 호환성 검증
+### Details:
+다형성 테스트 구현으로 모든 변환기 클래스가 ICoordinateTransformer 인터페이스를 올바르게 구현하는지 검증. WorldToScreenTransformer, ScreenToWorldTransformer, CachedCoordinateTransformer 등 모든 구현체 테스트. 인터페이스 메서드 시그니처 호환성과 반환값 타입 검증. 변환기 교체 시 동작 일관성 테스트.
+
+## 3. 성능 벤치마크 테스트 구현 [pending]
+### Dependencies: None
+### Description: 1000개 좌표 변환을 100ms 이내 처리하는 성능 요구사항 검증 및 최적화 효과 측정
+### Details:
+tests/performance/test_coordinate_performance.py 구현. 1000개 좌표 변환 성능 벤치마크: 기본 변환기와 캐시된 변환기 성능 비교. 시간 측정을 위한 time.perf_counter() 사용. 메모리 사용량 프로파일링으로 GC 압박 측정. 다양한 카메라 위치와 줌 레벨에서 성능 일관성 테스트. 프레임당 변환 호출 수 시뮬레이션 테스트.
+
+## 4. 통합 시나리오 테스트 구현 [pending]
+### Dependencies: 21.1, 21.2, 21.3
+### Description: 실제 게임 상황을 시뮬레이션한 좌표계 시스템 통합 테스트 및 영향도 검증
+### Details:
+CoordinateManager와 CameraSystem, PlayerMovementSystem, EnemyAISystem 간 통합 테스트. 플레이어 이동에 따른 카메라 추적과 월드-스크린 좌표 동기화 검증. 적 AI의 월드 좌표 기반 추적 동작과 화면 렌더링 위치 일치성 테스트. 투사체 시스템의 궤적 계산과 충돌 감지 정확성 검증. 실제 게임 루프 환경에서 좌표계 안정성과 일관성 테스트. 다중 엔티티 상호작용 시나리오에서 좌표 변환 정확성 검증.
+
