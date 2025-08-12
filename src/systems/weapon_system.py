@@ -9,6 +9,8 @@ import time
 from typing import TYPE_CHECKING, Optional
 
 from ..components.position_component import PositionComponent
+from ..components.projectile_component import ProjectileComponent
+from ..components.render_component import RenderComponent, RenderLayer
 from ..components.weapon_component import ProjectileType, WeaponComponent
 from ..core.system import System
 
@@ -69,14 +71,46 @@ class BasicProjectileHandler(IProjectileHandler):
         Returns:
             Created projectile entity or None.
         """
-        # AI-NOTE : 2025-08-11 기본 투사체 생성 - 단순 구현
-        # - 이유: 초기 구현에서는 기본 투사체만 지원
-        # - 요구사항: 향후 다양한 투사체 타입 확장 예정
-        # - 히스토리: State 패턴으로 확장 가능하도록 설계
+        # AI-NOTE : 2025-08-12 기본 투사체 엔티티 생성 구현
+        # - 이유: 실제 투사체 엔티티 생성으로 자동 공격 시스템 완성
+        # - 요구사항: ProjectileComponent, PositionComponent, RenderComponent 조합
+        # - 히스토리: 이전 TODO에서 실제 구현으로 변경
+        try:
+            # 투사체 엔티티 생성
+            projectile_entity = entity_manager.create_entity()
 
-        # TODO: 실제 ProjectileComponent와 연동하여 구현
-        # 현재는 기본 구조만 제공
-        return None
+            # PositionComponent 추가 (시작 위치 설정)
+            position_comp = PositionComponent(x=start_pos[0], y=start_pos[1])
+            entity_manager.add_component(projectile_entity, position_comp)
+
+            # ProjectileComponent 추가 (방향과 속도 계산)
+            projectile_comp = ProjectileComponent.create_towards_target(
+                start_pos=start_pos,
+                target_pos=target_pos,
+                velocity=400.0,  # 기본 투사체 속도
+                damage=weapon.get_effective_damage(),
+                lifetime=2.5,  # 기본 수명 2.5초
+                owner_id=None,  # TODO: 무기를 가진 엔티티 ID 전달 필요
+            )
+            entity_manager.add_component(projectile_entity, projectile_comp)
+
+            # RenderComponent 추가 (작은 원형 투사체)
+            render_comp = RenderComponent(
+                color=(255, 255, 0),  # 노란색 투사체
+                size=(6, 6),  # 6x6 픽셀 크기
+                layer=RenderLayer.PROJECTILES,
+                visible=True,
+            )
+            entity_manager.add_component(projectile_entity, render_comp)
+
+            return projectile_entity
+
+        except Exception as e:
+            # AI-DEV : 투사체 생성 실패 시 안전한 처리
+            # - 문제: 엔티티 생성 중 예외 발생 가능성
+            # - 해결책: 예외 캐치하여 None 반환으로 안전한 실패 처리
+            # - 주의사항: 로깅 시스템 구현 시 여기서 오류 기록
+            return None
 
 
 class WeaponSystem(System):

@@ -353,7 +353,7 @@
               "6.1"
             ],
             "details": "src/components/projectile_component.py에서 ProjectileComponent 클래스를 정의하여 투사체의 방향(direction), 속도(velocity), 수명(lifetime), 데미지(damage) 등을 관리합니다. ProjectileSystem에서 매 프레임마다 투사체의 위치를 업데이트하는 물리 처리 로직을 구현합니다. 투사체 생성 시 타겟 방향으로의 벡터 계산과 정규화를 통해 일정한 속도로 이동하도록 설정합니다. ProjectileSystem에서 개별 투사체의 구현을 알지 않아도 되도록, 코드 구조를 설계하여 작성 합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "유닛테스트 구현을 위한 인터뷰를 진행하고(@.claude/commands/interview-for-unit-test.md), 인터뷰에서 추출한 테스트 시나리오를 바탕으로 테스트 케이스를 작성합니다. 마지막으로 앞서 작성한 기능이 정상적으로 작동하는지 테스트 하며 테스트가 통과할 때까지 반복합니다. 단 같은 오류가 3번 이상 반복되면, 잠시 멈추고 사용자와 소통하며 오류를 고쳐 나가세요."
           },
           {
@@ -1288,7 +1288,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-11T22:53:21.696Z",
+      "updated": "2025-08-12T01:44:05.810Z",
       "description": "Tasks for master context"
     }
   }

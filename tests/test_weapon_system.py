@@ -381,10 +381,10 @@ class TestBasicProjectileHandler:
     def test_기본_투사체_생성_호출_검증_성공_시나리오(self) -> None:
         """10. 기본 투사체 생성 호출 검증 (성공 시나리오)
 
-        목적: create_projectile 메서드가 호출 가능한지 확인
-        테스트할 범위: create_projectile() 메서드 호출
+        목적: create_projectile 메서드가 실제 투사체를 생성하는지 확인
+        테스트할 범위: create_projectile() 메서드 호출 및 엔티티 생성
         커버하는 함수 및 데이터: create_projectile()
-        기대되는 안정성: 메서드 호출 시 예외 발생하지 않음
+        기대되는 안정성: 투사체 엔티티가 성공적으로 생성됨
         """
         # Given - 기본 투사체 핸들러와 테스트 데이터
         handler = BasicProjectileHandler()
@@ -398,5 +398,6 @@ class TestBasicProjectileHandler:
             weapon, start_pos, target_pos, entity_manager
         )
 
-        # Then - 현재 구현에서는 None 반환 확인
-        assert result is None, '현재 기본 구현에서는 None을 반환해야 함'
+        # Then - 실제 투사체 엔티티 생성 확인
+        assert result is not None, '투사체 엔티티가 생성되어야 함'
+        assert hasattr(result, 'entity_id'), '생성된 엔티티는 entity_id를 가져야 함'
