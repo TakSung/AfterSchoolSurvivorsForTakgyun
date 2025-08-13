@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import pygame
 
+from ..components.camera_component import CameraComponent
 from ..components.map_component import MapComponent
 from ..core.coordinate_manager import CoordinateManager
 from ..core.system import System
@@ -105,7 +106,7 @@ class MapRenderSystem(System):
                 continue
 
             # 현재 카메라 오프셋 가져오기
-            camera_offset = self._get_current_camera_offset()
+            camera_offset = self._get_current_camera_offset(entity_manager)
             if camera_offset is None:
                 continue
 
@@ -122,26 +123,29 @@ class MapRenderSystem(System):
             # 렌더링 데이터를 준비하고 다른 시스템이 사용할 수 있도록 저장
             self._prepare_render_data(map_comp, camera_offset, tile_range)
 
-    def _get_current_camera_offset(self) -> tuple[float, float] | None:
+    def _get_current_camera_offset(self, entity_manager: 'EntityManager') -> tuple[float, float] | None:
         """
-        Get the current camera offset from coordinate manager.
+        Get the current camera offset from camera entities.
+
+        Args:
+            entity_manager: Entity manager for accessing camera components
 
         Returns:
             Camera offset as (x, y) tuple, or None if not available
         """
-        transformer = self._coordinate_manager.get_transformer()
-        if transformer is None:
-            return None
+        # AI-DEV : 카메라 엔티티에서 직접 오프셋 가져오기
+        # - 문제: 좌표 변환기를 통한 간접 접근으로 카메라 오프셋 누락
+        # - 해결책: CameraComponent를 가진 엔티티에서 직접 world_offset 가져오기
+        # - 주의사항: 여러 카메라 엔티티가 있을 경우 첫 번째 활성 카메라 사용
+        
+        # 모든 엔티티를 순회하며 CameraComponent를 찾기
+        for entity_id in entity_manager.get_all_entities():
+            camera_comp = entity_manager.get_component(entity_id, CameraComponent)
+            if camera_comp is not None:
+                # 첫 번째 찾은 카메라의 오프셋 반환
+                return camera_comp.world_offset
 
-        # AI-DEV : 좌표 변환기에서 카메라 오프셋 추출
-        # - 문제: 카메라 오프셋 정보에 접근하는 표준 인터페이스 필요
-        # - 해결책: 좌표 변환기의 카메라 오프셋 속성 활용
-        # - 주의사항: 좌표 변환기 구현에 따른 인터페이스 의존성
-        if hasattr(transformer, 'camera_offset'):
-            offset = transformer.camera_offset
-            return (offset.x, offset.y) if offset else (0.0, 0.0)
-
-        return (0.0, 0.0)
+        return (0.0, 0.0)  # 카메라가 없으면 기본값 반환
 
     def _get_visible_tile_range_cached(
         self,
@@ -240,7 +244,7 @@ class MapRenderSystem(System):
                 # 타일 패턴 타입 계산
                 pattern_type = map_comp.get_tile_pattern_type(tile_x, tile_y)
 
-                # 화면 좌표 계산
+                # 화면 좌표 계산 (카메라 오프셋 역방향 적용)
                 world_pos = map_comp.get_tile_world_position(tile_x, tile_y)
                 screen_x = world_pos[0] + camera_offset[0]
                 screen_y = world_pos[1] + camera_offset[1]
