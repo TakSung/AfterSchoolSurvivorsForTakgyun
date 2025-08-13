@@ -400,4 +400,6 @@ class TestBasicProjectileHandler:
 
         # Then - 실제 투사체 엔티티 생성 확인
         assert result is not None, '투사체 엔티티가 생성되어야 함'
-        assert hasattr(result, 'entity_id'), '생성된 엔티티는 entity_id를 가져야 함'
+        assert hasattr(result, 'entity_id'), (
+            '생성된 엔티티는 entity_id를 가져야 함'
+        )

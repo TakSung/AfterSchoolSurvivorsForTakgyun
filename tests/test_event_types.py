@@ -5,8 +5,6 @@ Tests the multi-layer structure, performance optimization features,
 and Korean display names of the EventType enum.
 """
 
-import pytest
-
 from src.core.events.event_types import EventType
 
 
@@ -256,6 +254,7 @@ class TestEventType:
             '경험치',
             '보스',
             '게임상태',
+            '카메라',
         ]  # 예상 카테고리 목록
         for event_type in all_event_types:
             category_index = event_type.value // 20

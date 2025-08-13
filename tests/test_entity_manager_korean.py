@@ -6,12 +6,13 @@ CLAUDE.md 가이드라인에 따라 한국어 테스트 명명법을 사용합�
 - 목적, 테스트 범위, 커버 함수, 기대 안정성을 포함한 독스트링
 """
 
-import pytest
 from dataclasses import dataclass
 
-from src.core.entity_manager import EntityManager
-from src.core.entity import Entity
+import pytest
+
 from src.core.component import Component
+from src.core.entity import Entity
+from src.core.entity_manager import EntityManager
 
 
 # AI-DEV : pytest 컬렉션 경고 방지를 위한 Helper 클래스명 변경

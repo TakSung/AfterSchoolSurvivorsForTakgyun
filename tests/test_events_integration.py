@@ -21,7 +21,7 @@ class TestEventsIntegration:
 
     def test_이벤트_시스템_전체_통합_동작_검증_성공_시나리오(self) -> None:
         """1. 이벤트 시스템 전체 통합 동작 검증 (성공 시나리오)
-        
+
         목적: EnemyDeathEvent와 EventBus가 함께 올바르게 동작하는지 확인
         테스트할 범위: 이벤트 발행, 구독, 처리의 전체 흐름
         커버하는 함수 및 데이터: 통합된 이벤트 시스템
@@ -41,7 +41,7 @@ class TestEventsIntegration:
                     self.received_events.append(event)
 
             def get_subscriber_name(self) -> str:
-                return "MockEnemyDeathSubscriber"
+                return 'MockEnemyDeathSubscriber'
 
         event_bus = EventBus()
         subscriber = MockEnemyDeathSubscriber()
@@ -49,17 +49,21 @@ class TestEventsIntegration:
         # When - 구독자 등록 및 이벤트 발행
         event_bus.subscribe(subscriber)
 
-        enemy_death_event = EnemyDeathEvent.create_from_id("enemy_integration_test")
+        enemy_death_event = EnemyDeathEvent.create_from_id(
+            'enemy_integration_test'
+        )
         published = event_bus.publish(enemy_death_event)
         processed_count = event_bus.process_events()
 
         # Then - 전체 플로우 검증
         assert published is True, '이벤트가 성공적으로 발행되어야 함'
         assert processed_count == 1, '1개 이벤트가 처리되어야 함'
-        assert len(subscriber.received_events) == 1, '구독자가 1개 이벤트를 받아야 함'
+        assert len(subscriber.received_events) == 1, (
+            '구독자가 1개 이벤트를 받아야 함'
+        )
 
         received_event = subscriber.received_events[0]
-        assert received_event.enemy_entity_id == "enemy_integration_test", (
+        assert received_event.enemy_entity_id == 'enemy_integration_test', (
             '받은 이벤트의 적 ID가 일치해야 함'
         )
         assert received_event.event_type == EventType.ENEMY_DEATH, (
@@ -68,7 +72,7 @@ class TestEventsIntegration:
 
     def test_다중_구독자_이벤트_브로드캐스트_검증_성공_시나리오(self) -> None:
         """2. 다중 구독자 이벤트 브로드캐스트 검증 (성공 시나리오)
-        
+
         목적: 하나의 EnemyDeathEvent가 여러 구독자에게 올바르게 전달되는지 확인
         테스트할 범위: 이벤트 브로드캐스팅
         커버하는 함수 및 데이터: 다중 구독자 관리
@@ -92,32 +96,40 @@ class TestEventsIntegration:
                 return self.name
 
         event_bus = EventBus()
-        subscriber1 = MockCombatSubscriber("CombatSubscriber1")
-        subscriber2 = MockCombatSubscriber("CombatSubscriber2")
-        subscriber3 = MockCombatSubscriber("CombatSubscriber3")
+        subscriber1 = MockCombatSubscriber('CombatSubscriber1')
+        subscriber2 = MockCombatSubscriber('CombatSubscriber2')
+        subscriber3 = MockCombatSubscriber('CombatSubscriber3')
 
         # When - 모든 구독자 등록 및 이벤트 발행
         event_bus.subscribe(subscriber1)
         event_bus.subscribe(subscriber2)
         event_bus.subscribe(subscriber3)
 
-        enemy_death_event = EnemyDeathEvent.create_from_id("boss_multi_subscriber")
+        enemy_death_event = EnemyDeathEvent.create_from_id(
+            'boss_multi_subscriber'
+        )
         event_bus.publish(enemy_death_event)
         event_bus.process_events()
 
         # Then - 모든 구독자가 이벤트를 받았는지 확인
-        assert len(subscriber1.received_enemy_deaths) == 1, '첫 번째 구독자가 이벤트를 받아야 함'
-        assert len(subscriber2.received_enemy_deaths) == 1, '두 번째 구독자가 이벤트를 받아야 함'
-        assert len(subscriber3.received_enemy_deaths) == 1, '세 번째 구독자가 이벤트를 받아야 함'
+        assert len(subscriber1.received_enemy_deaths) == 1, (
+            '첫 번째 구독자가 이벤트를 받아야 함'
+        )
+        assert len(subscriber2.received_enemy_deaths) == 1, (
+            '두 번째 구독자가 이벤트를 받아야 함'
+        )
+        assert len(subscriber3.received_enemy_deaths) == 1, (
+            '세 번째 구독자가 이벤트를 받아야 함'
+        )
 
         for subscriber in [subscriber1, subscriber2, subscriber3]:
-            assert subscriber.received_enemy_deaths[0] == "boss_multi_subscriber", (
-                f'{subscriber.name}이 올바른 적 ID를 받아야 함'
-            )
+            assert (
+                subscriber.received_enemy_deaths[0] == 'boss_multi_subscriber'
+            ), f'{subscriber.name}이 올바른 적 ID를 받아야 함'
 
     def test_이벤트_타입_필터링_정확성_검증_성공_시나리오(self) -> None:
         """3. 이벤트 타입 필터링 정확성 검증 (성공 시나리오)
-        
+
         목적: 구독자가 관심 있는 이벤트만 받는지 확인
         테스트할 범위: 이벤트 타입 기반 필터링
         커버하는 함수 및 데이터: 선택적 이벤트 수신
@@ -137,7 +149,7 @@ class TestEventsIntegration:
                 self.received_events.append(event)
 
             def get_subscriber_name(self) -> str:
-                return "SelectiveSubscriber"
+                return 'SelectiveSubscriber'
 
         # Mock 다른 타입 이벤트
         class MockItemEvent(BaseEvent):
@@ -145,7 +157,7 @@ class TestEventsIntegration:
                 super().__init__(
                     event_type=EventType.ITEM_DROP,
                     timestamp=0.0,
-                    created_at=None
+                    created_at=None,
                 )
 
             def validate(self) -> bool:
@@ -154,7 +166,9 @@ class TestEventsIntegration:
         event_bus = EventBus()
 
         # 적 사망 이벤트만 구독하는 구독자
-        enemy_only_subscriber = MockSelectiveSubscriber([EventType.ENEMY_DEATH])
+        enemy_only_subscriber = MockSelectiveSubscriber(
+            [EventType.ENEMY_DEATH]
+        )
         # 아이템 이벤트만 구독하는 구독자
         item_only_subscriber = MockSelectiveSubscriber([EventType.ITEM_DROP])
 
@@ -162,7 +176,7 @@ class TestEventsIntegration:
         event_bus.subscribe(item_only_subscriber)
 
         # When - 두 타입의 이벤트 발행
-        enemy_event = EnemyDeathEvent.create_from_id("filtered_enemy")
+        enemy_event = EnemyDeathEvent.create_from_id('filtered_enemy')
         item_event = MockItemEvent()
 
         event_bus.publish(enemy_event)
@@ -173,20 +187,21 @@ class TestEventsIntegration:
         assert len(enemy_only_subscriber.received_events) == 1, (
             '적 사망 전용 구독자는 1개 이벤트만 받아야 함'
         )
-        assert isinstance(enemy_only_subscriber.received_events[0], EnemyDeathEvent), (
-            '적 사망 전용 구독자는 EnemyDeathEvent를 받아야 함'
-        )
+        assert isinstance(
+            enemy_only_subscriber.received_events[0], EnemyDeathEvent
+        ), '적 사망 전용 구독자는 EnemyDeathEvent를 받아야 함'
 
         assert len(item_only_subscriber.received_events) == 1, (
             '아이템 전용 구독자는 1개 이벤트만 받아야 함'
         )
-        assert item_only_subscriber.received_events[0].event_type == EventType.ITEM_DROP, (
-            '아이템 전용 구독자는 ITEM_DROP 이벤트를 받아야 함'
-        )
+        assert (
+            item_only_subscriber.received_events[0].event_type
+            == EventType.ITEM_DROP
+        ), '아이템 전용 구독자는 ITEM_DROP 이벤트를 받아야 함'
 
     def test_모듈_임포트_완전성_검증_성공_시나리오(self) -> None:
         """4. 모듈 임포트 완전성 검증 (성공 시나리오)
-        
+
         목적: 이벤트 시스템 모듈들이 올바르게 임포트되는지 확인
         테스트할 범위: 모듈 구조 및 임포트
         커버하는 함수 및 데이터: __init__.py 설정
@@ -210,7 +225,9 @@ class TestEventsIntegration:
         assert EventType is not None, 'EventType이 임포트되어야 함'
         assert IEventHandler is not None, 'IEventHandler가 임포트되어야 함'
         assert IEventPublisher is not None, 'IEventPublisher가 임포트되어야 함'
-        assert IEventSubscriber is not None, 'IEventSubscriber가 임포트되어야 함'
+        assert IEventSubscriber is not None, (
+            'IEventSubscriber가 임포트되어야 함'
+        )
 
         # EnemyDeathEvent가 BaseEvent를 상속하는지 확인
         assert issubclass(EnemyDeathEvent, BaseEvent), (
@@ -219,7 +236,7 @@ class TestEventsIntegration:
 
     def test_이벤트_생성_편의_메서드_통합_검증_성공_시나리오(self) -> None:
         """5. 이벤트 생성 편의 메서드 통합 검증 (성공 시나리오)
-        
+
         목적: Entity 객체 기반 이벤트 생성이 전체 시스템에서 작동하는지 확인
         테스트할 범위: Entity 연동 이벤트 생성
         커버하는 함수 및 데이터: create_from_entity 메서드 통합
@@ -239,10 +256,10 @@ class TestEventsIntegration:
                     self.processed_entities.append(event.enemy_entity_id)
 
             def get_subscriber_name(self) -> str:
-                return "EntitySubscriber"
+                return 'EntitySubscriber'
 
         mock_entity = Mock()
-        mock_entity.id = "boss_entity_integration"
+        mock_entity.id = 'boss_entity_integration'
 
         event_bus = EventBus()
         subscriber = MockEntitySubscriber()
@@ -254,14 +271,18 @@ class TestEventsIntegration:
         event_bus.process_events()
 
         # Then - 정상적인 처리 확인
-        assert len(subscriber.processed_entities) == 1, '1개 엔티티가 처리되어야 함'
-        assert subscriber.processed_entities[0] == "boss_entity_integration", (
+        assert len(subscriber.processed_entities) == 1, (
+            '1개 엔티티가 처리되어야 함'
+        )
+        assert subscriber.processed_entities[0] == 'boss_entity_integration', (
             '올바른 엔티티 ID가 처리되어야 함'
         )
 
-    def test_이벤트_검증_실패_시_시스템_안정성_검증_성공_시나리오(self) -> None:
+    def test_이벤트_검증_실패_시_시스템_안정성_검증_성공_시나리오(
+        self,
+    ) -> None:
         """6. 이벤트 검증 실패 시 시스템 안정성 검증 (성공 시나리오)
-        
+
         목적: 잘못된 이벤트가 시스템을 중단시키지 않는지 확인
         테스트할 범위: 잘못된 이벤트 처리
         커버하는 함수 및 데이터: 예외 상황 안정성
@@ -274,7 +295,7 @@ class TestEventsIntegration:
                 super().__init__(
                     event_type=EventType.ENEMY_DEATH,
                     timestamp=0.0,
-                    created_at=None
+                    created_at=None,
                 )
 
             def validate(self) -> bool:
@@ -291,14 +312,14 @@ class TestEventsIntegration:
                 self.valid_events_received += 1
 
             def get_subscriber_name(self) -> str:
-                return "RobustSubscriber"
+                return 'RobustSubscriber'
 
         event_bus = EventBus()
         subscriber = MockRobustSubscriber()
         event_bus.subscribe(subscriber)
 
         # When - 유효한 이벤트와 잘못된 이벤트 발행
-        valid_event = EnemyDeathEvent.create_from_id("valid_enemy")
+        valid_event = EnemyDeathEvent.create_from_id('valid_enemy')
         invalid_event = MockInvalidEvent()
 
         valid_published = event_bus.publish(valid_event)
@@ -309,4 +330,6 @@ class TestEventsIntegration:
         assert valid_published is True, '유효한 이벤트는 발행되어야 함'
         assert invalid_published is False, '잘못된 이벤트는 거부되어야 함'
         assert processed_count == 1, '유효한 이벤트 1개만 처리되어야 함'
-        assert subscriber.valid_events_received == 1, '구독자는 유효한 이벤트만 받아야 함'
+        assert subscriber.valid_events_received == 1, (
+            '구독자는 유효한 이벤트만 받아야 함'
+        )

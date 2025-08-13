@@ -10,7 +10,6 @@ from unittest.mock import Mock, patch
 
 from src.components.camera_component import CameraComponent
 from src.core.component import Component
-from src.core.entity import Entity
 from src.core.entity_manager import EntityManager
 from src.systems.camera_system import CameraSystem
 
@@ -334,13 +333,14 @@ class TestCameraSystem:
         mock_coord_manager.return_value.get_transformer.return_value = Mock()
         camera_system = CameraSystem()
         entity_manager = EntityManager()
-        
+
         # PositionComponent가 있는 엔티티
         from src.components.position_component import PositionComponent
+
         entity_with_position = entity_manager.create_entity()
         position_comp = PositionComponent(100.0, 200.0)
         entity_manager.add_component(entity_with_position, position_comp)
-        
+
         # PositionComponent가 없는 엔티티
         entity_without_position = entity_manager.create_entity()
 
@@ -348,15 +348,19 @@ class TestCameraSystem:
         position = camera_system._get_entity_position(
             entity_manager, entity_with_position
         )
-        assert position == (100.0, 200.0), '위치 컴포넌트가 있으면 해당 좌표를 반환해야 함'
+        assert position == (100.0, 200.0), (
+            '위치 컴포넌트가 있으면 해당 좌표를 반환해야 함'
+        )
         assert isinstance(position[0], float), 'X 좌표는 float 타입이어야 함'
         assert isinstance(position[1], float), 'Y 좌표는 float 타입이어야 함'
-        
+
         # When & Then - 위치 컴포넌트가 없는 경우
         position_none = camera_system._get_entity_position(
             entity_manager, entity_without_position
         )
-        assert position_none is None, '위치 컴포넌트가 없으면 None을 반환해야 함'
+        assert position_none is None, (
+            '위치 컴포넌트가 없으면 None을 반환해야 함'
+        )
 
     @patch('src.systems.camera_system.CoordinateManager.get_instance')
     def test_카메라_시스템_정리_기능_검증_성공_시나리오(

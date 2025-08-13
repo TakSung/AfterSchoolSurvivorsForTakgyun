@@ -1,6 +1,5 @@
 import threading
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -63,7 +62,7 @@ class MockObserver(ICoordinateObserver):
 
     def on_transformer_changed(self, new_transformer) -> None:
         if self.should_fail:
-            raise RuntimeError("Observer intentionally failed")
+            raise RuntimeError('Observer intentionally failed')
         self.notifications.append(new_transformer)
 
 
@@ -92,9 +91,9 @@ class TestCoordinateManager:
         manager3 = CoordinateManager.get_instance()
 
         # Then - 모든 인스턴스가 동일함
-        assert manager1 is manager2, "첫 번째와 두 번째 인스턴스가 동일해야 함"
-        assert manager2 is manager3, "두 번째와 세 번째 인스턴스가 동일해야 함"
-        assert manager1 is manager3, "첫 번째와 세 번째 인스턴스가 동일해야 함"
+        assert manager1 is manager2, '첫 번째와 두 번째 인스턴스가 동일해야 함'
+        assert manager2 is manager3, '두 번째와 세 번째 인스턴스가 동일해야 함'
+        assert manager1 is manager3, '첫 번째와 세 번째 인스턴스가 동일해야 함'
 
     def test_스레드_안전_싱글톤_생성_검증_성공_시나리오(self) -> None:
         """2. 멀티스레드 환경에서 싱글톤 생성 안전성 검증 (성공 시나리오)
@@ -124,9 +123,11 @@ class TestCoordinateManager:
             thread.join()
 
         # Then - 모든 결과가 동일한 인스턴스
-        assert len(results) == 5, "모든 스레드에서 인스턴스를 반환해야 함"
+        assert len(results) == 5, '모든 스레드에서 인스턴스를 반환해야 함'
         for result in results[1:]:
-            assert result is results[0], "모든 스레드에서 동일한 인스턴스를 반환해야 함"
+            assert result is results[0], (
+                '모든 스레드에서 동일한 인스턴스를 반환해야 함'
+            )
 
     def test_기본_변환기_자동_생성_검증_성공_시나리오(self) -> None:
         """3. 변환기가 설정되지 않은 경우 기본 변환기 자동 생성 검증 (성공 시나리오)
@@ -143,11 +144,17 @@ class TestCoordinateManager:
         transformer = manager.get_transformer()
 
         # Then - 기본 CameraBasedTransformer 생성 확인
-        assert transformer is not None, "변환기가 반환되어야 함"
-        assert isinstance(transformer, CameraBasedTransformer), "기본값으로 CameraBasedTransformer가 생성되어야 함"
-        assert transformer.screen_size == Vector2(800.0, 600.0), "기본 화면 크기가 800x600이어야 함"
-        assert transformer.get_camera_offset() == Vector2.zero(), "기본 카메라 오프셋이 0이어야 함"
-        assert transformer.zoom_level == 1.0, "기본 줌 레벨이 1.0이어야 함"
+        assert transformer is not None, '변환기가 반환되어야 함'
+        assert isinstance(transformer, CameraBasedTransformer), (
+            '기본값으로 CameraBasedTransformer가 생성되어야 함'
+        )
+        assert transformer.screen_size == Vector2(800.0, 600.0), (
+            '기본 화면 크기가 800x600이어야 함'
+        )
+        assert transformer.get_camera_offset() == Vector2.zero(), (
+            '기본 카메라 오프셋이 0이어야 함'
+        )
+        assert transformer.zoom_level == 1.0, '기본 줌 레벨이 1.0이어야 함'
 
     def test_좌표_변환_래퍼_메서드_정확성_검증_성공_시나리오(self) -> None:
         """4. world_to_screen, screen_to_world 래퍼 메서드 정확성 검증 (성공 시나리오)
@@ -171,8 +178,12 @@ class TestCoordinateManager:
         expected_screen = transformer.world_to_screen(world_pos)
         expected_world = transformer.screen_to_world(screen_pos)
 
-        assert converted_screen == expected_screen, "world_to_screen 래퍼가 정확해야 함"
-        assert converted_world == expected_world, "screen_to_world 래퍼가 정확해야 함"
+        assert converted_screen == expected_screen, (
+            'world_to_screen 래퍼가 정확해야 함'
+        )
+        assert converted_world == expected_world, (
+            'screen_to_world 래퍼가 정확해야 함'
+        )
 
     def test_의존성_주입_set_instance_동작_검증_성공_시나리오(self) -> None:
         """5. 테스트용 의존성 주입 set_instance() 동작 검증 (성공 시나리오)
@@ -192,15 +203,21 @@ class TestCoordinateManager:
         retrieved_manager = CoordinateManager.get_instance()
 
         # Then - 커스텀 인스턴스가 반환됨
-        assert retrieved_manager is custom_manager, "set_instance로 설정한 인스턴스가 반환되어야 함"
-        assert retrieved_manager.get_transformer() is custom_transformer, "커스텀 변환기가 설정되어 있어야 함"
+        assert retrieved_manager is custom_manager, (
+            'set_instance로 설정한 인스턴스가 반환되어야 함'
+        )
+        assert retrieved_manager.get_transformer() is custom_transformer, (
+            '커스텀 변환기가 설정되어 있어야 함'
+        )
 
         # When - None으로 리셋
         CoordinateManager.set_instance(None)
         new_manager = CoordinateManager.get_instance()
 
         # Then - 새로운 인스턴스가 생성됨
-        assert new_manager is not custom_manager, "리셋 후 새로운 인스턴스가 생성되어야 함"
+        assert new_manager is not custom_manager, (
+            '리셋 후 새로운 인스턴스가 생성되어야 함'
+        )
 
     def test_매니저_상태_정보_조회_정확성_검증_성공_시나리오(self) -> None:
         """6. get_manager_stats() 상태 정보 조회 정확성 검증 (성공 시나리오)
@@ -221,10 +238,14 @@ class TestCoordinateManager:
         stats = manager.get_manager_stats()
 
         # Then - 정확한 상태 정보 확인
-        assert stats["has_transformer"] is True, "변환기가 설정되어 있어야 함"
-        assert stats["transformer_type"] == "CameraBasedTransformer", "변환기 타입이 정확해야 함"
-        assert stats["observer_count"] == 2, "옵저버 개수가 정확해야 함"
-        assert stats["transformer_stats"] is not None, "변환기 통계 정보가 있어야 함"
+        assert stats['has_transformer'] is True, '변환기가 설정되어 있어야 함'
+        assert stats['transformer_type'] == 'CameraBasedTransformer', (
+            '변환기 타입이 정확해야 함'
+        )
+        assert stats['observer_count'] == 2, '옵저버 개수가 정확해야 함'
+        assert stats['transformer_stats'] is not None, (
+            '변환기 통계 정보가 있어야 함'
+        )
 
         # When - 커스텀 변환기로 교체 후 다시 조회
         custom_transformer = MockCoordinateTransformer()
@@ -232,8 +253,12 @@ class TestCoordinateManager:
         updated_stats = manager.get_manager_stats()
 
         # Then - 업데이트된 상태 정보 확인
-        assert updated_stats["transformer_type"] == "MockCoordinateTransformer", "변경된 변환기 타입이 반영되어야 함"
-        assert updated_stats["transformer_stats"] is None, "Mock 변환기는 통계가 없어야 함"
+        assert (
+            updated_stats['transformer_type'] == 'MockCoordinateTransformer'
+        ), '변경된 변환기 타입이 반영되어야 함'
+        assert updated_stats['transformer_stats'] is None, (
+            'Mock 변환기는 통계가 없어야 함'
+        )
 
     def test_변환기_교체_기본_동작_검증_성공_시나리오(self) -> None:
         """7. set_transformer()로 변환기 교체 기본 동작 검증 (성공 시나리오)
@@ -253,11 +278,17 @@ class TestCoordinateManager:
 
         # Then - 새로운 변환기가 설정됨
         current_transformer = manager.get_transformer()
-        assert current_transformer is custom_transformer, "새로운 변환기가 설정되어야 함"
-        assert current_transformer is not original_transformer, "기존 변환기와는 다른 인스턴스여야 함"
+        assert current_transformer is custom_transformer, (
+            '새로운 변환기가 설정되어야 함'
+        )
+        assert current_transformer is not original_transformer, (
+            '기존 변환기와는 다른 인스턴스여야 함'
+        )
 
         # 캐시 무효화 확인
-        assert custom_transformer.get_cache_invalidated(), "새 변환기의 캐시가 무효화되어야 함"
+        assert custom_transformer.get_cache_invalidated(), (
+            '새 변환기의 캐시가 무효화되어야 함'
+        )
 
     def test_변환기_교체_시_캐시_무효화_검증_성공_시나리오(self) -> None:
         """8. 변환기 교체 시 기존 캐시 무효화 검증 (성공 시나리오)
@@ -271,7 +302,7 @@ class TestCoordinateManager:
         manager = CoordinateManager.get_instance()
         old_transformer = MockCoordinateTransformer()
         new_transformer = MockCoordinateTransformer()
-        
+
         # 첫 번째 변환기 설정
         manager.set_transformer(old_transformer)
         old_transformer._cache_invalidated = False  # 상태 초기화
@@ -280,7 +311,9 @@ class TestCoordinateManager:
         manager.set_transformer(new_transformer)
 
         # Then - 새 변환기의 캐시가 무효화됨
-        assert new_transformer.get_cache_invalidated(), "새 변환기의 캐시가 무효화되어야 함"
+        assert new_transformer.get_cache_invalidated(), (
+            '새 변환기의 캐시가 무효화되어야 함'
+        )
 
     def test_잘못된_변환기_타입_교체_실패_시나리오(self) -> None:
         """9. 잘못된 타입의 변환기 교체 시도 실패 검증 (실패 시나리오)
@@ -292,13 +325,15 @@ class TestCoordinateManager:
         """
         # Given - 매니저와 잘못된 타입의 객체
         manager = CoordinateManager.get_instance()
-        invalid_transformer = "이것은 변환기가 아닙니다"
+        invalid_transformer = '이것은 변환기가 아닙니다'
 
         # When & Then - TypeError 예외 발생 확인
         with pytest.raises(TypeError) as exc_info:
             manager.set_transformer(invalid_transformer)
 
-        assert "Expected ICoordinateTransformer" in str(exc_info.value), "적절한 에러 메시지가 출력되어야 함"
+        assert 'Expected ICoordinateTransformer' in str(exc_info.value), (
+            '적절한 에러 메시지가 출력되어야 함'
+        )
 
     def test_옵저버_등록_제거_기본_동작_검증_성공_시나리오(self) -> None:
         """10. 옵저버 등록 및 제거 기본 동작 검증 (성공 시나리오)
@@ -316,31 +351,31 @@ class TestCoordinateManager:
         # When - 옵저버 등록
         manager.add_observer(observer1)
         manager.add_observer(observer2)
-        
+
         # Then - 옵저버 개수 확인
         stats = manager.get_manager_stats()
-        assert stats["observer_count"] == 2, "두 개의 옵저버가 등록되어야 함"
+        assert stats['observer_count'] == 2, '두 개의 옵저버가 등록되어야 함'
 
         # When - 중복 등록 시도
         manager.add_observer(observer1)
-        
+
         # Then - 중복 등록이 방지됨
         stats = manager.get_manager_stats()
-        assert stats["observer_count"] == 2, "중복 등록이 방지되어야 함"
+        assert stats['observer_count'] == 2, '중복 등록이 방지되어야 함'
 
         # When - 옵저버 제거
         manager.remove_observer(observer1)
-        
+
         # Then - 옵저버 개수 감소
         stats = manager.get_manager_stats()
-        assert stats["observer_count"] == 1, "옵저버가 제거되어야 함"
+        assert stats['observer_count'] == 1, '옵저버가 제거되어야 함'
 
         # When - 존재하지 않는 옵저버 제거 시도
         manager.remove_observer(observer1)  # 이미 제거됨
-        
+
         # Then - 에러 없이 처리됨
         stats = manager.get_manager_stats()
-        assert stats["observer_count"] == 1, "옵저버 개수가 변경되지 않아야 함"
+        assert stats['observer_count'] == 1, '옵저버 개수가 변경되지 않아야 함'
 
     def test_변환기_교체_시_옵저버_알림_검증_성공_시나리오(self) -> None:
         """11. 변환기 교체 시 등록된 옵저버들에게 알림 전송 검증 (성공 시나리오)
@@ -355,24 +390,36 @@ class TestCoordinateManager:
         observer1 = MockObserver()
         observer2 = MockObserver()
         observer3 = MockObserver()
-        
+
         manager.add_observer(observer1)
         manager.add_observer(observer2)
         manager.add_observer(observer3)
-        
+
         new_transformer = MockCoordinateTransformer()
 
         # When - 변환기 교체
         manager.set_transformer(new_transformer)
 
         # Then - 모든 옵저버가 알림을 받음
-        assert len(observer1.notifications) == 1, "첫 번째 옵저버가 알림을 받아야 함"
-        assert len(observer2.notifications) == 1, "두 번째 옵저버가 알림을 받아야 함"
-        assert len(observer3.notifications) == 1, "세 번째 옵저버가 알림을 받아야 함"
-        
-        assert observer1.notifications[0] is new_transformer, "올바른 변환기 정보가 전달되어야 함"
-        assert observer2.notifications[0] is new_transformer, "올바른 변환기 정보가 전달되어야 함"
-        assert observer3.notifications[0] is new_transformer, "올바른 변환기 정보가 전달되어야 함"
+        assert len(observer1.notifications) == 1, (
+            '첫 번째 옵저버가 알림을 받아야 함'
+        )
+        assert len(observer2.notifications) == 1, (
+            '두 번째 옵저버가 알림을 받아야 함'
+        )
+        assert len(observer3.notifications) == 1, (
+            '세 번째 옵저버가 알림을 받아야 함'
+        )
+
+        assert observer1.notifications[0] is new_transformer, (
+            '올바른 변환기 정보가 전달되어야 함'
+        )
+        assert observer2.notifications[0] is new_transformer, (
+            '올바른 변환기 정보가 전달되어야 함'
+        )
+        assert observer3.notifications[0] is new_transformer, (
+            '올바른 변환기 정보가 전달되어야 함'
+        )
 
     def test_옵저버_예외_처리_격리_검증_성공_시나리오(self) -> None:
         """12. 옵저버 알림 중 예외 발생 시 다른 옵저버 격리 검증 (성공 시나리오)
@@ -387,24 +434,30 @@ class TestCoordinateManager:
         normal_observer = MockObserver()
         failing_observer = MockObserver()
         another_normal_observer = MockObserver()
-        
+
         failing_observer.should_fail = True  # 예외 발생하도록 설정
-        
+
         manager.add_observer(normal_observer)
         manager.add_observer(failing_observer)
         manager.add_observer(another_normal_observer)
-        
+
         new_transformer = MockCoordinateTransformer()
 
         # When - 변환기 교체 (예외가 발생해도 계속 실행되어야 함)
         manager.set_transformer(new_transformer)
 
         # Then - 정상 옵저버들은 알림을 받음
-        assert len(normal_observer.notifications) == 1, "정상 옵저버는 알림을 받아야 함"
-        assert len(another_normal_observer.notifications) == 1, "또 다른 정상 옵저버도 알림을 받아야 함"
-        
+        assert len(normal_observer.notifications) == 1, (
+            '정상 옵저버는 알림을 받아야 함'
+        )
+        assert len(another_normal_observer.notifications) == 1, (
+            '또 다른 정상 옵저버도 알림을 받아야 함'
+        )
+
         # 실패한 옵저버는 알림을 처리하지 못했지만 시스템은 계속 동작
-        assert len(failing_observer.notifications) == 0, "실패 옵저버는 알림 처리에 실패해야 함"
+        assert len(failing_observer.notifications) == 0, (
+            '실패 옵저버는 알림 처리에 실패해야 함'
+        )
 
     def test_스레드_안전_옵저버_관리_검증_성공_시나리오(self) -> None:
         """13. 멀티스레드 환경에서 옵저버 관리 스레드 안전성 검증 (성공 시나리오)
@@ -424,20 +477,20 @@ class TestCoordinateManager:
             barrier.wait()
             for observer in observers[:5]:
                 manager.add_observer(observer)
-            results.append("add_completed")
+            results.append('add_completed')
 
         def remove_observers():
             barrier.wait()
             for observer in observers[2:7]:  # 일부 겹치는 범위
                 manager.remove_observer(observer)
-            results.append("remove_completed")
+            results.append('remove_completed')
 
         def notify_observers():
             barrier.wait()
             time.sleep(0.01)  # 등록/제거 작업이 일부 완료될 때까지 대기
             new_transformer = MockCoordinateTransformer()
             manager.set_transformer(new_transformer)
-            results.append("notify_completed")
+            results.append('notify_completed')
 
         # When - 여러 스레드에서 동시에 옵저버 관리 작업 수행
         threads = [
@@ -450,17 +503,19 @@ class TestCoordinateManager:
             thread.start()
 
         barrier.wait()  # 모든 스레드가 동시에 시작
-        
+
         for thread in threads:
             thread.join()
 
         # Then - 모든 작업이 완료되고 시스템이 안정적으로 동작
-        assert len(results) == 3, "모든 스레드 작업이 완료되어야 함"
-        assert "add_completed" in results, "옵저버 추가 작업이 완료되어야 함"
-        assert "remove_completed" in results, "옵저버 제거 작업이 완료되어야 함"
-        assert "notify_completed" in results, "알림 작업이 완료되어야 함"
+        assert len(results) == 3, '모든 스레드 작업이 완료되어야 함'
+        assert 'add_completed' in results, '옵저버 추가 작업이 완료되어야 함'
+        assert 'remove_completed' in results, (
+            '옵저버 제거 작업이 완료되어야 함'
+        )
+        assert 'notify_completed' in results, '알림 작업이 완료되어야 함'
 
         # 시스템이 일관된 상태를 유지하는지 확인
         stats = manager.get_manager_stats()
-        assert stats["observer_count"] >= 0, "옵저버 개수가 음수가 되면 안됨"
-        assert stats["has_transformer"] is True, "변환기가 설정되어 있어야 함"
+        assert stats['observer_count'] >= 0, '옵저버 개수가 음수가 되면 안됨'
+        assert stats['has_transformer'] is True, '변환기가 설정되어 있어야 함'

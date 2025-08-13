@@ -5,7 +5,6 @@ This module tests the MapComponent functionality including tile calculations,
 boundary checking, and visual properties management.
 """
 
-
 from src.components.map_component import MapComponent
 
 
@@ -24,14 +23,26 @@ class TestMapComponent:
         map_comp = MapComponent()
 
         # Then - 기본값 확인 (객체의 설정 변수 사용)
-        assert map_comp.tile_size == 64, f"기본 타일 크기는 {map_comp.tile_size}이어야 함"
-        assert map_comp.world_width == 2000.0, "기본 월드 너비는 2000.0이어야 함"
-        assert map_comp.world_height == 2000.0, "기본 월드 높이는 2000.0이어야 함"
-        assert map_comp.light_tile_color == (240, 240, 240), "기본 밝은 타일 색상 확인"
-        assert map_comp.dark_tile_color == (220, 220, 220), "기본 어두운 타일 색상 확인"
-        assert map_comp.grid_color == (0, 0, 0), "기본 격자 색상 확인"
-        assert map_comp.enable_infinite_scroll is True, "무한 스크롤 기본값은 True"
-        assert map_comp.tile_pattern_size == 4, "기본 타일 패턴 크기는 4"
+        assert map_comp.tile_size == 64, (
+            f'기본 타일 크기는 {map_comp.tile_size}이어야 함'
+        )
+        assert map_comp.world_width == 2000.0, (
+            '기본 월드 너비는 2000.0이어야 함'
+        )
+        assert map_comp.world_height == 2000.0, (
+            '기본 월드 높이는 2000.0이어야 함'
+        )
+        assert map_comp.light_tile_color == (240, 240, 240), (
+            '기본 밝은 타일 색상 확인'
+        )
+        assert map_comp.dark_tile_color == (220, 220, 220), (
+            '기본 어두운 타일 색상 확인'
+        )
+        assert map_comp.grid_color == (0, 0, 0), '기본 격자 색상 확인'
+        assert map_comp.enable_infinite_scroll is True, (
+            '무한 스크롤 기본값은 True'
+        )
+        assert map_comp.tile_pattern_size == 4, '기본 타일 패턴 크기는 4'
 
     def test_맵_컴포넌트_커스텀_초기화_검증_성공_시나리오(self) -> None:
         """2. 맵 컴포넌트 커스텀 초기화 검증 (성공 시나리오)
@@ -50,18 +61,24 @@ class TestMapComponent:
             dark_tile_color=(100, 100, 100),
             grid_color=(50, 50, 50),
             enable_infinite_scroll=False,
-            tile_pattern_size=8
+            tile_pattern_size=8,
         )
 
         # Then - 커스텀 값 확인
-        assert map_comp.tile_size == 32, "커스텀 타일 크기 확인"
-        assert map_comp.world_width == 1024.0, "커스텀 월드 너비 확인"
-        assert map_comp.world_height == 768.0, "커스텀 월드 높이 확인"
-        assert map_comp.light_tile_color == (200, 200, 200), "커스텀 밝은 타일 색상 확인"
-        assert map_comp.dark_tile_color == (100, 100, 100), "커스텀 어두운 타일 색상 확인"
-        assert map_comp.grid_color == (50, 50, 50), "커스텀 격자 색상 확인"
-        assert map_comp.enable_infinite_scroll is False, "무한 스크롤 비활성화 확인"
-        assert map_comp.tile_pattern_size == 8, "커스텀 타일 패턴 크기 확인"
+        assert map_comp.tile_size == 32, '커스텀 타일 크기 확인'
+        assert map_comp.world_width == 1024.0, '커스텀 월드 너비 확인'
+        assert map_comp.world_height == 768.0, '커스텀 월드 높이 확인'
+        assert map_comp.light_tile_color == (200, 200, 200), (
+            '커스텀 밝은 타일 색상 확인'
+        )
+        assert map_comp.dark_tile_color == (100, 100, 100), (
+            '커스텀 어두운 타일 색상 확인'
+        )
+        assert map_comp.grid_color == (50, 50, 50), '커스텀 격자 색상 확인'
+        assert map_comp.enable_infinite_scroll is False, (
+            '무한 스크롤 비활성화 확인'
+        )
+        assert map_comp.tile_pattern_size == 8, '커스텀 타일 패턴 크기 확인'
 
     def test_타일_위치_계산_기능_검증_성공_시나리오(self) -> None:
         """3. 타일 위치 계산 기능 검증 (성공 시나리오)
@@ -77,11 +94,22 @@ class TestMapComponent:
 
         # When & Then - 다양한 월드 좌표에 대한 타일 좌표 계산
         assert map_comp.get_tile_at_position(0.0, 0.0) == (0, 0)
-        assert map_comp.get_tile_at_position(tile_size/2, tile_size/2) == (0, 0)
+        assert map_comp.get_tile_at_position(tile_size / 2, tile_size / 2) == (
+            0,
+            0,
+        )
         assert map_comp.get_tile_at_position(tile_size, tile_size) == (1, 1)
-        assert map_comp.get_tile_at_position(tile_size*2, tile_size) == (2, 1)
-        assert map_comp.get_tile_at_position(-tile_size/2, -tile_size/2) == (-1, -1)
-        assert map_comp.get_tile_at_position(-tile_size, -tile_size) == (-1, -1)
+        assert map_comp.get_tile_at_position(tile_size * 2, tile_size) == (
+            2,
+            1,
+        )
+        assert map_comp.get_tile_at_position(
+            -tile_size / 2, -tile_size / 2
+        ) == (-1, -1)
+        assert map_comp.get_tile_at_position(-tile_size, -tile_size) == (
+            -1,
+            -1,
+        )
 
     def test_타일_월드_위치_계산_기능_검증_성공_시나리오(self) -> None:
         """4. 타일 월드 위치 계산 기능 검증 (성공 시나리오)
@@ -97,10 +125,22 @@ class TestMapComponent:
 
         # When & Then - 다양한 타일 좌표에 대한 월드 위치 계산
         assert map_comp.get_tile_world_position(0, 0) == (0.0, 0.0)
-        assert map_comp.get_tile_world_position(1, 1) == (float(tile_size), float(tile_size))
-        assert map_comp.get_tile_world_position(2, 3) == (float(tile_size*2), float(tile_size*3))
-        assert map_comp.get_tile_world_position(-1, -1) == (float(-tile_size), float(-tile_size))
-        assert map_comp.get_tile_world_position(-2, -3) == (float(-tile_size*2), float(-tile_size*3))
+        assert map_comp.get_tile_world_position(1, 1) == (
+            float(tile_size),
+            float(tile_size),
+        )
+        assert map_comp.get_tile_world_position(2, 3) == (
+            float(tile_size * 2),
+            float(tile_size * 3),
+        )
+        assert map_comp.get_tile_world_position(-1, -1) == (
+            float(-tile_size),
+            float(-tile_size),
+        )
+        assert map_comp.get_tile_world_position(-2, -3) == (
+            float(-tile_size * 2),
+            float(-tile_size * 3),
+        )
 
     def test_가시_타일_범위_계산_기능_검증_성공_시나리오(self) -> None:
         """5. 가시 타일 범위 계산 기능 검증 (성공 시나리오)
@@ -129,12 +169,18 @@ class TestMapComponent:
         expected_max_x = int(screen_width // tile_size) + 1
         expected_max_y = int(screen_height // tile_size) + 1
 
-        assert min_tile_x == -1, "최소 X 타일은 -1이어야 함"
-        assert min_tile_y == -1, "최소 Y 타일은 -1이어야 함"
-        assert max_tile_x == expected_max_x, f"최대 X 타일은 {expected_max_x}이어야 함 ({screen_width}/{tile_size} + 1)"
-        assert max_tile_y == expected_max_y, f"최대 Y 타일은 {expected_max_y}이어야 함 ({screen_height}/{tile_size} + 1)"
+        assert min_tile_x == -1, '최소 X 타일은 -1이어야 함'
+        assert min_tile_y == -1, '최소 Y 타일은 -1이어야 함'
+        assert max_tile_x == expected_max_x, (
+            f'최대 X 타일은 {expected_max_x}이어야 함 ({screen_width}/{tile_size} + 1)'
+        )
+        assert max_tile_y == expected_max_y, (
+            f'최대 Y 타일은 {expected_max_y}이어야 함 ({screen_height}/{tile_size} + 1)'
+        )
 
-    def test_가시_타일_범위_카메라_오프셋_적용_검증_성공_시나리오(self) -> None:
+    def test_가시_타일_범위_카메라_오프셋_적용_검증_성공_시나리오(
+        self,
+    ) -> None:
         """6. 가시 타일 범위 카메라 오프셋 적용 검증 (성공 시나리오)
 
         목적: 카메라 오프셋이 가시 타일 범위 계산에 정확히 반영되는지 검증
@@ -171,10 +217,18 @@ class TestMapComponent:
         expected_max_x = int(bottom_right_world_x // tile_size) + 1
         expected_max_y = int(bottom_right_world_y // tile_size) + 1
 
-        assert min_tile_x == expected_min_x, f"오프셋 적용된 최소 X 타일은 {expected_min_x}이어야 함"
-        assert min_tile_y == expected_min_y, f"오프셋 적용된 최소 Y 타일은 {expected_min_y}이어야 함"
-        assert max_tile_x == expected_max_x, f"오프셋 적용된 최대 X 타일은 {expected_max_x}이어야 함"
-        assert max_tile_y == expected_max_y, f"오프셋 적용된 최대 Y 타일은 {expected_max_y}이어야 함"
+        assert min_tile_x == expected_min_x, (
+            f'오프셋 적용된 최소 X 타일은 {expected_min_x}이어야 함'
+        )
+        assert min_tile_y == expected_min_y, (
+            f'오프셋 적용된 최소 Y 타일은 {expected_min_y}이어야 함'
+        )
+        assert max_tile_x == expected_max_x, (
+            f'오프셋 적용된 최대 X 타일은 {expected_max_x}이어야 함'
+        )
+        assert max_tile_y == expected_max_y, (
+            f'오프셋 적용된 최대 Y 타일은 {expected_max_y}이어야 함'
+        )
 
     def test_타일_패턴_타입_계산_기능_검증_성공_시나리오(self) -> None:
         """7. 타일 패턴 타입 계산 기능 검증 (성공 시나리오)
@@ -185,7 +239,9 @@ class TestMapComponent:
         기대되는 안정성: 일관된 체스보드 패턴 생성
         """
         # Given - 무한 스크롤 활성화된 맵 컴포넌트
-        map_comp = MapComponent(enable_infinite_scroll=True, tile_pattern_size=4)
+        map_comp = MapComponent(
+            enable_infinite_scroll=True, tile_pattern_size=4
+        )
 
         # When & Then - 체스보드 패턴 확인
         assert map_comp.get_tile_pattern_type(0, 0) == 0  # (0+0) % 2 = 0
@@ -207,10 +263,18 @@ class TestMapComponent:
         map_comp = MapComponent(tile_pattern_size=4)
 
         # When & Then - 음수 좌표에서의 패턴 확인
-        assert map_comp.get_tile_pattern_type(-1, -1) == 0  # abs(-1)+abs(-1)=2, 2%2=0
-        assert map_comp.get_tile_pattern_type(-1, 0) == 1   # abs(-1)+abs(0)=1, 1%2=1
-        assert map_comp.get_tile_pattern_type(0, -1) == 1   # abs(0)+abs(-1)=1, 1%2=1
-        assert map_comp.get_tile_pattern_type(-2, -3) == 1  # abs(-2)+abs(-3)=5, 5%2=1
+        assert (
+            map_comp.get_tile_pattern_type(-1, -1) == 0
+        )  # abs(-1)+abs(-1)=2, 2%2=0
+        assert (
+            map_comp.get_tile_pattern_type(-1, 0) == 1
+        )  # abs(-1)+abs(0)=1, 1%2=1
+        assert (
+            map_comp.get_tile_pattern_type(0, -1) == 1
+        )  # abs(0)+abs(-1)=1, 1%2=1
+        assert (
+            map_comp.get_tile_pattern_type(-2, -3) == 1
+        )  # abs(-2)+abs(-3)=5, 5%2=1
 
     def test_월드_경계_내부_확인_기능_검증_성공_시나리오(self) -> None:
         """9. 월드 경계 내부 확인 기능 검증 (성공 시나리오)
@@ -275,14 +339,14 @@ class TestMapComponent:
             dark_tile_color=(200, 200, 200),
             grid_color=(0, 0, 0),
             enable_infinite_scroll=True,
-            tile_pattern_size=2
+            tile_pattern_size=2,
         )
 
         # When - 유효성 검사
         result = map_comp.validate()
 
         # Then - 유효성 검사 통과
-        assert result is True, "유효한 맵 컴포넌트는 검증을 통과해야 함"
+        assert result is True, '유효한 맵 컴포넌트는 검증을 통과해야 함'
 
     def test_맵_컴포넌트_유효성_검사_실패_시나리오들(self) -> None:
         """12. 맵 컴포넌트 유효성 검사 실패 시나리오들
@@ -304,7 +368,9 @@ class TestMapComponent:
         assert invalid_comp.validate() is False
 
         # 잘못된 색상 (새로운 필드명 사용)
-        invalid_comp = MapComponent(light_tile_color=(256, 100, 100))  # 256 > 255
+        invalid_comp = MapComponent(
+            light_tile_color=(256, 100, 100)
+        )  # 256 > 255
         assert invalid_comp.validate() is False
 
         invalid_comp = MapComponent(dark_tile_color=(-1, 50, 50))  # -1 < 0

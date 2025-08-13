@@ -227,14 +227,14 @@ class TestCameraComponent:
         """
         # 잘못된 world_offset 타입
         camera_invalid_offset = CameraComponent()
-        camera_invalid_offset.world_offset = 'invalid'  # type: ignore
+        camera_invalid_offset.world_offset = 'invalid'
         assert not camera_invalid_offset.validate(), (
             '잘못된 world_offset 타입에 대해 False를 반환해야 함'
         )
 
         # 잘못된 screen_center 타입
         camera_invalid_center = CameraComponent()
-        camera_invalid_center.screen_center = (1.5, 2.5)  # type: ignore (float instead of int)
+        camera_invalid_center.screen_center = (1.5, 2.5)
         assert not camera_invalid_center.validate(), (
             '잘못된 screen_center 타입에 대해 False를 반환해야 함'
         )

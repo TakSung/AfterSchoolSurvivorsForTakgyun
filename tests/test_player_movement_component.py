@@ -340,7 +340,7 @@ class TestPlayerMovementComponent:
         """
         # 잘못된 world_position 타입
         movement_invalid_position = PlayerMovementComponent()
-        movement_invalid_position.world_position = 'invalid'  # type: ignore
+        movement_invalid_position.world_position = 'invalid'
         assert not movement_invalid_position.validate(), (
             '잘못된 world_position 타입에 대해 False를 반환해야 함'
         )

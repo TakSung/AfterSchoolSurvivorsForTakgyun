@@ -398,7 +398,7 @@ class TestValidationReportGenerator:
         # Then
         assert len(generator.results) == 1
         assert hasattr(result, 'data_type')
-        assert result.data_type == 'items'  # type: ignore[attr-defined]
+        assert result.data_type == 'items'
 
     def test_검증_요약_생성_정확성_검증_성공_시나리오(self) -> None:
         """19. 검증 요약 생성 정확성 검증 (성공 시나리오)."""
