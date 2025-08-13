@@ -40,29 +40,81 @@ uv pip install -r requirements.txt
 ## Architecture
 
 ### ECS (Entity-Component-System) Architecture
-The game follows an ECS architecture pattern:
+The game follows an ECS architecture pattern with advanced features:
 
 - **Entities**: Game objects (Player, Enemy, Item, etc.)
 - **Components**: Data containers (Position, Health, Velocity, etc.)
 - **Systems**: Logic processors (Movement, Collision, Rendering, etc.)
 
+### Coordinate Transformation System (Core Feature)
+A sophisticated world-to-screen coordinate transformation system:
+
+- **CoordinateManager**: Singleton manager for coordinate transformations
+- **CachedCameraTransformer**: High-performance cached transformations
+- **Observer Pattern**: Systems automatically notified of transformer changes
+- **Thread-Safe**: Supports concurrent access across systems
+- **World Coordinates**: Game logic operates in infinite world space
+- **Screen Coordinates**: Rendering operates in screen pixel space
+
+```python
+# Usage example:
+manager = CoordinateManager.get_instance()
+screen_pos = manager.world_to_screen(Vector2(world_x, world_y))
+world_pos = manager.screen_to_world(Vector2(screen_x, screen_y))
+```
+
+### Event System Architecture
+Decoupled event-driven communication between systems:
+
+- **EventBus**: Central event dispatcher using observer pattern
+- **BaseEvent**: Type-safe event base class with generic payload
+- **Event Interfaces**: Publisher/Subscriber contracts via ABC
+- **Async Support**: Non-blocking event processing
+- **Type Safety**: Generic event types with payload validation
+
+```python
+# Event usage example:
+event_bus = EventBus()
+event = EnemyDeathEvent(entity_id=enemy_id, position=pos)
+await event_bus.publish_async(event)  # Non-blocking dispatch
+```
+
 ### Project Structure
 ```
 src/
-├── core/           # ECS framework foundation
-│   ├── entity.py
-│   ├── component.py
-│   ├── system.py
-│   ├── entity_manager.py
-│   ├── component_registry.py
-│   └── system_orchestrator.py
-├── systems/        # Game systems
-├── components/     # Game components
-├── entities/       # Game entities
-└── utils/         # Utility functions
+├── core/           # ECS framework foundation + advanced systems
+│   ├── entity.py, component.py, system.py
+│   ├── entity_manager.py, component_registry.py, system_orchestrator.py
+│   ├── coordinate_manager.py, coordinate_transformer.py  # Coordinate system
+│   ├── cached_camera_transformer.py, camera_based_transformer.py
+│   ├── coordinate_cache.py  # Performance optimization
+│   ├── game_loop.py, time_manager.py  # Game loop management
+│   ├── game_state_manager.py, state_handler.py  # State management
+│   └── events/     # Event system (observer pattern)
+│       ├── event_bus.py, base_event.py
+│       └── interfaces.py, event_types.py
+├── systems/        # Game systems (16+ implemented)
+│   ├── camera_system.py, player_movement_system.py
+│   ├── entity_render_system.py, render_system.py
+│   ├── collision_system.py, physics_system.py
+│   ├── weapon_system.py, projectile_system.py
+│   └── map_render_system.py
+├── components/     # Game components (13+ implemented)
+│   ├── position_component.py, render_component.py
+│   ├── player_component.py, camera_component.py
+│   ├── weapon_component.py, projectile_component.py
+│   ├── health_component.py, collision_component.py
+│   └── player_movement_component.py, velocity_component.py
+├── data/           # Data management system
+│   ├── loader.py, models.py, validator.py
+│   └── file_repository.py  # File I/O abstraction
+├── entities/       # Game entity factories
+└── utils/          # Utility functions
+    └── vector2.py  # 2D vector math
 
-tests/             # Test files
-docs/              # Documentation
+tests/              # Comprehensive test suite (40+ test files)
+data/               # Game data (JSON configs)
+demo_*.py           # Runnable demos
 ```
 
 ## Task Master AI Integration
@@ -101,16 +153,40 @@ task-master expand --id=<id> --research --force
 /opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest  # Run tests
 ```
 
-### Code Quality
+### Code Quality & Testing
 ```bash
-/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff check .    # Lint code
-/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff format .   # Format code
-/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest          # Run tests
-memory_profiler       # Profile memory usage
+# type check
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m mypy src/
+
+# Linting and formatting (ALWAYS run before committing)
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff check .
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff format .
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff check --fix .
+
+# Testing commands (comprehensive test suite)
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest          # Run all tests
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_core.py -v
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_entity_manager.py -v
+
+# Specific system testing patterns
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_coordinate_*.py -v
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_weapon_*.py -v
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_*_system.py -v
+
+# Performance and validation
+memory_profiler       # Profile memory usage (installed)
 ```
 
 ### Game Execution
-The game will be executed through the main entry point once implemented. No specific run commands are defined yet as the codebase is in early development.
+```bash
+# Main game demo (comprehensive ECS demo with UI)
+/opt/homebrew/anaconda3/envs/as-game/bin/python demo_main.py
+
+# Alternative demo files
+/opt/homebrew/anaconda3/envs/as-game/bin/python demo_player_camera.py
+/opt/homebrew/anaconda3/envs/as-game/bin/python demo_map_render.py
+/opt/homebrew/anaconda3/envs/as-game/bin/python simple_demo.py
+```
 
 ## Game Design Core Features
 

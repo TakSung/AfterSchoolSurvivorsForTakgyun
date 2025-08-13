@@ -16,6 +16,7 @@ cython>=3.0.0
 
 # Modern Development Tools
 ruff>=0.6.0
+mypy>=1.0.0
 pytest>=8.0.0
 memory-profiler
 
