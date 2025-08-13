@@ -235,3 +235,7 @@ node_modules/
 .taskmaster/config.json
 .gemini/settings.json
 .mcp.json
+
+# temp
+temp*
+temp/*
