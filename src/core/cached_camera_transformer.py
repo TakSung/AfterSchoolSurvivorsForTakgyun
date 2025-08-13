@@ -1,3 +1,5 @@
+from typing import Any
+
 from ..utils.vector2 import Vector2
 from .camera_based_transformer import CameraBasedTransformer
 from .coordinate_cache import CoordinateTransformCache
@@ -81,11 +83,9 @@ class CachedCameraTransformer(CameraBasedTransformer):
 
     @zoom_level.setter
     def zoom_level(self, value: float) -> None:
-        old_zoom = self._zoom_level
-        super(CachedCameraTransformer, self.__class__).zoom_level.fset(
-            self, value
-        )
-        if old_zoom != self._zoom_level:
+        old_zoom = super().zoom_level  # type: ignore # Access via super() property
+        super().zoom_level = value
+        if old_zoom != super().zoom_level:  # type: ignore # Access via super() property
             self._coordinate_cache.clear()  # 줌 변경 시 캐시 무효화
 
     @property
@@ -95,9 +95,7 @@ class CachedCameraTransformer(CameraBasedTransformer):
     @screen_size.setter
     def screen_size(self, size: Vector2) -> None:
         old_size = self._screen_size
-        super(CachedCameraTransformer, self.__class__).screen_size.fset(
-            self, size
-        )
+        super().screen_size = size
         if old_size != self._screen_size:
             self._coordinate_cache.clear()  # 화면 크기 변경 시 캐시 무효화
 
@@ -115,13 +113,13 @@ class CachedCameraTransformer(CameraBasedTransformer):
     def resize_cache(self, new_size: int) -> None:
         self._coordinate_cache.resize(new_size)
 
-    def get_coordinate_cache_stats(self) -> dict[str, any]:
+    def get_coordinate_cache_stats(self) -> dict[str, Any]:
         return self._coordinate_cache.get_cache_stats()
 
     def reset_cache_stats(self) -> None:
         self._coordinate_cache.reset_stats()
 
-    def get_cache_stats(self) -> dict[str, any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         base_stats = super().get_cache_stats()
         coordinate_stats = self.get_coordinate_cache_stats()
 
@@ -137,7 +135,10 @@ class CachedCameraTransformer(CameraBasedTransformer):
         if not self._cache_enabled or not world_positions:
             return super().transform_multiple_points(world_positions)
 
-        screen_positions = []
+        final_screen_positions: list[Vector2] = [Vector2.zero()] * len(
+            world_positions
+        )
+
         uncached_positions = []
         uncached_indices = []
 
@@ -150,9 +151,8 @@ class CachedCameraTransformer(CameraBasedTransformer):
                 self._screen_size,
             )
             if cached_result is not None:
-                screen_positions.append(cached_result)
+                final_screen_positions[i] = cached_result
             else:
-                screen_positions.append(None)  # 임시 플레이스홀더
                 uncached_positions.append(world_pos)
                 uncached_indices.append(i)
 
@@ -163,23 +163,23 @@ class CachedCameraTransformer(CameraBasedTransformer):
             )
 
             # 결과를 캐시에 저장하고 리스트에 반영
-            for idx, (world_pos, screen_pos) in enumerate(
-                zip(uncached_positions, uncached_results, strict=False)
-            ):
+            for idx, screen_pos in enumerate(uncached_results):
+                # Store in the correct original position
+                final_screen_positions[uncached_indices[idx]] = screen_pos
+                # Also put into cache
                 self._coordinate_cache.put_world_to_screen(
-                    world_pos,
+                    uncached_positions[idx],  # Original world_pos
                     self._camera_offset,
                     self._zoom_level,
                     self._screen_size,
                     screen_pos,
                 )
-                screen_positions[uncached_indices[idx]] = screen_pos
 
-        return screen_positions
+        return final_screen_positions
 
     def benchmark_cache_performance(
         self, test_positions: list[Vector2], iterations: int = 1000
-    ) -> dict[str, any]:
+    ) -> dict[str, Any]:
         import time
 
         # 캐시 통계 초기화

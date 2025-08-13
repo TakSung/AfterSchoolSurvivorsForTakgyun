@@ -8,9 +8,12 @@ and their components throughout the game lifecycle.
 import weakref
 from collections import defaultdict
 from collections.abc import Iterator
+from typing import TypeVar, cast
 
-from .entity import Entity
 from .component import Component
+from .entity import Entity
+
+T = TypeVar('T', bound=Component)
 
 
 class EntityManager:
@@ -149,8 +152,8 @@ class EntityManager:
         self._entity_components[entity.entity_id].discard(component_type)
 
     def get_component(
-        self, entity: Entity, component_type: type[Component]
-    ) -> Component | None:
+        self, entity: Entity, component_type: type[T]
+    ) -> T | None:
         """
         Get a specific component from an entity.
 
@@ -163,7 +166,8 @@ class EntityManager:
         """
         if component_type not in self._components:
             return None
-        return self._components[component_type].get(entity.entity_id)
+        component = self._components[component_type].get(entity.entity_id)
+        return cast(T, component) if component else None
 
     def has_component(
         self, entity: Entity, component_type: type[Component]
@@ -181,42 +185,42 @@ class EntityManager:
         return component_type in self._entity_components[entity.entity_id]
 
     def get_entities_with_component(
-        self, component_type: type[Component]
-    ) -> list[Entity]:
+        self, component_type: type[T]
+    ) -> list[tuple[Entity, T]]:
         """
-        Get all entities that have a specific component.
+        Get all active entities that have a specific component.
 
         Args:
             component_type: The type of component to search for.
 
         Returns:
-            List of entities that have the specified component.
+            List of (Entity, Component) tuples for active entities that have the component.
         """
         if component_type not in self._components:
             return []
 
-        entities = []
-        for entity_id in self._components[component_type]:
+        entities_with_component = []
+        for entity_id, component in self._components[component_type].items():
             entity = self._entities.get(entity_id)
-            if entity is not None:
-                entities.append(entity)
+            if entity is not None and entity.active:
+                entities_with_component.append((entity, cast(T, component)))
 
-        return entities
+        return entities_with_component
 
     def get_entities_with_components(
         self, *component_types: type[Component]
     ) -> list[Entity]:
         """
-        Get all entities that have all specified components.
+        Get all active entities that have all specified components.
 
         Args:
             *component_types: Variable number of component types to match.
 
         Returns:
-            List of entities that have all specified components.
+            List of active entities that have all specified components.
         """
         if not component_types:
-            return self.get_all_entities()
+            return self.get_active_entities()
 
         # Start with entities that have the first component type
         entity_ids = set(self._components.get(component_types[0], {}).keys())
@@ -227,14 +231,14 @@ class EntityManager:
                 return []
             entity_ids &= set(self._components[component_type].keys())
 
-        # Convert entity IDs back to entities
-        entities = []
+        # Convert entity IDs back to active entities
+        active_entities = []
         for entity_id in entity_ids:
             entity = self._entities.get(entity_id)
-            if entity is not None:
-                entities.append(entity)
+            if entity is not None and entity.active:
+                active_entities.append(entity)
 
-        return entities
+        return active_entities
 
     def get_components_for_entity(
         self, entity: Entity
@@ -326,4 +330,3 @@ class EntityManager:
             f'active={self.get_active_entity_count()}, '
             f'component_types={len(self._components)})'
         )
-

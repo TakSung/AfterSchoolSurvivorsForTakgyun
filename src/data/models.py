@@ -324,5 +324,5 @@ class GameConfig(BaseModel):
     model_config = ConfigDict(
         use_enum_values=True,
         validate_assignment=True,
-        extra='forbid'  # 정의되지 않은 필드 금지
+        extra='forbid',  # 정의되지 않은 필드 금지
     )

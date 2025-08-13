@@ -3,6 +3,7 @@ from enum import IntEnum
 from typing import Any
 
 import pygame
+from pygame import FRect  # Added FRect import
 
 from ..core.coordinate_transformer import ICoordinateTransformer
 from ..utils.vector2 import Vector2
@@ -30,14 +31,23 @@ class RenderLayer(IntEnum):
 
 
 class RenderableSprite(pygame.sprite.Sprite):
-    __slots__ = ('_layer', '_world_position')
+    __slots__ = (
+        '_layer',
+        '_world_position',
+        'visible',
+    )  # Added 'visible' to slots
+    _layer: RenderLayer  # Explicit type hint for slotted attribute
+    visible: bool  # Added type hint for 'visible'
 
     def __init__(self, layer: RenderLayer = RenderLayer.ENTITIES) -> None:
         super().__init__()
         self._layer = layer
         self._world_position = Vector2()
         self.image = pygame.Surface((1, 1))
-        self.rect = self.image.get_rect()
+        self.rect: pygame.Rect = (
+            self.image.get_rect()
+        )  # Explicit type hint for rect
+        self.visible = True  # Initialize visible
 
     @property
     def layer(self) -> RenderLayer:
@@ -65,7 +75,9 @@ class LayeredSpriteGroup:
 
     def __init__(self) -> None:
         self._groups: dict[RenderLayer, pygame.sprite.Group] = {}
-        self._all_sprites = pygame.sprite.Group()
+        self._all_sprites: pygame.sprite.Group = (
+            pygame.sprite.Group()
+        )  # Explicit type hint for _all_sprites
         self._layers = sorted(RenderLayer)
 
         for layer in self._layers:
@@ -159,7 +171,9 @@ class RenderSystem:
             Callable[[pygame.Surface], None]
         ] = []
 
-        self._dirty_rects: list[pygame.Rect] = []
+        self._dirty_rects: list[
+            pygame.Rect | FRect
+        ] = []  # Changed type to include FRect
         self._render_bounds = pygame.Rect(
             0, 0, int(self._screen_size.x), int(self._screen_size.y)
         )
@@ -280,13 +294,17 @@ class RenderSystem:
         else:
             self._surface.fill(self._background_color)
 
-    def render(self) -> list[pygame.Rect]:
+    def render(
+        self,
+    ) -> list[pygame.Rect | FRect]:  # Changed return type to include FRect
         self.clear_screen()
 
         for callback in self._pre_render_callbacks:
             callback(self._surface)
 
-        rendered_rects = []
+        rendered_rects: list[
+            pygame.Rect | FRect
+        ] = []  # Explicitly type rendered_rects
 
         if self._track_dirty_rects:
             for layer in RenderLayer:
@@ -313,9 +331,9 @@ class RenderSystem:
         all_sprites = self._layered_sprites.get_all_sprites()
 
         for sprite in all_sprites:
-            if hasattr(sprite, 'visible') and getattr(sprite, 'visible', True):
-                visible_count += 1
-            else:
+            if (
+                isinstance(sprite, RenderableSprite) and sprite.visible
+            ):  # Corrected logic
                 visible_count += 1
 
         return visible_count

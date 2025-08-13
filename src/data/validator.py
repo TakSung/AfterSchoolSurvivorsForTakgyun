@@ -418,7 +418,7 @@ class ValidationReportGenerator:
             result: 검증 결과
             data_type: 데이터 타입 이름
         """
-        result.data_type = data_type  # type: ignore[attr-defined]
+        result.data_type = data_type
         self.results.append(result)
 
     def generate_summary(self) -> dict[str, Any]:

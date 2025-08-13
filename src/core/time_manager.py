@@ -1,6 +1,7 @@
 import time
 from collections.abc import Callable
 from enum import IntEnum
+from typing import Any
 
 
 class TimeMode(IntEnum):
@@ -172,7 +173,7 @@ class TimeManager:
             return self._accumulated_time / self._fixed_timestep
         return 0.0
 
-    def get_time_stats(self) -> dict[str, any]:
+    def get_time_stats(self) -> dict[str, Any]:
         return {
             'time_mode': self._time_mode.display_name,
             'time_scale': self._time_scale,

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from src.core.game_state_manager import GameState, GameStateManager
 
@@ -169,7 +169,9 @@ class StateDispatcher:
             self._render_processors,
             self._update_processors,
         ]:
-            for processors in processors_dict.values():
+            for processors in cast(
+                dict[GameState, list[Callable[[Any], Any]]], processors_dict
+            ).values():
                 processors.clear()
 
     def clear_state_processors(self, state: GameState) -> None:

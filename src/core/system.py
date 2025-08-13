@@ -53,6 +53,12 @@ class ISystem(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def priority(self) -> int:
+        """Get the system's execution priority."""
+        pass
+
 
 class System(ISystem):
     """

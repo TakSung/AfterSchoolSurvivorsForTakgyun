@@ -390,10 +390,10 @@ class EventBus:
             'events_published': self._stats['events_published'],
             'events_processed': self._stats['events_processed'],
             'exceptions_caught': self._stats['exceptions_caught'],
-            'last_process_time': self._stats['last_process_time'],
+            'last_process_time': float(self._stats['last_process_time']),  # type: ignore
             'queue_size': self.get_queue_size(),
             'total_subscribers': self.get_subscriber_count(),
-            'subscribed_event_types': len(self._subscribers),
+            'subscribed_event_types': len(self._subscribers),  # type: ignore
             'is_processing': self._processing_events,
             'max_queue_size': self._max_queue_size,
         }

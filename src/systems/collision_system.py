@@ -138,6 +138,7 @@ class BruteForceCollisionDetector(ICollisionDetector):
         if not position or not collision:
             return False
 
+        assert position and collision
         left, top, right, bottom = collision.get_bounds(position.x, position.y)
 
         return left <= point_x <= right and top <= point_y <= bottom
@@ -170,6 +171,7 @@ class BruteForceCollisionDetector(ICollisionDetector):
         if not all([pos1, pos2, col1, col2]):
             return False
 
+        assert pos1 and pos2 and col1 and col2
         return self._check_aabb_collision(
             pos1.x,
             pos1.y,
@@ -459,7 +461,7 @@ class CollisionSystem(System):
             # 기본 충돌 처리 (로깅만)
             logger.debug(
                 f'Collision between {col1.layer.display_name} and {col2.layer.display_name}: '
-                f'entities {entity1.id} and {entity2.id}'
+                f'entities {entity1.entity_id} and {entity2.entity_id}'
             )
 
     def _handle_player_enemy_collision(
@@ -473,7 +475,7 @@ class CollisionSystem(System):
         """Handle collision between player and enemy."""
         # TODO: 플레이어 피해 처리 구현 예정
         logger.info(
-            f'Player-Enemy collision: player={entity1.id if col1.layer.value == 0 else entity2.id}'
+            f'Player-Enemy collision: player={entity1.entity_id if col1.layer.value == 0 else entity2.entity_id}'
         )
 
     def _handle_player_item_collision(

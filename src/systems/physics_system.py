@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ..components.position_component import PositionComponent
+from ..components.velocity_component import VelocityComponent
 from ..core.system import System
 
 if TYPE_CHECKING:
@@ -49,9 +51,6 @@ class PhysicsSystem(System):
         Returns:
             List containing PositionComponent and VelocityComponent types.
         """
-        from ..components.position_component import PositionComponent
-        from ..components.velocity_component import VelocityComponent
-
         return [PositionComponent, VelocityComponent]
 
     def update(
@@ -86,8 +85,8 @@ class PhysicsSystem(System):
             entity: Entity to update physics for.
             delta_time: Time elapsed since last update in seconds.
         """
-        position = entity_manager.get_component(entity, 'PositionComponent')
-        velocity = entity_manager.get_component(entity, 'VelocityComponent')
+        position = entity_manager.get_component(entity, PositionComponent)
+        velocity = entity_manager.get_component(entity, VelocityComponent)
 
         if not position or not velocity:
             return

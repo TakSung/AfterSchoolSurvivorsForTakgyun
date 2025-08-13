@@ -7,9 +7,11 @@ friction, and gravity application settings.
 
 from dataclasses import dataclass
 
+from ..core.component import Component
+
 
 @dataclass
-class VelocityComponent:
+class VelocityComponent(Component):
     """
     Component that defines velocity and movement properties for an entity.
 

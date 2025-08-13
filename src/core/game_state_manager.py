@@ -133,14 +133,14 @@ class GameStateManager:
         # Call transition callbacks
         for callback in self._transition_callbacks:
             try:
-                callback(old_state, new_state)
+                callback(old_state, new_state)  # type: ignore
             except Exception:
                 pass  # Log error in real implementation
 
         # Call state-specific callbacks
         for callback in self._state_callbacks[new_state]:
             try:
-                callback()
+                callback()  # type: ignore
             except Exception:
                 pass  # Log error in real implementation
 

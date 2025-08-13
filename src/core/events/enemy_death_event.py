@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class EnemyDeathEvent(BaseEvent):
     """
     Event fired when an enemy dies in the game.
-    
+
     This event carries the minimal necessary information about an enemy
     death, following the principle of minimal data transfer. Systems that
     need additional enemy information can query the EntityManager using
@@ -45,12 +45,14 @@ class EnemyDeathEvent(BaseEvent):
 
         # 데이터 검증 수행
         if not self.validate():
-            raise ValueError(f"Invalid EnemyDeathEvent data: enemy_entity_id='{self.enemy_entity_id}'")
+            raise ValueError(
+                f"Invalid EnemyDeathEvent data: enemy_entity_id='{self.enemy_entity_id}'"
+            )
 
     def validate(self) -> bool:
         """
         Validate the enemy death event data.
-        
+
         Returns:
             True if the event data is valid, False otherwise.
         """
@@ -69,36 +71,38 @@ class EnemyDeathEvent(BaseEvent):
         cls,
         enemy_entity: 'Entity',
         timestamp: float | None = None,
-        created_at: datetime | None = None
+        created_at: datetime | None = None,
     ) -> 'EnemyDeathEvent':
         """
         Create an EnemyDeathEvent from an Entity object.
-        
+
         This convenience method extracts the entity ID and creates the event
         with proper validation.
-        
+
         Args:
             enemy_entity: The enemy entity that died.
             timestamp: Optional custom timestamp. If None, current time is used.
             created_at: Optional custom creation datetime. If None, current time is used.
-            
+
         Returns:
             A new EnemyDeathEvent instance.
-            
+
         Raises:
             ValueError: If the entity is invalid or has no ID.
         """
         if enemy_entity is None:
-            raise ValueError("Entity cannot be None")
+            raise ValueError('Entity cannot be None')
 
         if not hasattr(enemy_entity, 'id') or not enemy_entity.id:
-            raise ValueError("Entity must have a valid ID")
+            raise ValueError('Entity must have a valid ID')
 
         return cls(
             event_type=EventType.ENEMY_DEATH,  # 명시적으로 설정하지만 __post_init__에서 덮어씀
-            timestamp=timestamp if timestamp is not None else 0.0,  # 0.0이면 자동 설정
+            timestamp=timestamp
+            if timestamp is not None
+            else 0.0,  # 0.0이면 자동 설정
             created_at=created_at,
-            enemy_entity_id=str(enemy_entity.id)
+            enemy_entity_id=str(enemy_entity.id),
         )
 
     @classmethod
@@ -106,33 +110,35 @@ class EnemyDeathEvent(BaseEvent):
         cls,
         enemy_entity_id: str,
         timestamp: float | None = None,
-        created_at: datetime | None = None
+        created_at: datetime | None = None,
     ) -> 'EnemyDeathEvent':
         """
         Create an EnemyDeathEvent from an entity ID string.
-        
+
         Args:
             enemy_entity_id: The ID of the enemy that died.
             timestamp: Optional custom timestamp. If None, current time is used.
             created_at: Optional custom creation datetime. If None, current time is used.
-            
+
         Returns:
             A new EnemyDeathEvent instance.
-            
+
         Raises:
             ValueError: If the entity ID is invalid.
         """
         return cls(
             event_type=EventType.ENEMY_DEATH,  # 명시적으로 설정하지만 __post_init__에서 덮어씀
-            timestamp=timestamp if timestamp is not None else 0.0,  # 0.0이면 자동 설정
+            timestamp=timestamp
+            if timestamp is not None
+            else 0.0,  # 0.0이면 자동 설정
             created_at=created_at,
-            enemy_entity_id=enemy_entity_id
+            enemy_entity_id=enemy_entity_id,
         )
 
     def get_enemy_id(self) -> str:
         """
         Get the enemy entity ID.
-        
+
         Returns:
             The enemy entity ID that this event represents.
         """

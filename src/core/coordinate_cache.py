@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from ..utils.vector2 import Vector2
 
@@ -233,7 +233,7 @@ class CoordinateTransformCache:
         self._world_to_screen_cache.resize(new_max_size)
         self._screen_to_world_cache.resize(new_max_size)
 
-    def get_cache_stats(self) -> dict[str, any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         w2s_stats = self._world_to_screen_cache.get_stats()
         s2w_stats = self._screen_to_world_cache.get_stats()
 

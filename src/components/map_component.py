@@ -33,7 +33,7 @@ class MapComponent(Component):
     # - 문제: 무한 타일 계산 시 성능 저하 발생 가능
     # - 해결책: 맵 경계를 설정하여 렌더링 범위 제한
     # - 주의사항: 카메라 이동 범위와 연동하여 설정 필요
-    world_width: float = 2000.0   # 월드 전체 너비 (픽셀)
+    world_width: float = 2000.0  # 월드 전체 너비 (픽셀)
     world_height: float = 2000.0  # 월드 전체 높이 (픽셀)
 
     # AI-NOTE : 2025-08-13 맵 시각적 속성 설정 (Task 17 체스판 패턴)
@@ -41,7 +41,7 @@ class MapComponent(Component):
     # - 요구사항: 밝은 회색(240,240,240)과 어두운 회색(220,220,220) 체스판
     # - 히스토리: 단조로운 배경에서 체스판 패턴으로 시각적 개선
     light_tile_color: tuple[int, int, int] = (240, 240, 240)  # 밝은 타일
-    dark_tile_color: tuple[int, int, int] = (220, 220, 220)   # 어두운 타일
+    dark_tile_color: tuple[int, int, int] = (220, 220, 220)  # 어두운 타일
     grid_color: tuple[int, int, int] = (0, 0, 0)  # 1픽셀 검은색 경계선
 
     # AI-DEV : 무한 스크롤링을 위한 타일 패턴 설정
@@ -230,9 +230,7 @@ class MapComponent(Component):
             else self.dark_tile_color
         )
 
-    def is_within_world_bounds(
-        self, world_x: float, world_y: float
-    ) -> bool:
+    def is_within_world_bounds(self, world_x: float, world_y: float) -> bool:
         """
         Check if a world coordinate is within map boundaries.
 

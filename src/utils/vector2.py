@@ -88,7 +88,7 @@ class Vector2:
     def copy(self) -> Vector2:
         return Vector2(self.x, self.y)
 
-    def tuple(self) -> tuple[float, float]:
+    def to_tuple(self) -> tuple[float, float]:
         return (self.x, self.y)
 
     def int_tuple(self) -> tuple[int, int]:

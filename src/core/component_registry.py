@@ -7,7 +7,7 @@ retrieval, and management of components across all entities.
 
 from collections import defaultdict
 from collections.abc import Iterator
-from typing import TypeVar
+from typing import TypeVar, cast
 from weakref import WeakSet
 
 from .component import Component
@@ -103,7 +103,7 @@ class ComponentRegistry:
         if not self._entity_components[entity.entity_id]:
             del self._entity_components[entity.entity_id]
 
-        return component
+        return cast(T, component) if component else None
 
     def get_component(
         self, entity: Entity, component_type: type[T]
@@ -119,7 +119,8 @@ class ComponentRegistry:
             The component instance, or None if not found
         """
         components_of_type = self._components.get(component_type, {})
-        return components_of_type.get(entity.entity_id)
+        component = components_of_type.get(entity.entity_id)
+        return cast(T, component) if component else None
 
     def has_component(
         self, entity: Entity, component_type: type[Component]
@@ -177,7 +178,7 @@ class ComponentRegistry:
         for entity in self._entities:
             if entity.entity_id in components_of_type and entity.active:
                 component = components_of_type[entity.entity_id]
-                yield entity, component
+                yield entity, cast(T, component)
 
     def get_entities_with_components(
         self, *component_types: type[Component]

@@ -8,6 +8,8 @@ collision masks, and collision layers.
 from dataclasses import dataclass, field
 from enum import IntEnum
 
+from ..core.component import Component
+
 
 class CollisionLayer(IntEnum):
     """
@@ -39,7 +41,7 @@ class CollisionLayer(IntEnum):
 
 
 @dataclass
-class CollisionComponent:
+class CollisionComponent(Component):
     """
     Component that defines collision properties for an entity.
 

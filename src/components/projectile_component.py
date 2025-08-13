@@ -5,7 +5,7 @@ This component represents projectile properties including direction, velocity,
 lifetime, damage, and physics state for entities that are projectiles.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..core.component import Component
 from ..utils.vector2 import Vector2
@@ -24,22 +24,22 @@ class ProjectileComponent(Component):
     # - 이유: 자동 공격 시스템에서 생성되는 투사체 데이터 관리 필요
     # - 요구사항: 방향, 속도, 수명, 데미지 관리로 투사체 물리 처리 지원
     # - 히스토리: Vector2를 활용한 벡터 기반 방향 및 속도 계산
-    direction: Vector2 = None  # 정규화된 방향 벡터
+    direction: Vector2 | None = field(default=None)  # 정규화된 방향 벡터
     velocity: float = 300.0  # 초당 이동 속도 (픽셀)
     lifetime: float = 3.0  # 투사체 수명 (초)
     max_lifetime: float = 3.0  # 최대 수명 (초)
     damage: int = 10  # 투사체 데미지
     owner_id: str | None = None  # 투사체를 생성한 엔티티 ID
     piercing: bool = False  # 관통 여부 (True면 적을 관통해서 지나감)
-    hit_targets: list[str] = None  # 이미 충돌한 타겟들 (관통 투사체용)
+    hit_targets: list[str] = field(
+        default_factory=list
+    )  # 이미 충돌한 타겟들 (관통 투사체용)
     max_velocity: float = 1000.0  # 최대 허용 속도
 
     def __post_init__(self) -> None:
-        """Initialize default values after dataclass creation."""
+        """
+        Initialize default values after dataclass creation."""
         # AI-DEV : 개발자 가정 - assert 검증으로 잘못된 타입 방지
-        assert isinstance(self.direction, (Vector2, type(None))), (
-            'direction must be Vector2 or None'
-        )
         assert isinstance(self.velocity, (int, float)), (
             'velocity must be numeric'
         )
@@ -49,11 +49,6 @@ class ProjectileComponent(Component):
             'lifetime must be numeric'
         )
         assert self.lifetime >= 0, 'lifetime cannot be negative'
-
-        if self.hit_targets is None:
-            self.hit_targets = []
-        if self.direction is None:
-            self.direction = Vector2.zero()
 
         # AI-DEV : 최대값 제한 적용
         if self.velocity > self.max_velocity:
@@ -83,6 +78,9 @@ class ProjectileComponent(Component):
         Returns:
             Velocity vector combining direction and speed.
         """
+        # direction이 Optional이므로 None 체크 필요
+        if self.direction is None:
+            return Vector2.zero()
         return self.direction * self.velocity
 
     def is_expired(self) -> bool:

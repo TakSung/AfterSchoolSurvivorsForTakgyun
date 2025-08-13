@@ -10,7 +10,7 @@ from .position_component import PositionComponent
 from .projectile_component import ProjectileComponent
 from .render_component import RenderComponent, RenderLayer
 from .rotation_component import RotationComponent
-from .weapon_component import WeaponComponent, WeaponType, ProjectileType
+from .weapon_component import ProjectileType, WeaponComponent, WeaponType
 
 __all__ = [
     'CameraComponent',
@@ -19,14 +19,14 @@ __all__ = [
     'EnemyComponent',
     'EnemyType',
     'HealthComponent',
-    'PlayerComponent', 
+    'PlayerComponent',
     'PlayerMovementComponent',
     'PositionComponent',
     'ProjectileComponent',
+    'ProjectileType',
     'RenderComponent',
     'RenderLayer',
     'RotationComponent',
     'WeaponComponent',
     'WeaponType',
-    'ProjectileType',
 ]

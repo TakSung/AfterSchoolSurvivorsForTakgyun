@@ -10,8 +10,8 @@ from .render_system import RenderSystem
 from .weapon_system import WeaponSystem
 
 __all__ = [
-    'CameraSystem',
     'BruteForceCollisionDetector',
+    'CameraSystem',
     'CollisionSystem',
     'EntityRenderSystem',
     'PhysicsSystem',

@@ -172,7 +172,7 @@ class ProjectileSystem(System):
             entity_manager: Entity manager to remove entities from
         """
         for entity in self._expired_projectiles:
-            entity_manager.remove_entity(entity.entity_id)
+            entity_manager.destroy_entity(entity)
 
     def get_projectile_count(self, entity_manager: 'EntityManager') -> int:
         """
@@ -228,7 +228,7 @@ class ProjectileSystem(System):
             entity_manager, owner_id
         )
         for entity in owner_projectiles:
-            entity_manager.remove_entity(entity.entity_id)
+            entity_manager.destroy_entity(entity)
         return len(owner_projectiles)
 
     def update_screen_bounds(self, screen: pygame.Surface) -> None:
@@ -385,7 +385,7 @@ class ProjectileSystem(System):
             pass
 
         # 적 엔티티 제거
-        entity_manager.remove_entity(enemy_entity.entity_id)
+        entity_manager.destroy_entity(enemy_entity)
 
     def get_collision_count(self) -> int:
         """

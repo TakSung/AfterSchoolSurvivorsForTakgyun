@@ -1,5 +1,6 @@
 import time
 from collections.abc import Callable
+from typing import Any
 
 import pygame
 
@@ -23,9 +24,9 @@ class GameLoop:
     def __init__(
         self, game_state_manager: GameStateManager, target_fps: int = 60
     ) -> None:
-        assert (
-            game_state_manager is not None
-        ), 'GameStateManager must be provided.'
+        assert game_state_manager is not None, (
+            'GameStateManager must be provided.'
+        )
         pygame.init()
 
         self._game_state_manager = game_state_manager
@@ -160,7 +161,7 @@ class GameLoop:
         except Exception:
             pass
 
-    def get_performance_stats(self) -> dict[str, any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         return {
             'target_fps': self._target_fps,
             'current_fps': self.current_fps,

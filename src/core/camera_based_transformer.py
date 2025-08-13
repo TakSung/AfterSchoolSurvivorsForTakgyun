@@ -1,3 +1,5 @@
+from typing import Any
+
 from ..utils.vector2 import Vector2
 from .coordinate_transformer import ICoordinateTransformer
 
@@ -180,13 +182,13 @@ class CameraBasedTransformer(ICoordinateTransformer):
             and max_y >= screen_bounds.y + margin
         )
 
-    def get_cache_stats(self) -> dict[str, any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         return {
             'cache_dirty': self._cache_dirty,
             'has_transform_matrix': self._transformation_matrix_cache
             is not None,
             'has_inverse_matrix': self._inverse_matrix_cache is not None,
             'zoom_level': self._zoom_level,
-            'camera_offset': self._camera_offset.tuple(),
-            'screen_size': self._screen_size.tuple(),
+            'camera_offset': self._camera_offset.to_tuple(),
+            'screen_size': self._screen_size.to_tuple(),
         }
