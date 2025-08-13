@@ -236,20 +236,20 @@ class CoordinateManager(IEventSubscriber):
 
         try:
             # 현재 변환기에 카메라 오프셋 업데이트
-            transformer = self.get_transformer()
-            if hasattr(transformer, 'set_camera_offset'):
-                # 카메라 오프셋을 Vector2로 변환하여 설정
-                camera_offset = Vector2(
-                    event.world_offset[0], event.world_offset[1]
-                )
-                transformer.set_camera_offset(camera_offset)
+            transformer = self.get_transformer()  # ICoordinateTransformer 보장
 
-                # 캐시 무효화
-                if hasattr(transformer, 'invalidate_cache'):
-                    transformer.invalidate_cache()
+            # 카메라 오프셋을 Vector2로 변환하여 설정
+            camera_offset = Vector2(
+                event.world_offset[0], event.world_offset[1]
+            )
+            assert hasattr(transformer, 'set_camera_offset'), "인터페이스 계약에 따라 set_camera_offset 반드시 존재"
+            assert hasattr(transformer, 'invalidate_cache'), "인터페이스 계약에 따라 invalidate_cache 반드시 존재"
+            
+            transformer.set_camera_offset(camera_offset)
+            transformer.invalidate_cache() # 캐시 무효화
 
-                # 옵저버들에게 알림 (기존 시스템과의 호환성 유지)
-                self.notify_observers(transformer)
+            # 옵저버들에게 알림 (기존 시스템과의 호환성 유지)
+            self.notify_observers(transformer)
 
         except Exception as e:
             # 이벤트 처리 중 오류가 발생해도 다른 시스템에 영향을 주지 않도록 처리

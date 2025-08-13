@@ -1,11 +1,17 @@
 import threading
 import time
+from unittest.mock import Mock, patch
 
 import pytest
 
 from src.core.camera_based_transformer import CameraBasedTransformer
 from src.core.coordinate_manager import CoordinateManager, ICoordinateObserver
 from src.core.coordinate_transformer import ICoordinateTransformer
+from src.core.events.base_event import BaseEvent
+from src.core.events.camera_offset_changed_event import (
+    CameraOffsetChangedEvent,
+)
+from src.core.events.event_types import EventType
 from src.utils.vector2 import Vector2
 
 
@@ -519,3 +525,222 @@ class TestCoordinateManager:
         stats = manager.get_manager_stats()
         assert stats['observer_count'] >= 0, '옵저버 개수가 음수가 되면 안됨'
         assert stats['has_transformer'] is True, '변환기가 설정되어 있어야 함'
+
+    def test_이벤트_처리_CAMERA_OFFSET_CHANGED_정상_처리_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """14. 카메라 오프셋 변경 이벤트 정상 처리 검증 (성공 시나리오)
+
+        목적: CameraOffsetChangedEvent를 수신했을 때 변환기가 올바르게 업데이트되는지 검증
+        테스트할 범위: handle_event() 메서드의 이벤트 처리 로직
+        커버하는 함수 및 데이터: 이벤트 타입 검증, 변환기 업데이트, 캐시 무효화, 옵저버 알림
+        기대되는 안정성: 이벤트 기반 좌표 변환기 자동 업데이트 보장
+        """
+        # Given - CoordinateManager와 mock 변환기 설정
+        manager = CoordinateManager.get_instance()
+        mock_transformer = Mock(spec=ICoordinateTransformer)
+        mock_transformer.set_camera_offset = Mock()
+        mock_transformer.invalidate_cache = Mock()
+
+        with (
+            patch.object(
+                manager, 'get_transformer', return_value=mock_transformer
+            ),
+            patch.object(manager, 'notify_observers') as mock_notify,
+        ):
+            # 카메라 오프셋 변경 이벤트 생성
+            with patch('time.time', return_value=1234567890.5):
+                event = CameraOffsetChangedEvent(
+                    event_type=None,  # __post_init__에서 자동 설정됨
+                    timestamp=0.0,  # __post_init__에서 자동 설정됨
+                    created_at=None,  # __post_init__에서 자동 설정됨
+                    world_offset=(100.0, 150.0),
+                    screen_center=(400, 300),
+                    camera_entity_id='test-camera-uuid',
+                )
+
+            # When - 이벤트 처리
+            manager.handle_event(event)
+
+            # Then - 변환기 메서드들이 올바른 순서로 호출됨
+            mock_transformer.set_camera_offset.assert_called_once()
+            called_offset = mock_transformer.set_camera_offset.call_args[0][0]
+            assert called_offset.x == 100.0, (
+                'X 오프셋이 올바르게 설정되어야 함'
+            )
+            assert called_offset.y == 150.0, (
+                'Y 오프셋이 올바르게 설정되어야 함'
+            )
+
+            mock_transformer.invalidate_cache.assert_called_once()
+            mock_notify.assert_called_once_with(mock_transformer)
+
+    def test_이벤트_처리_다른_타입_이벤트_무시_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """15. 다른 타입 이벤트 무시 처리 검증 (성공 시나리오)
+
+        목적: CAMERA_OFFSET_CHANGED가 아닌 이벤트는 무시되는지 검증
+        테스트할 범위: handle_event() 메서드의 이벤트 타입 필터링
+        커버하는 함수 및 데이터: 이벤트 타입 구분 처리, early return
+        기대되는 안정성: 관련 없는 이벤트에 대한 무시 처리 보장
+        """
+        # Given - CoordinateManager와 mock 변환기 설정
+        manager = CoordinateManager.get_instance()
+        mock_transformer = Mock(spec=ICoordinateTransformer)
+
+        with (
+            patch.object(
+                manager, 'get_transformer', return_value=mock_transformer
+            ),
+            patch.object(manager, 'notify_observers') as mock_notify,
+        ):
+            # 다른 타입의 이벤트 생성
+            other_event = Mock(spec=BaseEvent)
+            other_event.event_type = EventType.ENEMY_DEATH  # 다른 이벤트 타입
+
+            # When - 이벤트 처리
+            manager.handle_event(other_event)
+
+            # Then - 어떤 변환기 메서드도 호출되지 않음
+            mock_transformer.set_camera_offset.assert_not_called()
+            mock_transformer.invalidate_cache.assert_not_called()
+            mock_notify.assert_not_called()
+
+    def test_이벤트_처리_잘못된_인스턴스_타입_무시_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """16. CameraOffsetChangedEvent가 아닌 BaseEvent 무시 검증 (성공 시나리오)
+
+        목적: event_type은 올바르지만 인스턴스가 CameraOffsetChangedEvent가 아닌 경우 무시되는지 검증
+        테스트할 범위: handle_event() 메서드의 인스턴스 타입 검증
+        커버하는 함수 및 데이터: isinstance 검증, 타입 안전성
+        기대되는 안정성: 타입 안전성을 통한 잘못된 이벤트 처리 방지 보장
+        """
+        # Given - CoordinateManager와 mock 변환기 설정
+        manager = CoordinateManager.get_instance()
+        mock_transformer = Mock(spec=ICoordinateTransformer)
+
+        with (
+            patch.object(
+                manager, 'get_transformer', return_value=mock_transformer
+            ),
+            patch.object(manager, 'notify_observers') as mock_notify,
+        ):
+            # 올바른 event_type이지만 잘못된 인스턴스 타입
+            wrong_instance_event = Mock(spec=BaseEvent)
+            wrong_instance_event.event_type = EventType.CAMERA_OFFSET_CHANGED
+
+            # When - 이벤트 처리
+            manager.handle_event(wrong_instance_event)
+
+            # Then - 어떤 변환기 메서드도 호출되지 않음
+            mock_transformer.set_camera_offset.assert_not_called()
+            mock_transformer.invalidate_cache.assert_not_called()
+            mock_notify.assert_not_called()
+
+    def test_이벤트_처리_예외_발생_시_격리_처리_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """17. 변환기 처리 중 예외 발생 시 격리 처리 검증 (성공 시나리오)
+
+        목적: 예외가 발생해도 다른 시스템에 영향을 주지 않고 경고 메시지를 출력하는지 검증
+        테스트할 범위: handle_event() 메서드의 예외 처리 및 격리
+        커버하는 함수 및 데이터: try-except 블록, 예외 격리, 경고 메시지 출력
+        기대되는 안정성: 예외 상황에서도 시스템 안정성 유지 보장
+        """
+        # Given - CoordinateManager와 예외를 발생시키는 mock 변환기
+        manager = CoordinateManager.get_instance()
+        mock_transformer = Mock(spec=ICoordinateTransformer)
+        mock_transformer.set_camera_offset.side_effect = RuntimeError(
+            'Test exception'
+        )
+
+        with (
+            patch.object(
+                manager, 'get_transformer', return_value=mock_transformer
+            ),
+            patch('builtins.print') as mock_print,
+        ):
+            # 카메라 오프셋 변경 이벤트 생성
+            with patch('time.time', return_value=1234567890.5):
+                event = CameraOffsetChangedEvent(
+                    event_type=None,  # __post_init__에서 자동 설정됨
+                    timestamp=0.0,  # __post_init__에서 자동 설정됨
+                    created_at=None,  # __post_init__에서 자동 설정됨
+                    world_offset=(100.0, 150.0),
+                    screen_center=(400, 300),
+                    camera_entity_id='test-camera-uuid',
+                )
+
+            # When - 이벤트 처리 (예외가 발생하지만 메서드는 정상 종료되어야 함)
+            try:
+                manager.handle_event(event)
+            except Exception as e:
+                pytest.fail(f'handle_event()에서 예외가 누출되었습니다: {e}')
+
+            # Then - 예외가 잡혀서 경고 메시지가 출력됨
+            mock_transformer.set_camera_offset.assert_called_once()
+            mock_print.assert_called_once()
+
+            # 경고 메시지 내용 확인
+            print_call_args = mock_print.call_args[0][0]
+            assert (
+                'Warning: CoordinateManager failed to handle camera offset event'
+                in print_call_args
+            ), '적절한 경고 메시지가 출력되어야 함'
+            assert 'Test exception' in print_call_args, (
+                '실제 예외 메시지가 포함되어야 함'
+            )
+
+    def test_구독_이벤트_타입_목록_반환_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """18. 구독 이벤트 타입 목록 반환 검증 (성공 시나리오)
+
+        목적: get_subscribed_events() 메서드가 올바른 이벤트 타입을 반환하는지 검증
+        테스트할 범위: IEventSubscriber 인터페이스 구현
+        커버하는 함수 및 데이터: get_subscribed_events() 메서드
+        기대되는 안정성: 이벤트 구독 시스템과의 정확한 연동 보장
+        """
+        # Given - CoordinateManager 인스턴스
+        manager = CoordinateManager.get_instance()
+
+        # When - 구독 이벤트 목록 조회
+        subscribed_events = manager.get_subscribed_events()
+
+        # Then - CAMERA_OFFSET_CHANGED 이벤트 타입이 포함됨
+        assert isinstance(subscribed_events, list), (
+            '구독 이벤트 목록은 리스트여야 함'
+        )
+        assert len(subscribed_events) == 1, (
+            'CAMERA_OFFSET_CHANGED 하나의 이벤트 타입만 구독해야 함'
+        )
+        assert EventType.CAMERA_OFFSET_CHANGED in subscribed_events, (
+            'CAMERA_OFFSET_CHANGED 이벤트 타입을 구독해야 함'
+        )
+
+    def test_구독자_이름_반환_검증_성공_시나리오(
+        self,
+    ) -> None:
+        """19. 구독자 이름 반환 검증 (성공 시나리오)
+
+        목적: get_subscriber_name() 메서드가 올바른 이름을 반환하는지 검증
+        테스트할 범위: IEventSubscriber 인터페이스 구현
+        커버하는 함수 및 데이터: get_subscriber_name() 메서드
+        기대되는 안정성: 디버깅을 위한 정확한 구독자 식별 보장
+        """
+        # Given - CoordinateManager 인스턴스
+        manager = CoordinateManager.get_instance()
+
+        # When - 구독자 이름 조회
+        subscriber_name = manager.get_subscriber_name()
+
+        # Then - 올바른 이름이 반환됨
+        assert isinstance(subscriber_name, str), (
+            '구독자 이름은 문자열이어야 함'
+        )
+        assert subscriber_name == 'CoordinateManager', (
+            '구독자 이름이 CoordinateManager여야 함'
+        )
+        assert len(subscriber_name) > 0, '구독자 이름은 비어있지 않아야 함'
