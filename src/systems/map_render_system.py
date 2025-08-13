@@ -2,10 +2,12 @@
 MapRenderSystem for rendering map tiles and background with camera offset.
 
 This system processes entities with MapComponent and renders the visible
-map tiles with proper camera offset integration.
+map tiles with proper camera offset integration using pygame.draw.rect.
 """
 
 from typing import TYPE_CHECKING
+
+import pygame
 
 from ..components.map_component import MapComponent
 from ..core.coordinate_manager import CoordinateManager
@@ -26,20 +28,24 @@ class MapRenderSystem(System):
     - Optimize rendering by culling off-screen tiles
     """
 
-    def __init__(self, priority: int = 15) -> None:
+    def __init__(
+        self, priority: int = 15, screen: pygame.Surface | None = None
+    ) -> None:
         """
         Initialize the MapRenderSystem.
 
         Args:
             priority: System execution priority (15 = after camera update)
+            screen: Pygame screen surface for rendering
         """
         super().__init__(priority=priority)
         self._coordinate_manager = CoordinateManager.get_instance()
 
-        # AI-NOTE : 2025-08-11 렌더링 대상 화면 크기 설정
-        # - 이유: 타일 가시성 계산을 위한 화면 크기 정보 필요
-        # - 요구사항: 카메라 시스템과 동일한 화면 해상도
-        # - 히스토리: 하드코딩에서 설정 가능한 값으로 확장 예정
+        # AI-NOTE : 2025-08-13 pygame 렌더링 표면 설정 (Task 17.2)
+        # - 이유: 실제 pygame.draw.rect를 사용한 타일 렌더링 필요
+        # - 요구사항: 체스판 패턴 타일과 1픽셀 경계선 렌더링
+        # - 히스토리: 데이터 준비에서 실제 렌더링으로 확장
+        self._screen = screen
         self._screen_width = 800
         self._screen_height = 600
 
@@ -49,6 +55,12 @@ class MapRenderSystem(System):
         # - 주의사항: 카메라 이동 시 캐시 무효화 필요
         self._cached_tile_range: tuple[tuple[int, int], tuple[int, int]] | None = None
         self._last_camera_offset: tuple[float, float] | None = None
+
+        # AI-NOTE : 2025-08-13 visible_tiles 세트 기반 최적화 (Task 17.3 준비)
+        # - 이유: 중복 렌더링 방지와 메모리 효율성 향상
+        # - 요구사항: 현재 보이는 타일만 관리하여 성능 최적화
+        # - 히스토리: 전체 타일 관리에서 가시 타일만 관리로 개선
+        self._visible_tiles: set[tuple[int, int]] = set()
 
     def initialize(self) -> None:
         """Initialize the map render system."""
@@ -203,14 +215,20 @@ class MapRenderSystem(System):
         """
         (min_tile_x, min_tile_y), (max_tile_x, max_tile_y) = tile_range
 
-        # AI-DEV : 타일 렌더링 데이터 준비를 위한 최적화된 루프
-        # - 문제: 대량의 타일 데이터 처리 시 성능 고려 필요
-        # - 해결책: 필요한 타일만 선별하여 렌더링 데이터 생성
-        # - 주의사항: 메모리 사용량과 계산 시간의 균형 고려
+        # AI-DEV : visible_tiles 세트 기반 최적화된 타일 관리 (Task 17.3)
+        # - 문제: 매 프레임 대량의 타일 데이터 생성으로 인한 메모리 낭비
+        # - 해결책: 가시 타일 세트로 중복 제거 및 메모리 효율성 향상
+        # - 주의사항: 카메라 이동 시 세트 업데이트와 성능 모니터링
 
+        # 현재 프레임의 가시 타일 세트 계산
+        current_visible_tiles = set()
         render_tiles = []
+
         for tile_y in range(min_tile_y, max_tile_y + 1):
             for tile_x in range(min_tile_x, max_tile_x + 1):
+                tile_coord = (tile_x, tile_y)
+                current_visible_tiles.add(tile_coord)
+
                 # 맵 경계 검사 (무한 스크롤이 비활성화된 경우)
                 if not map_comp.enable_infinite_scroll:
                     world_pos = map_comp.get_tile_world_position(tile_x, tile_y)
@@ -234,14 +252,65 @@ class MapRenderSystem(System):
                     'screen_y': screen_y,
                     'pattern_type': pattern_type,
                     'tile_size': map_comp.tile_size,
-                    'grid_color': map_comp.grid_color,
-                    'background_color': map_comp.background_color,
                 }
 
                 render_tiles.append(render_tile_data)
 
+        # visible_tiles 세트 업데이트 (메모리 최적화)
+        self._update_visible_tiles(current_visible_tiles)
+
         # 렌더링 데이터를 시스템에 저장 (다른 시스템에서 접근 가능)
         self._current_render_tiles = render_tiles
+
+        # AI-NOTE : 2025-08-13 실제 pygame 렌더링 수행 (Task 17.2)
+        # - 이유: 체스판 패턴 타일과 경계선을 화면에 그리기
+        # - 요구사항: pygame.draw.rect를 사용한 64x64 타일 렌더링
+        # - 히스토리: 데이터 준비에서 실제 렌더링 구현으로 확장
+        if self._screen is not None:
+            self._render_tiles_to_screen(render_tiles, map_comp)
+
+    def _render_tiles_to_screen(
+        self, render_tiles: list[dict], map_comp: MapComponent
+    ) -> None:
+        """
+        Render tiles to pygame screen surface with checkerboard pattern.
+
+        Args:
+            render_tiles: List of tile render data
+            map_comp: Map component for tile configuration
+        """
+        # AI-DEV : pygame.draw.rect를 사용한 효율적인 타일 렌더링
+        # - 문제: 대량의 타일을 매 프레임 렌더링 시 성능 고려 필요
+        # - 해결책: 화면 클리핑과 배치 렌더링으로 최적화
+        # - 주의사항: 화면 경계 검사를 통한 불필요한 렌더링 방지
+
+        for tile_data in render_tiles:
+            tile_x = tile_data['tile_x']
+            tile_y = tile_data['tile_y']
+            screen_x = int(tile_data['screen_x'])
+            screen_y = int(tile_data['screen_y'])
+            tile_size = tile_data['tile_size']
+
+            # 화면 경계 검사 (클리핑)
+            if (
+                screen_x + tile_size < 0
+                or screen_y + tile_size < 0
+                or screen_x >= self._screen_width
+                or screen_y >= self._screen_height
+            ):
+                continue
+
+            # 체스판 패턴에 따른 타일 색상 결정
+            tile_color = map_comp.get_tile_color(tile_x, tile_y)
+
+            # 타일 사각형 렌더링 (64x64 픽셀)
+            tile_rect = pygame.Rect(screen_x, screen_y, tile_size, tile_size)
+            pygame.draw.rect(self._screen, tile_color, tile_rect)
+
+            # 1픽셀 검은색 경계선 렌더링
+            pygame.draw.rect(
+                self._screen, map_comp.grid_color, tile_rect, width=1
+            )
 
     def get_render_tiles(self) -> list[dict]:
         """
@@ -251,6 +320,20 @@ class MapRenderSystem(System):
             List of tile render data dictionaries
         """
         return getattr(self, '_current_render_tiles', [])
+
+    def set_screen(self, screen: pygame.Surface) -> None:
+        """
+        Set pygame screen surface for rendering.
+
+        Args:
+            screen: Pygame screen surface
+        """
+        self._screen = screen
+        if screen:
+            self._screen_width = screen.get_width()
+            self._screen_height = screen.get_height()
+            # 화면 변경 시 캐시 무효화
+            self.invalidate_cache()
 
     def set_screen_size(self, width: int, height: int) -> None:
         """
@@ -267,13 +350,68 @@ class MapRenderSystem(System):
         self._cached_tile_range = None
         self._last_camera_offset = None
 
+    def _update_visible_tiles(
+        self, current_visible_tiles: set[tuple[int, int]]
+    ) -> None:
+        """
+        Update visible tiles set for memory optimization.
+
+        Args:
+            current_visible_tiles: Set of currently visible tile coordinates
+        """
+        # AI-DEV : 메모리 효율적인 가시 타일 세트 관리 (Task 17.3)
+        # - 문제: 이전 프레임의 타일 데이터가 메모리에 누적
+        # - 해결책: 현재 가시 타일만 유지하고 불필요한 타일 제거
+        # - 주의사항: 세트 연산 비용과 메모리 절약 효과의 균형
+
+        # 새로 보이는 타일과 사라진 타일 계산
+        new_tiles = current_visible_tiles - self._visible_tiles
+        removed_tiles = self._visible_tiles - current_visible_tiles
+
+        # 통계 정보 업데이트 (성능 모니터링용)
+        self._tile_stats = {
+            'total_visible': len(current_visible_tiles),
+            'new_tiles': len(new_tiles),
+            'removed_tiles': len(removed_tiles),
+            'total_managed': len(self._visible_tiles),
+        }
+
+        # 가시 타일 세트 업데이트
+        self._visible_tiles = current_visible_tiles.copy()
+
+    def get_visible_tiles(self) -> set[tuple[int, int]]:
+        """
+        Get the current set of visible tile coordinates.
+
+        Returns:
+            Set of (tile_x, tile_y) coordinates currently visible
+        """
+        return self._visible_tiles.copy()
+
+    def get_tile_stats(self) -> dict[str, int]:
+        """
+        Get tile management statistics for performance monitoring.
+
+        Returns:
+            Dictionary with tile statistics
+        """
+        return getattr(self, '_tile_stats', {
+            'total_visible': 0,
+            'new_tiles': 0,
+            'removed_tiles': 0,
+            'total_managed': 0,
+        })
+
     def invalidate_cache(self) -> None:
         """Invalidate tile range cache to force recalculation."""
         self._cached_tile_range = None
         self._last_camera_offset = None
+        # 캐시 무효화 시 가시 타일도 초기화
+        self._visible_tiles.clear()
 
     def cleanup(self) -> None:
         """Clean up map render system resources."""
         super().cleanup()
         self._cached_tile_range = None
         self._last_camera_offset = None
+        self._visible_tiles.clear()

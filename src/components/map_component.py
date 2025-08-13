@@ -23,11 +23,11 @@ class MapComponent(Component):
     tile size, world boundaries, and rendering configuration.
     """
 
-    # AI-NOTE : 2025-08-11 타일 기반 맵 시스템 설정
+    # AI-NOTE : 2025-08-13 타일 기반 맵 시스템 설정
     # - 이유: 카메라 이동을 시각적으로 확인할 수 있는 격자 패턴 필요
-    # - 요구사항: 50x50 픽셀 크기의 타일 기반 배경 시스템
-    # - 히스토리: 단순 배경에서 타일 기반 시스템으로 확장
-    tile_size: int = 50  # 픽셀 단위 타일 크기
+    # - 요구사항: 64x64 픽셀 크기의 타일 기반 배경 시스템 (Task 17 요구사항)
+    # - 히스토리: 50px에서 64px로 표준화, 무한 스크롤 최적화
+    tile_size: int = 64  # 픽셀 단위 타일 크기
 
     # AI-DEV : 타일 계산 성능 최적화를 위한 월드 경계 설정
     # - 문제: 무한 타일 계산 시 성능 저하 발생 가능
@@ -36,12 +36,13 @@ class MapComponent(Component):
     world_width: float = 2000.0   # 월드 전체 너비 (픽셀)
     world_height: float = 2000.0  # 월드 전체 높이 (픽셀)
 
-    # AI-NOTE : 2025-08-11 맵 시각적 속성 설정
+    # AI-NOTE : 2025-08-13 맵 시각적 속성 설정 (Task 17 체스판 패턴)
     # - 이유: 타일 구분을 위한 시각적 피드백 제공
-    # - 요구사항: 격자 선과 배경 색상으로 타일 구분
-    # - 히스토리: 단조로운 배경에서 시각적 구분이 가능한 격자로 개선
-    grid_color: tuple[int, int, int] = (100, 100, 100)  # RGB 격자 선 색상
-    background_color: tuple[int, int, int] = (50, 50, 60)  # RGB 배경 색상
+    # - 요구사항: 밝은 회색(240,240,240)과 어두운 회색(220,220,220) 체스판
+    # - 히스토리: 단조로운 배경에서 체스판 패턴으로 시각적 개선
+    light_tile_color: tuple[int, int, int] = (240, 240, 240)  # 밝은 타일
+    dark_tile_color: tuple[int, int, int] = (220, 220, 220)   # 어두운 타일
+    grid_color: tuple[int, int, int] = (0, 0, 0)  # 1픽셀 검은색 경계선
 
     # AI-DEV : 무한 스크롤링을 위한 타일 패턴 설정
     # - 문제: 맵 경계를 벗어날 때 빈 공간 표시 문제
@@ -63,22 +64,25 @@ class MapComponent(Component):
 
         # 월드 크기 유효성 검사
         if (
-            not isinstance(self.world_width, (int, float))
+            not isinstance(self.world_width, int | float)
             or self.world_width <= 0
         ):
             return False
 
         if (
-            not isinstance(self.world_height, (int, float))
+            not isinstance(self.world_height, int | float)
             or self.world_height <= 0
         ):
             return False
 
         # 색상 유효성 검사
-        if not self._validate_color(self.grid_color):
+        if not self._validate_color(self.light_tile_color):
             return False
 
-        if not self._validate_color(self.background_color):
+        if not self._validate_color(self.dark_tile_color):
+            return False
+
+        if not self._validate_color(self.grid_color):
             return False
 
         # 무한 스크롤 설정 유효성 검사
@@ -103,12 +107,13 @@ class MapComponent(Component):
         Returns:
             True if valid RGB color, False otherwise
         """
-        if not isinstance(color, tuple) or len(color) != 3:
-            return False
-
-        return all(
-            isinstance(component, int) and 0 <= component <= 255
-            for component in color
+        return (
+            isinstance(color, tuple)
+            and len(color) == 3
+            and all(
+                isinstance(component, int) and 0 <= component <= 255
+                for component in color
+            )
         )
 
     def get_tile_at_position(
@@ -199,20 +204,31 @@ class MapComponent(Component):
             tile_y: Tile Y coordinate
 
         Returns:
-            Pattern type (0 to pattern_size-1)
+            Pattern type (0 or 1 for checkerboard pattern)
         """
-        if not self.enable_infinite_scroll:
-            return 0
-
-        # AI-DEV : 체스보드 패턴을 위한 모듈로 연산
+        # AI-DEV : 체스보드 패턴을 위한 간단한 모듈로 연산
         # - 문제: 단조로운 격자 패턴으로 인한 시각적 지루함
-        # - 해결책: 타일 좌표 기반 패턴 생성으로 시각적 다양성 제공
-        # - 주의사항: 패턴 크기와 좌표 모듈로 연산으로 반복 패턴 생성
-        pattern_x = abs(tile_x) % self.tile_pattern_size
-        pattern_y = abs(tile_y) % self.tile_pattern_size
+        # - 해결책: 타일 좌표 기반 체스보드 패턴 생성으로 시각적 개선
+        # - 주의사항: (x+y) % 2 연산으로 체스보드 패턴 생성
+        return (tile_x + tile_y) % 2
 
-        # 체스보드 패턴 (0 또는 1)
-        return (pattern_x + pattern_y) % 2
+    def get_tile_color(self, tile_x: int, tile_y: int) -> tuple[int, int, int]:
+        """
+        Get the tile color based on checkerboard pattern.
+
+        Args:
+            tile_x: Tile X coordinate
+            tile_y: Tile Y coordinate
+
+        Returns:
+            RGB color tuple for the tile
+        """
+        pattern_type = self.get_tile_pattern_type(tile_x, tile_y)
+        return (
+            self.light_tile_color
+            if pattern_type == 0
+            else self.dark_tile_color
+        )
 
     def is_within_world_bounds(
         self, world_x: float, world_y: float
