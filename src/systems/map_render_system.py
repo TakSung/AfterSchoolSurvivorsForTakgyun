@@ -9,16 +9,18 @@ from typing import TYPE_CHECKING
 
 import pygame
 
-from ..components.camera_component import CameraComponent
 from ..components.map_component import MapComponent
 from ..core.coordinate_manager import CoordinateManager
+from ..core.events.event_types import EventType
+from ..core.events.interfaces import IEventSubscriber
 from ..core.system import System
 
 if TYPE_CHECKING:
     from ..core.entity_manager import EntityManager
+    from ..core.events.base_event import BaseEvent
 
 
-class MapRenderSystem(System):
+class MapRenderSystem(System, IEventSubscriber):
     """
     System that renders map tiles and background based on camera position.
 
@@ -29,9 +31,7 @@ class MapRenderSystem(System):
     - Optimize rendering by culling off-screen tiles
     """
 
-    def __init__(
-        self, priority: int = 15, screen: pygame.Surface | None = None
-    ) -> None:
+    def __init__(self, screen: pygame.Surface, priority: int = 15) -> None:
         """
         Initialize the MapRenderSystem.
 
@@ -39,6 +39,9 @@ class MapRenderSystem(System):
             priority: System execution priority (15 = after camera update)
             screen: Pygame screen surface for rendering
         """
+        assert isinstance(screen, pygame.Surface), (
+            'screen must be pygame.Surface'
+        )
         super().__init__(priority=priority)
         self._coordinate_manager = CoordinateManager.get_instance()
 
@@ -54,7 +57,9 @@ class MapRenderSystem(System):
         # - 문제: 매 프레임 타일 계산으로 인한 성능 저하
         # - 해결책: 이전 프레임의 가시 타일 범위 캐시
         # - 주의사항: 카메라 이동 시 캐시 무효화 필요
-        self._cached_tile_range: tuple[tuple[int, int], tuple[int, int]] | None = None
+        self._cached_tile_range: (
+            tuple[tuple[int, int], tuple[int, int]] | None
+        ) = None
         self._last_camera_offset: tuple[float, float] | None = None
 
         # AI-NOTE : 2025-08-13 visible_tiles 세트 기반 최적화 (Task 17.3 준비)
@@ -62,6 +67,13 @@ class MapRenderSystem(System):
         # - 요구사항: 현재 보이는 타일만 관리하여 성능 최적화
         # - 히스토리: 전체 타일 관리에서 가시 타일만 관리로 개선
         self._visible_tiles: set[tuple[int, int]] = set()
+
+        # AI-NOTE : 2025-08-13 이벤트 기반 카메라 오프셋 캐싱 시스템 도입
+        # - 이유: 직접 엔티티 순회 제거로 성능 향상 (O(n) → O(1))
+        # - 요구사항: CameraOffsetChangedEvent 구독하여 오프셋 캐시
+        # - 히스토리: 매 프레임 엔티티 순회에서 이벤트 기반 캐싱으로 개선
+        self._cached_camera_offset: tuple[float, float] = (0.0, 0.0)
+        self._camera_offset_valid: bool = False
 
     def initialize(self) -> None:
         """Initialize the map render system."""
@@ -123,29 +135,29 @@ class MapRenderSystem(System):
             # 렌더링 데이터를 준비하고 다른 시스템이 사용할 수 있도록 저장
             self._prepare_render_data(map_comp, camera_offset, tile_range)
 
-    def _get_current_camera_offset(self, entity_manager: 'EntityManager') -> tuple[float, float] | None:
+    def _get_current_camera_offset(
+        self, entity_manager: 'EntityManager'
+    ) -> tuple[float, float] | None:
         """
-        Get the current camera offset from camera entities.
+        Get the current camera offset from cached event data.
 
         Args:
-            entity_manager: Entity manager for accessing camera components
+            entity_manager: Entity manager (now unused, kept for compatibility)
 
         Returns:
-            Camera offset as (x, y) tuple, or None if not available
+            Cached camera offset as (x, y) tuple
         """
-        # AI-DEV : 카메라 엔티티에서 직접 오프셋 가져오기
-        # - 문제: 좌표 변환기를 통한 간접 접근으로 카메라 오프셋 누락
-        # - 해결책: CameraComponent를 가진 엔티티에서 직접 world_offset 가져오기
-        # - 주의사항: 여러 카메라 엔티티가 있을 경우 첫 번째 활성 카메라 사용
-        
-        # 모든 엔티티를 순회하며 CameraComponent를 찾기
-        for entity_id in entity_manager.get_all_entities():
-            camera_comp = entity_manager.get_component(entity_id, CameraComponent)
-            if camera_comp is not None:
-                # 첫 번째 찾은 카메라의 오프셋 반환
-                return camera_comp.world_offset
+        # AI-NOTE : 2025-08-13 이벤트 기반 캐시 사용으로 성능 개선
+        # - 이유: 직접 엔티티 순회 제거로 O(n) → O(1) 성능 향상
+        # - 요구사항: CameraOffsetChangedEvent로 캐시된 오프셋 사용
+        # - 히스토리: 매 프레임 엔티티 순회에서 이벤트 기반 캐싱으로 개선
 
-        return (0.0, 0.0)  # 카메라가 없으면 기본값 반환
+        if self._camera_offset_valid:
+            return self._cached_camera_offset
+
+        # 폴백: 캐시가 유효하지 않은 경우 기본값 반환
+        # (첫 번째 프레임이거나 아직 이벤트를 받지 못한 경우)
+        return (0.0, 0.0)
 
     def _get_visible_tile_range_cached(
         self,
@@ -226,7 +238,7 @@ class MapRenderSystem(System):
 
         # 현재 프레임의 가시 타일 세트 계산
         current_visible_tiles = set()
-        render_tiles = []
+        render_tiles : list[dict[str,int|float]] = []
 
         for tile_y in range(min_tile_y, max_tile_y + 1):
             for tile_x in range(min_tile_x, max_tile_x + 1):
@@ -235,7 +247,9 @@ class MapRenderSystem(System):
 
                 # 맵 경계 검사 (무한 스크롤이 비활성화된 경우)
                 if not map_comp.enable_infinite_scroll:
-                    world_pos = map_comp.get_tile_world_position(tile_x, tile_y)
+                    world_pos = map_comp.get_tile_world_position(
+                        tile_x, tile_y
+                    )
                     if not map_comp.is_within_world_bounds(
                         world_pos[0], world_pos[1]
                     ):
@@ -249,7 +263,7 @@ class MapRenderSystem(System):
                 screen_x = world_pos[0] + camera_offset[0]
                 screen_y = world_pos[1] + camera_offset[1]
 
-                render_tile_data = {
+                render_tile_data:dict[str, int|float] = {
                     'tile_x': tile_x,
                     'tile_y': tile_y,
                     'screen_x': screen_x,
@@ -274,7 +288,7 @@ class MapRenderSystem(System):
             self._render_tiles_to_screen(render_tiles, map_comp)
 
     def _render_tiles_to_screen(
-        self, render_tiles: list[dict], map_comp: MapComponent
+        self, render_tiles: list[dict[str,int|float]], map_comp: MapComponent
     ) -> None:
         """
         Render tiles to pygame screen surface with checkerboard pattern.
@@ -289,8 +303,8 @@ class MapRenderSystem(System):
         # - 주의사항: 화면 경계 검사를 통한 불필요한 렌더링 방지
 
         for tile_data in render_tiles:
-            tile_x = tile_data['tile_x']
-            tile_y = tile_data['tile_y']
+            tile_x = int(tile_data['tile_x'])
+            tile_y = int(tile_data['tile_y'])
             screen_x = int(tile_data['screen_x'])
             screen_y = int(tile_data['screen_y'])
             tile_size = tile_data['tile_size']
@@ -316,7 +330,7 @@ class MapRenderSystem(System):
                 self._screen, map_comp.grid_color, tile_rect, width=1
             )
 
-    def get_render_tiles(self) -> list[dict]:
+    def get_render_tiles(self) -> list[dict[str, int]]:
         """
         Get the current frame's tile render data.
 
@@ -399,12 +413,16 @@ class MapRenderSystem(System):
         Returns:
             Dictionary with tile statistics
         """
-        return getattr(self, '_tile_stats', {
-            'total_visible': 0,
-            'new_tiles': 0,
-            'removed_tiles': 0,
-            'total_managed': 0,
-        })
+        return getattr(
+            self,
+            '_tile_stats',
+            {
+                'total_visible': 0,
+                'new_tiles': 0,
+                'removed_tiles': 0,
+                'total_managed': 0,
+            },
+        )
 
     def invalidate_cache(self) -> None:
         """Invalidate tile range cache to force recalculation."""
@@ -419,3 +437,63 @@ class MapRenderSystem(System):
         self._cached_tile_range = None
         self._last_camera_offset = None
         self._visible_tiles.clear()
+        # 이벤트 기반 캐시도 정리
+        self._cached_camera_offset = (0.0, 0.0)
+        self._camera_offset_valid = False
+
+    # AI-NOTE : 2025-08-13 IEventSubscriber 인터페이스 구현
+    # - 이유: 카메라 오프셋 변경 이벤트를 구독하여 캐시 업데이트
+    # - 요구사항: CameraOffsetChangedEvent 처리로 성능 최적화
+    # - 히스토리: 직접 엔티티 순회에서 이벤트 기반 시스템으로 개선
+
+    def handle_event(self, event: 'BaseEvent') -> None:
+        """
+        Handle incoming events, specifically camera offset change events.
+
+        Args:
+            event: The event to handle. Expected to be CameraOffsetChangedEvent.
+        """
+        # 타입 체크를 통한 안전한 이벤트 처리
+        if event.event_type != EventType.CAMERA_OFFSET_CHANGED:
+            return
+
+        # TYPE_CHECKING을 위한 import 처리
+        from ..core.events.camera_offset_changed_event import (
+            CameraOffsetChangedEvent,
+        )
+
+        if not isinstance(event, CameraOffsetChangedEvent):
+            return
+
+        try:
+            # 카메라 오프셋 캐시 업데이트
+            self._cached_camera_offset = event.world_offset
+            self._camera_offset_valid = True
+
+            # 캐시된 타일 범위 무효화 (카메라가 움직였으므로)
+            self._cached_tile_range = None
+            self._last_camera_offset = None
+
+        except Exception as e:
+            # 이벤트 처리 중 오류가 발생해도 렌더링 시스템에 영향을 주지 않도록 처리
+            print(
+                f'Warning: MapRenderSystem failed to handle camera offset event: {e}'
+            )
+
+    def get_subscribed_events(self) -> list[EventType]:
+        """
+        Get the list of event types this subscriber wants to receive.
+
+        Returns:
+            List containing CAMERA_OFFSET_CHANGED event type.
+        """
+        return [EventType.CAMERA_OFFSET_CHANGED]
+
+    def get_subscriber_name(self) -> str:
+        """
+        Get a human-readable name for this subscriber.
+
+        Returns:
+            String identifying this subscriber for debugging purposes.
+        """
+        return 'MapRenderSystem'

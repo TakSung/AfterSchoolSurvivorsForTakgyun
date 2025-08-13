@@ -51,6 +51,11 @@ class EventType(IntEnum):
     GAME_RESUMED = 82
     GAME_OVER = 83
 
+    # Camera Events (100-119)
+    CAMERA_OFFSET_CHANGED = 100
+    CAMERA_TARGET_CHANGED = 101
+    CAMERA_BOUNDS_CHANGED = 102
+
     @property
     def display_name(self) -> str:
         """Get the Korean display name for the event type."""
@@ -72,6 +77,9 @@ class EventType(IntEnum):
             81: '게임 일시정지',  # GAME_PAUSED
             82: '게임 재개',  # GAME_RESUMED
             83: '게임 오버',  # GAME_OVER
+            100: '카메라 오프셋 변경',  # CAMERA_OFFSET_CHANGED
+            101: '카메라 대상 변경',  # CAMERA_TARGET_CHANGED
+            102: '카메라 경계 변경',  # CAMERA_BOUNDS_CHANGED
         }
         return display_names.get(self.value, f'Unknown_{self.value}')
 
@@ -84,6 +92,7 @@ class EventType(IntEnum):
             '경험치',  # 40-59: Experience Events
             '보스',  # 60-79: Boss Events
             '게임상태',  # 80-99: Game State Events
+            '카메라',  # 100-119: Camera Events
         ]
         category_index = self.value // 20
         return (
@@ -117,6 +126,11 @@ class EventType(IntEnum):
         """Check if this is a game state event."""
         return 80 <= self.value <= 99
 
+    @property
+    def is_camera_event(self) -> bool:
+        """Check if this is a camera-related event."""
+        return 100 <= self.value <= 119
+
     @classmethod
     def get_events_by_category(cls, category: str) -> list['EventType']:
         """
@@ -134,6 +148,7 @@ class EventType(IntEnum):
             '경험치',  # 40-59: Experience Events
             '보스',  # 60-79: Boss Events
             '게임상태',  # 80-99: Game State Events
+            '카메라',  # 100-119: Camera Events
         ]
 
         category_index = None

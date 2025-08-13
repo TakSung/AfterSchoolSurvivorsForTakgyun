@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .entity_manager import EntityManager
+    from .events.event_bus import EventBus
+    from .events.interfaces import IEventSubscriber
     from .system import ISystem
 
 
@@ -23,8 +25,12 @@ class SystemOrchestrator:
     all systems in the ECS architecture.
     """
 
-    def __init__(self) -> None:
-        """Initialize the system orchestrator."""
+    def __init__(self, event_bus: 'EventBus | None' = None) -> None:
+        """Initialize the system orchestrator.
+
+        Args:
+            event_bus: Optional EventBus for system event communication
+        """
         # OrderedDict to maintain insertion order while allowing efficient
         # lookups
         self._systems: OrderedDict[str, ISystem] = OrderedDict()
@@ -38,6 +44,13 @@ class SystemOrchestrator:
         self._execution_stats: dict[str, dict[str, float]] = {}
         # System groups for batch operations
         self._system_groups: dict[str, set[str]] = {}
+
+        # AI-NOTE : 2025-08-13 이벤트 기반 시스템 간 통신 지원
+        # - 이유: 카메라 좌표 관리 등 시스템 간 느슨한 결합 필요
+        # - 요구사항: EventBus를 통한 시스템 이벤트 처리 지원
+        # - 히스토리: 직접 호출 방식에서 이벤트 기반 시스템으로 확장
+        self._event_bus = event_bus
+        self._event_subscribers: list[IEventSubscriber] = []
 
     def register_system(
         self, system: 'ISystem', name: str | None = None
@@ -89,6 +102,35 @@ class SystemOrchestrator:
             'avg_time': 0.0,
             'max_time': 0.0,
         }
+
+        # AI-NOTE : 2025-08-13 IEventSubscriber 시스템 자동 이벤트 구독
+        # - 이유: 이벤트 구독 설정 자동화로 개발자 편의성 향상
+        # - 요구사항: IEventSubscriber를 구현한 시스템 자동 EventBus 등록
+        # - 히스토리: 수동 구독 설정에서 자동 감지 및 등록으로 개선
+
+        # 시스템이 IEventSubscriber를 구현하는지 확인
+        from .events.interfaces import IEventSubscriber
+
+        if (
+            isinstance(system, IEventSubscriber)
+            and self._event_bus is not None
+        ):
+            try:
+                self._event_bus.subscribe(system)
+                self._event_subscribers.append(system)
+            except Exception as e:
+                print(
+                    f'Warning: Failed to subscribe system {system_name} to EventBus: {e}'
+                )
+
+        # CameraSystem에 EventBus 주입 (특별 처리)
+        if hasattr(system, 'set_event_bus') and self._event_bus is not None:
+            try:
+                system.set_event_bus(self._event_bus)
+            except Exception as e:
+                print(
+                    f'Warning: Failed to set EventBus for system {system_name}: {e}'
+                )
 
     def unregister_system(self, name: str) -> 'ISystem | None':
         """
@@ -179,6 +221,25 @@ class SystemOrchestrator:
         if self._needs_sorting or self._sorted_systems is None:
             self._sort_systems()
 
+        # AI-NOTE : 2025-08-13 이벤트 처리를 시스템 업데이트 전에 수행
+        # - 이유: 이벤트 기반 상태 변경을 시스템 업데이트 전에 적용
+        # - 요구사항: 매 프레임 이벤트 처리로 일관된 상태 보장
+        # - 히스토리: 시스템 업데이트와 이벤트 처리 순서 최적화
+
+        # Process events before updating systems
+        if self._event_bus is not None:
+            try:
+                events_processed = self._event_bus.process_events()
+                # 성능 모니터링을 위한 이벤트 처리 통계
+                if events_processed > 0 and hasattr(
+                    self, '_event_processing_stats'
+                ):
+                    self._event_processing_stats['events_processed'] += (
+                        events_processed
+                    )
+            except Exception as e:
+                print(f'Warning: Failed to process events: {e}')
+
         # Update each system
         for system in self._sorted_systems or []:
             # Skip disabled systems
@@ -232,7 +293,7 @@ class SystemOrchestrator:
             system.set_priority(priority)
         else:
             # Set priority attribute directly if method not available
-            system._priority = priority  # type: ignore
+            system.set_priority(priority)
 
         # Add to new priority group
         if priority not in self._priority_map:
@@ -461,3 +522,85 @@ class SystemOrchestrator:
             f'groups={len(self._system_groups)}, '
             f'priorities={len(self._priority_map)})'
         )
+
+    # AI-NOTE : 2025-08-13 EventBus 관리 메서드들 추가
+    # - 이유: EventBus 설정 및 상태 조회를 위한 유틸리티 메서드 필요
+    # - 요구사항: EventBus 설정, 조회, 구독자 관리 기능 제공
+    # - 히스토리: SystemOrchestrator에 이벤트 시스템 통합
+
+    def set_event_bus(self, event_bus: 'EventBus') -> None:
+        """
+        Set the EventBus for system communication.
+
+        Args:
+            event_bus: EventBus instance to use for system communication
+        """
+        self._event_bus = event_bus
+
+        # 기존 구독자들을 새 EventBus에 재등록
+        from .events.interfaces import IEventSubscriber
+
+        for system_name, system in self._systems.items():
+            if isinstance(system, IEventSubscriber):
+                try:
+                    event_bus.subscribe(system)
+                except Exception as e:
+                    print(
+                        f'Warning: Failed to resubscribe system {system_name}: {e}'
+                    )
+
+            # CameraSystem에도 새 EventBus 설정
+            if hasattr(system, 'set_event_bus'):
+                try:
+                    system.set_event_bus(event_bus)
+                except Exception as e:
+                    print(
+                        f'Warning: Failed to set new EventBus for system {system_name}: {e}'
+                    )
+
+    def get_event_bus(self) -> 'EventBus | None':
+        """
+        Get the current EventBus instance.
+
+        Returns:
+            Current EventBus instance or None if not set
+        """
+        return self._event_bus
+
+    def get_event_subscriber_count(self) -> int:
+        """
+        Get the number of registered event subscribers.
+
+        Returns:
+            Number of systems that subscribe to events
+        """
+        return len(self._event_subscribers)
+
+    def get_event_processing_stats(self) -> dict[str, int | float]:
+        """
+        Get event processing statistics.
+
+        Returns:
+            Dictionary with event processing statistics
+        """
+        if self._event_bus is not None:
+            return self._event_bus.get_processing_stats()
+        return {}
+
+    def process_events_manually(self) -> int:
+        """
+        Manually process all queued events.
+
+        This is typically called automatically in update_systems(),
+        but can be called manually for testing or special cases.
+
+        Returns:
+            Number of events processed
+        """
+        if self._event_bus is not None:
+            try:
+                return self._event_bus.process_events()
+            except Exception as e:
+                print(f'Warning: Failed to manually process events: {e}')
+                return 0
+        return 0

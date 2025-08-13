@@ -1,17 +1,24 @@
 import threading
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..utils.vector2 import Vector2
 from .camera_based_transformer import CameraBasedTransformer
 from .coordinate_transformer import ICoordinateTransformer
+from .events.event_types import EventType
+from .events.interfaces import IEventSubscriber
+
+if TYPE_CHECKING:
+    from .events.base_event import BaseEvent
 
 
 class ICoordinateObserver(ABC):
     """좌표 변환기 변경에 대한 알림을 받는 옵저버 인터페이스"""
 
     @abstractmethod
-    def on_transformer_changed(self, new_transformer: ICoordinateTransformer) -> None:
+    def on_transformer_changed(
+        self, new_transformer: ICoordinateTransformer
+    ) -> None:
         """변환기가 변경되었을 때 호출되는 메서드
 
         Args:
@@ -20,7 +27,7 @@ class ICoordinateObserver(ABC):
         pass
 
 
-class CoordinateManager:
+class CoordinateManager(IEventSubscriber):
     """좌표 변환 시스템을 전역적으로 관리하는 싱글톤 매니저
 
     # AI-NOTE : 2025-01-10 전역 좌표 변환 관리 시스템 도입
@@ -29,7 +36,7 @@ class CoordinateManager:
     # - 히스토리: 개별 변환기 사용에서 중앙 집중 관리로 변경
     """
 
-    _instance: "CoordinateManager | None" = None
+    _instance: 'CoordinateManager | None' = None
     _lock = threading.Lock()
 
     def __init__(self) -> None:
@@ -42,7 +49,7 @@ class CoordinateManager:
         self._observer_lock = threading.Lock()
 
     @classmethod
-    def get_instance(cls) -> "CoordinateManager":
+    def get_instance(cls) -> 'CoordinateManager':
         """싱글톤 인스턴스를 반환합니다.
 
         스레드 안전하게 구현된 싱글톤 패턴을 사용합니다.
@@ -57,7 +64,7 @@ class CoordinateManager:
         return cls._instance
 
     @classmethod
-    def set_instance(cls, instance: "CoordinateManager | None") -> None:
+    def set_instance(cls, instance: 'CoordinateManager | None') -> None:
         """테스트용 의존성 주입을 위한 인스턴스 설정
 
         # AI-DEV : 테스트 격리를 위한 의존성 주입 지원
@@ -130,7 +137,9 @@ class CoordinateManager:
             if observer in self._observers:
                 self._observers.remove(observer)
 
-    def notify_observers(self, new_transformer: ICoordinateTransformer) -> None:
+    def notify_observers(
+        self, new_transformer: ICoordinateTransformer
+    ) -> None:
         """모든 옵저버에게 변환기 변경을 알립니다.
 
         # AI-DEV : 예외 처리를 통한 옵저버 격리
@@ -149,7 +158,9 @@ class CoordinateManager:
                 observer.on_transformer_changed(new_transformer)
             except Exception as e:
                 # 개별 옵저버 오류가 전체 시스템에 영향을 주지 않도록 처리
-                print(f"Warning: Observer {observer} failed to handle transformer change: {e}")
+                print(
+                    f'Warning: Observer {observer} failed to handle transformer change: {e}'
+                )
 
     def set_transformer(self, transformer: ICoordinateTransformer) -> None:
         """좌표 변환기를 교체합니다.
@@ -162,7 +173,7 @@ class CoordinateManager:
         """
         if not isinstance(transformer, ICoordinateTransformer):
             raise TypeError(
-                f"Expected ICoordinateTransformer, got {type(transformer)}"
+                f'Expected ICoordinateTransformer, got {type(transformer)}'
             )
 
         # 기존 변환기의 캐시 무효화
@@ -187,12 +198,79 @@ class CoordinateManager:
         # get_transformer()를 호출하여 기본 변환기도 포함하여 상태 확인
         transformer = self.get_transformer()
         return {
-            "has_transformer": transformer is not None,
-            "transformer_type": type(transformer).__name__ if transformer else None,
-            "observer_count": len(self._observers),
-            "transformer_stats": (
+            'has_transformer': transformer is not None,
+            'transformer_type': type(transformer).__name__
+            if transformer
+            else None,
+            'observer_count': len(self._observers),
+            'transformer_stats': (
                 transformer.get_cache_stats()
-                if transformer and hasattr(transformer, "get_cache_stats")
+                if transformer and hasattr(transformer, 'get_cache_stats')
                 else None
             ),
         }
+
+    # AI-NOTE : 2025-08-13 이벤트 시스템 통합을 위한 IEventSubscriber 구현
+    # - 이유: 카메라 오프셋 변경을 이벤트로 수신하여 자동으로 변환기 업데이트
+    # - 요구사항: CameraOffsetChangedEvent 구독하여 느슨한 결합 구현
+    # - 히스토리: 직접 호출 방식에서 이벤트 기반 시스템으로 개선
+
+    def handle_event(self, event: 'BaseEvent') -> None:
+        """
+        Handle incoming events, specifically camera offset change events.
+
+        Args:
+            event: The event to handle. Expected to be CameraOffsetChangedEvent.
+        """
+        # 타입 체크를 통한 안전한 이벤트 처리
+        if event.event_type != EventType.CAMERA_OFFSET_CHANGED:
+            return
+
+        # TYPE_CHECKING을 위한 import 처리
+        from .events.camera_offset_changed_event import (
+            CameraOffsetChangedEvent,
+        )
+
+        if not isinstance(event, CameraOffsetChangedEvent):
+            return
+
+        try:
+            # 현재 변환기에 카메라 오프셋 업데이트
+            transformer = self.get_transformer()
+            if hasattr(transformer, 'set_camera_offset'):
+                # 카메라 오프셋을 Vector2로 변환하여 설정
+                camera_offset = Vector2(
+                    event.world_offset[0], event.world_offset[1]
+                )
+                transformer.set_camera_offset(camera_offset)
+
+                # 캐시 무효화
+                if hasattr(transformer, 'invalidate_cache'):
+                    transformer.invalidate_cache()
+
+                # 옵저버들에게 알림 (기존 시스템과의 호환성 유지)
+                self.notify_observers(transformer)
+
+        except Exception as e:
+            # 이벤트 처리 중 오류가 발생해도 다른 시스템에 영향을 주지 않도록 처리
+            print(
+                f'Warning: CoordinateManager failed to handle camera offset event: {e}'
+            )
+
+    def get_subscribed_events(self) -> list[EventType]:
+        """
+        Get the list of event types this subscriber wants to receive.
+
+        Returns:
+            List containing CAMERA_OFFSET_CHANGED event type.
+        """
+        return [EventType.CAMERA_OFFSET_CHANGED]
+
+    def get_subscriber_name(self) -> str:
+        """
+        Get a human-readable name for this subscriber.
+
+        Returns:
+            String identifying this subscriber for debugging purposes.
+        """
+        return 'CoordinateManager'
