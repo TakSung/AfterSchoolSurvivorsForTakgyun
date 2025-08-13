@@ -55,6 +55,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
+    "tests/",
 ]
 
 # Python 3.13 버전을 기준으로 코드를 검사합니다.
@@ -91,6 +92,7 @@ select = [
 # 비활성화할 규칙
 ignore = [
     "S101",  # 'assert' 문 사용 경고 제외
+    "D400",  # docstring 첫 번째 줄 끝에 마침표 없는 경고 제외
 ]
 
 

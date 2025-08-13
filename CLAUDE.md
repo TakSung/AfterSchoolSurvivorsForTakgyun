@@ -164,7 +164,7 @@ task-master expand --id=<id> --research --force
 /opt/homebrew/anaconda3/envs/as-game/bin/python -m ruff check --fix .
 
 # Testing commands (comprehensive test suite)
-/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest          # Run all tests
+/opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest -v          # Run all tests
 /opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_core.py -v
 /opt/homebrew/anaconda3/envs/as-game/bin/python -m pytest tests/test_entity_manager.py -v
 
