@@ -45,6 +45,29 @@ class CameraOffsetChangedEvent(BaseEvent):
 
     def __post_init__(self) -> None:
         """Initialize the event with camera-specific data."""
+        # AI-DEV : screen_center float 값 자동 정수 변환 처리
+        # - 문제: 사용자가 float 좌표를 전달할 수 있음
+        # - 해결책: __post_init__에서 자동으로 int로 변환
+        # - 주의사항: 원본 튜플 불변성 유지하면서 새 튜플 생성
+        if (
+            hasattr(self, 'screen_center')
+            and isinstance(self.screen_center, tuple)
+            and len(self.screen_center) == 2
+        ):
+            converted_center = (
+                (
+                    int(self.screen_center[0])
+                    if isinstance(self.screen_center[0], int | float)
+                    else self.screen_center[0]
+                ),
+                (
+                    int(self.screen_center[1])
+                    if isinstance(self.screen_center[1], int | float)
+                    else self.screen_center[1]
+                ),
+            )
+            object.__setattr__(self, 'screen_center', converted_center)
+
         # Set event type before calling parent's __post_init__
         object.__setattr__(self, 'event_type', EventType.CAMERA_OFFSET_CHANGED)
 
@@ -57,8 +80,8 @@ class CameraOffsetChangedEvent(BaseEvent):
 
             object.__setattr__(self, 'created_at', datetime.now())
 
-        # Call parent's validation through super().__post_init__() would cause issues
-        # with dataclass inheritance, so we handle it manually here
+        # Call parent's validation through super().__post_init__()
+        # would cause issues with dataclass inheritance, handle it manually
         if not hasattr(self, '_initialized'):
             object.__setattr__(self, '_initialized', True)
 
@@ -77,7 +100,7 @@ class CameraOffsetChangedEvent(BaseEvent):
             return False
 
         if not all(
-            isinstance(coord, (int, float)) for coord in self.world_offset
+            isinstance(coord, int | float) for coord in self.world_offset
         ):
             return False
 
@@ -104,7 +127,7 @@ class CameraOffsetChangedEvent(BaseEvent):
                 return False
 
             if not all(
-                isinstance(coord, (int, float))
+                isinstance(coord, int | float)
                 for coord in self.previous_offset
             ):
                 return False
@@ -116,17 +139,14 @@ class CameraOffsetChangedEvent(BaseEvent):
         ):
             return False
 
-        if not isinstance(self.timestamp, (int, float)) or self.timestamp <= 0:
-            return False
-
-        return True
+        return isinstance(self.timestamp, int | float) and self.timestamp > 0
 
     def get_offset_delta(self) -> tuple[float, float] | None:
         """
         Calculate the offset delta if previous offset is available.
 
         Returns:
-            Tuple of (delta_x, delta_y) or None if previous offset not available.
+            Tuple of (delta_x, delta_y) or None if previous offset unavailable.
         """
         if self.previous_offset is None:
             return None
@@ -137,7 +157,7 @@ class CameraOffsetChangedEvent(BaseEvent):
 
     def has_significant_change(self, threshold: float = 1.0) -> bool:
         """
-        Check if the offset change is significant enough to warrant processing.
+        Check if offset change is significant enough to warrant processing.
 
         Args:
             threshold: Minimum change threshold in pixels.
@@ -156,7 +176,7 @@ class CameraOffsetChangedEvent(BaseEvent):
         return delta_magnitude >= threshold
 
     def __str__(self) -> str:
-        """String representation of the camera offset changed event."""
+        """Return string representation of the camera offset changed event."""
         return (
             f'CameraOffsetChangedEvent('
             f'entity={self.camera_entity_id}, '

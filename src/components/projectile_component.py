@@ -24,7 +24,7 @@ class ProjectileComponent(Component):
     # - 이유: 자동 공격 시스템에서 생성되는 투사체 데이터 관리 필요
     # - 요구사항: 방향, 속도, 수명, 데미지 관리로 투사체 물리 처리 지원
     # - 히스토리: Vector2를 활용한 벡터 기반 방향 및 속도 계산
-    direction: Vector2 | None = field(default=None)  # 정규화된 방향 벡터
+    direction: Vector2 = field(default_factory=Vector2.zero)  # 정규화된 방향 벡터
     velocity: float = 300.0  # 초당 이동 속도 (픽셀)
     lifetime: float = 3.0  # 투사체 수명 (초)
     max_lifetime: float = 3.0  # 최대 수명 (초)
@@ -78,9 +78,6 @@ class ProjectileComponent(Component):
         Returns:
             Velocity vector combining direction and speed.
         """
-        # direction이 Optional이므로 None 체크 필요
-        if self.direction is None:
-            return Vector2.zero()
         return self.direction * self.velocity
 
     def is_expired(self) -> bool:

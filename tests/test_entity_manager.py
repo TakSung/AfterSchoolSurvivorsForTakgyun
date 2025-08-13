@@ -216,12 +216,14 @@ class TestEntityManager:
         )
 
         assert len(position_entities) == 2
-        assert entity1 in position_entities
-        assert entity2 in position_entities
-        assert entity3 not in position_entities
+        position_entity_list = [entity for entity, _ in position_entities]
+        assert entity1 in position_entity_list
+        assert entity2 in position_entity_list
+        assert entity3 not in position_entity_list
 
         assert len(health_entities) == 1
-        assert entity3 in health_entities
+        health_entity_list = [entity for entity, _ in health_entities]
+        assert entity3 in health_entity_list
 
     def test_get_entities_with_components_multiple(self) -> None:
         """Test getting entities with multiple components."""

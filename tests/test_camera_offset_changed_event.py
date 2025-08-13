@@ -22,7 +22,7 @@ class TestCameraOffsetChangedEvent:
 
         목적: CameraOffsetChangedEvent 객체 생성 시 자동 초기화 검증
         테스트할 범위: __post_init__ 메서드의 자동 설정 기능
-        커버하는 함수 및 데이터: event_type, timestamp, created_at, _initialized 속성
+        커버하는 함수 및 데이터: event_type, timestamp, created_at 등
         기대되는 안정성: 이벤트 객체 생성 시 모든 필수 속성 자동 설정 보장
         """
         # Given - 유효한 파라미터들
@@ -57,7 +57,7 @@ class TestCameraOffsetChangedEvent:
             assert event.created_at == mock_now, (
                 '생성시간이 자동 설정되어야 함'
             )
-            assert event._initialized == True, (
+            assert event._initialized, (
                 '_initialized가 True로 설정되어야 함'
             )
 
@@ -100,7 +100,7 @@ class TestCameraOffsetChangedEvent:
             result = event.validate()
 
             # Then - 검증 성공 및 불변성 확인
-            assert result == True, '유효한 이벤트에 대해 True를 반환해야 함'
+            assert result, '유효한 이벤트에 대해 True를 반환해야 함'
             assert event.world_offset == original_world_offset, (
                 'validate 후 world_offset 불변성 유지'
             )
@@ -171,7 +171,7 @@ class TestCameraOffsetChangedEvent:
             is_significant = event.has_significant_change(threshold=1.0)
 
             # Then - True 반환 검증 (5.0 > 1.0)
-            assert is_significant == True, '임계값보다 큰 변화는 유의미해야 함'
+            assert is_significant, '임계값보다 큰 변화는 유의미해야 함'
 
     def test_validate_메서드_실패_시나리오들_검증_성공_시나리오(self) -> None:
         """5. validate() 메서드 실패 시나리오들 검증 (경계 조건)
@@ -194,7 +194,7 @@ class TestCameraOffsetChangedEvent:
             # 강제로 잘못된 값 설정 (개발자 가정 우회하여 테스트)
             object.__setattr__(event, 'world_offset', (100.0,))
 
-            assert event.validate() == False, (
+            assert not event.validate(), (
                 'world_offset 길이 부족 시 False 반환'
             )
 
@@ -213,7 +213,7 @@ class TestCameraOffsetChangedEvent:
                 event, 'screen_center', ('400', '300')
             )  # 문자열 (잘못됨)
 
-            assert event.validate() == False, (
+            assert not event.validate(), (
                 'screen_center 타입 오류 시 False 반환'
             )
 
@@ -230,7 +230,7 @@ class TestCameraOffsetChangedEvent:
             # 강제로 잘못된 값 설정
             object.__setattr__(event, 'camera_entity_id', 123)  # 정수 (잘못됨)
 
-            assert event.validate() == False, (
+            assert not event.validate(), (
                 'camera_entity_id 타입 오류 시 False 반환'
             )
 
@@ -264,10 +264,10 @@ class TestCameraOffsetChangedEvent:
                 'previous_offset이 None이면 delta도 None이어야 함'
             )
 
-    def test_has_significant_change_previous_offset_None_케이스_검증_성공_시나리오(
+    def test_has_significant_change_previous_offset_None_검증_성공_시나리오(
         self,
     ) -> None:
-        """7. has_significant_change() previous_offset None 케이스 검증 (경계 조건)
+        """7. has_significant_change() previous_offset None 케이스 검증 (경계).
 
         목적: previous_offset이 None일 때 True 반환 검증 (첫 번째 변화)
         테스트할 범위: has_significant_change() 메서드의 첫 번째 변화 처리
@@ -292,7 +292,7 @@ class TestCameraOffsetChangedEvent:
             )  # 큰 임계값
 
             # Then - True 반환 검증 (첫 번째는 항상 유의미)
-            assert is_significant == True, '첫 번째 변화는 항상 유의미해야 함'
+            assert is_significant, '첫 번째 변화는 항상 유의미해야 함'
 
     def test_has_significant_change_임계값_이하_변화_검증_성공_시나리오(
         self,
@@ -323,7 +323,7 @@ class TestCameraOffsetChangedEvent:
             is_significant = event.has_significant_change(threshold=1.0)
 
             # Then - False 반환 검증 (0.58 < 1.0)
-            assert is_significant == False, (
+            assert not is_significant, (
                 '임계값보다 작은 변화는 유의미하지 않아야 함'
             )
 
@@ -363,7 +363,12 @@ class TestCameraOffsetChangedEvent:
                 )
 
             # 전체 형식 검증
-            expected_format = 'CameraOffsetChangedEvent(entity=test-camera-uuid, offset=(100.0, 150.0), timestamp=1234567890.500)'
+            expected_format = (
+                'CameraOffsetChangedEvent('
+                'entity=test-camera-uuid, '
+                'offset=(100.0, 150.0), '
+                'timestamp=1234567890.500)'
+            )
             assert str_repr == expected_format, (
                 f'예상: {expected_format}, 실제: {str_repr}'
             )
@@ -429,4 +434,40 @@ class TestCameraOffsetChangedEvent:
             (
                 mock_datetime.now.assert_called_once(),
                 'datetime.now()가 정확히 한 번 호출되어야 함',
+            )
+
+    def test_screen_center_float_자동_변환_검증_성공_시나리오(self) -> None:
+        """12. screen_center float 자동 변환 검증 (자동 변환)
+
+        목적: screen_center에 float 값 전달 시 자동 int 변환 검증
+        테스트할 범위: __post_init__ 메서드의 float to int 변환 로직
+        커버하는 함수 및 데이터: screen_center 자동 변환 기능
+        기대되는 안정성: float 입력에 대해 int로 자동 변환 보장
+        """
+        # Given - float 타입의 screen_center
+        with patch('time.time', return_value=1234567890.5):
+            # When - float screen_center로 이벤트 생성
+            event = CameraOffsetChangedEvent(
+                event_type=None,  # __post_init__에서 자동 설정됨
+                timestamp=0.0,    # __post_init__에서 자동 설정됨
+                created_at=None,  # __post_init__에서 자동 설정됨
+                world_offset=(100.0, 150.0),
+                screen_center=(400.7, 300.3),  # float 값 입력
+                camera_entity_id="float-test-uuid"
+            )
+
+            # Then - int로 자동 변환 검증
+            assert event.screen_center == (400, 300), (
+                "float screen_center가 int로 자동 변환되어야 함"
+            )
+            assert isinstance(event.screen_center[0], int), (
+                "변환된 screen_center[0]이 int 타입이어야 함"
+            )
+            assert isinstance(event.screen_center[1], int), (
+                "변환된 screen_center[1]이 int 타입이어야 함"
+            )
+
+            # validate() 메서드 통과 검증
+            assert event.validate(), (
+                "변환된 screen_center로 validate가 성공해야 함"
             )

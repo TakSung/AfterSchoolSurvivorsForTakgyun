@@ -343,13 +343,14 @@ class TestEntityManager:
         assert len(entities_with_position) == 2, (
             'Position 컴포넌트를 가진 엔티티는 2개여야 함'
         )
-        assert entity_with_position in entities_with_position, (
+        position_entity_list = [entity for entity, _ in entities_with_position]
+        assert entity_with_position in position_entity_list, (
             'Position만 가진 엔티티가 포함되어야 함'
         )
-        assert entity_with_both in entities_with_position, (
+        assert entity_with_both in position_entity_list, (
             'Position도 가진 엔티티가 포함되어야 함'
         )
-        assert entity_with_health not in entities_with_position, (
+        assert entity_with_health not in position_entity_list, (
             'Position이 없는 엔티티는 제외되어야 함'
         )
 
