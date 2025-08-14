@@ -1190,7 +1190,7 @@
             "description": "월드-스크린 변환, 왕복 변환 일관성, 경계값 테스트를 포함한 수학적 정확성 검증",
             "dependencies": [],
             "details": "tests/unit/test_coordinates.py 구현. WorldToScreenTransformer, ScreenToWorldTransformer의 변환 정확성 테스트. @pytest.mark.parametrize를 사용한 다양한 좌표값 테스트(정수, 부동소수점, 음수, 0, 극값). 왕복 변환 일관성 검증: world → screen → world 변환 후 원래 좌표와의 오차 허용범위(1픽셀) 내 확인. 카메라 이동, 줌 레벨 변경에 따른 변환 정확성 테스트.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-14T12:12:07.294Z",
+      "updated": "2025-08-14T12:39:04.787Z",
       "description": "Tasks for master context"
     }
   }

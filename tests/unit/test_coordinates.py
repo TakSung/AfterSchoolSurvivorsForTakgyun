@@ -1,8 +1,8 @@
 """
 Comprehensive coordinate transformation accuracy tests.
 
-Tests mathematical accuracy of world-screen transformations, round-trip consistency,
-edge cases, and various transformer implementations.
+Tests mathematical accuracy of world-screen transformations,
+round-trip consistency, edge cases, and various transformer implementations.
 """
 
 import math
@@ -20,7 +20,7 @@ class TestCoordinateTransformationAccuracy:
 
     @pytest.fixture
     def screen_size(self) -> Vector2:
-        """Standard screen size for testing."""
+        """Return standard screen size for testing."""
         return Vector2(1024, 768)
 
     @pytest.fixture
@@ -44,7 +44,7 @@ class TestCoordinateTransformationAccuracy:
         transformer_basic: CameraBasedTransformer,
         transformer_cached: CachedCameraTransformer,
     ) -> ICoordinateTransformer:
-        """Parameterized transformer fixture for testing all implementations."""
+        """Return parameterized transformer fixture for all implementations."""
         if request.param == 'basic':
             return transformer_basic
         elif request.param == 'cached':
@@ -171,7 +171,8 @@ class TestCoordinateTransformationAccuracy:
         # Then - 정확성 검증
         distance = test_world.distance_to(restored_world)
         assert distance < 1.0, (
-            f'카메라 오프셋 {camera_offset}에서 왕복 변환 오차 초과: {distance:.6f}'
+            f'카메라 오프셋 {camera_offset}에서 왕복 변환 오차 초과: '
+            f'{distance:.6f}'
         )
 
         # 카메라 오프셋이 올바르게 적용되었는지 확인
@@ -222,7 +223,8 @@ class TestCoordinateTransformationAccuracy:
             0.1, min(10.0, zoom_level)
         )  # CameraBasedTransformer 제약
         assert abs(transformer.zoom_level - expected_zoom) < 0.001, (
-            f'줌 레벨이 정확히 설정되어야 함: 예상 {expected_zoom}, 실제 {transformer.zoom_level}'
+            f'줌 레벨이 정확히 설정되어야 함: 예상 {expected_zoom}, '
+            f'실제 {transformer.zoom_level}'
         )
 
     def test_화면_크기_변경_시_변환_정확성_검증_성공_시나리오(
@@ -258,7 +260,8 @@ class TestCoordinateTransformationAccuracy:
             # Then - 정확성 검증
             distance = test_world.distance_to(restored_world)
             assert distance < 1.0, (
-                f'화면 크기 {screen_size}에서 왕복 변환 오차 초과: {distance:.6f}'
+                f'화면 크기 {screen_size}에서 왕복 변환 오차 초과: '
+                f'{distance:.6f}'
             )
 
             # 화면 크기가 올바르게 설정되었는지 확인
@@ -298,8 +301,9 @@ class TestCoordinateTransformationAccuracy:
             # Then - 정확성 검증
             distance = world_pos.distance_to(restored_world)
             assert distance < 1.0, (
-                f'복합 변환에서 {world_pos} 왕복 변환 오차 초과: {distance:.6f} '
-                f'(스크린: {screen_pos}, 복원: {restored_world})'
+                f'복합 변환에서 {world_pos} 왕복 변환 오차 초과: '
+                f'{distance:.6f} (스크린: {screen_pos}, '
+                f'복원: {restored_world})'
             )
 
     def test_극값_좌표_변환_안정성_검증_성공_시나리오(
@@ -336,19 +340,20 @@ class TestCoordinateTransformationAccuracy:
                     restored_world.y
                 ), f'복원된 월드 좌표가 유한하지 않음: {restored_world}'
 
-                # 왕복 변환 정확성도 확인 (극값에서는 오차가 클 수 있으므로 관대한 허용치)
+                # 왕복 변환 정확성 확인 (극값에서는 관대한 허용치)
                 distance = world_pos.distance_to(restored_world)
                 relative_error = distance / max(
                     abs(world_pos.x), abs(world_pos.y), 1.0
                 )
-                # 매우 작은 좌표값에서는 부동소수점 정밀도 한계로 더 큰 오차 허용
+                # 매우 작은 좌표값에서는 부동소수점 정밀도로 큰 오차 허용
                 max_relative_error = (
                     1e-3
                     if max(abs(world_pos.x), abs(world_pos.y)) < 1e-3
                     else 1e-6
                 )
                 assert relative_error < max_relative_error, (
-                    f'극값 {world_pos}에서 상대 오차 초과: {relative_error} (허용치: {max_relative_error})'
+                    f'극값 {world_pos}에서 상대 오차 초과: {relative_error} '
+                    f'(허용치: {max_relative_error})'
                 )
 
             except (OverflowError, ZeroDivisionError) as e:
@@ -422,7 +427,8 @@ class TestCoordinateTransformationAccuracy:
             angle_difference = 2 * math.pi - angle_difference
 
         assert angle_difference < 0.01, (  # 약 0.57도 이내 허용
-            f'{angle_degrees}도 방향에서 각도 변화 초과: {math.degrees(angle_difference):.3f}도'
+            f'{angle_degrees}도 방향에서 각도 변화 초과: '
+            f'{math.degrees(angle_difference):.3f}도'
         )
 
 
@@ -523,12 +529,14 @@ class TestCoordinateTransformationEdgeCases:
                 assert math.isfinite(screen_pos.x) and math.isfinite(
                     screen_pos.y
                 ), (
-                    f'화면 크기 {screen_size}에서 유한한 스크린 좌표 생성되어야 함'
+                    f'화면 크기 {screen_size}에서 유한한 스크린 좌표 '
+                    '생성되어야 함'
                 )
                 assert math.isfinite(restored_world.x) and math.isfinite(
                     restored_world.y
                 ), (
-                    f'화면 크기 {screen_size}에서 유한한 월드 좌표 복원되어야 함'
+                    f'화면 크기 {screen_size}에서 유한한 월드 좌표 '
+                    '복원되어야 함'
                 )
 
                 # Allow larger error tolerance for very small screens
@@ -537,7 +545,8 @@ class TestCoordinateTransformationEdgeCases:
                     10.0, 100.0 / min(screen_size.x, screen_size.y)
                 )
                 assert distance < max_allowed_error, (
-                    f'화면 크기 {screen_size}에서 허용 오차 {max_allowed_error} 초과: {distance}'
+                    f'화면 크기 {screen_size}에서 허용 오차 '
+                    f'{max_allowed_error} 초과: {distance}'
                 )
 
             except (ZeroDivisionError, OverflowError) as e:
