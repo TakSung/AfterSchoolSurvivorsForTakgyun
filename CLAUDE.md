@@ -180,7 +180,7 @@ memory_profiler       # Profile memory usage (installed)
 ### Game Execution
 ```bash
 # Main game demo (comprehensive ECS demo with UI)
-/opt/homebrew/anaconda3/envs/as-game/bin/python demo_main.py
+/opt/homebrew/anaconda3/envs/as-game/bin/python demo_first_move.py
 
 # Alternative demo files
 /opt/homebrew/anaconda3/envs/as-game/bin/python demo_player_camera.py
