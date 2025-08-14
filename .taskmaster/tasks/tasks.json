@@ -1210,7 +1210,7 @@
             "description": "1000개 좌표 변환을 100ms 이내 처리하는 성능 요구사항 검증 및 최적화 효과 측정",
             "dependencies": [],
             "details": "tests/performance/test_coordinate_performance.py 구현. 1000개 좌표 변환 성능 벤치마크: 기본 변환기와 캐시된 변환기 성능 비교. 시간 측정을 위한 time.perf_counter() 사용. 메모리 사용량 프로파일링으로 GC 압박 측정. 다양한 카메라 위치와 줌 레벨에서 성능 일관성 테스트. 프레임당 변환 호출 수 시뮬레이션 테스트.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-14T12:39:04.787Z",
+      "updated": "2025-08-14T13:29:53.536Z",
       "description": "Tasks for master context"
     }
   }
