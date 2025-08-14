@@ -1137,7 +1137,7 @@
         "dependencies": [
           19
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1167,7 +1167,7 @@
               "20.2"
             ],
             "details": "delta_time을 활용한 월드 좌표 기반 위치 업데이트 로직을 구현합니다. EnemyAISystem에서 CoordinateSystem과 연동하여 적의 월드 위치를 업데이트하고, 화면 렌더링을 위한 스크린 좌표 변환을 처리합니다. AI 상태별 동작 테스트, 좌표 변환 정확성 테스트, 다양한 AI 타입별 동작 검증을 포함한 통합 테스트를 구현하여 기존 AI 로직이 새로운 좌표계에서 올바르게 작동하는지 확인합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1182,7 +1182,7 @@
         "dependencies": [
           20
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -1190,7 +1190,7 @@
             "description": "월드-스크린 변환, 왕복 변환 일관성, 경계값 테스트를 포함한 수학적 정확성 검증",
             "dependencies": [],
             "details": "tests/unit/test_coordinates.py 구현. WorldToScreenTransformer, ScreenToWorldTransformer의 변환 정확성 테스트. @pytest.mark.parametrize를 사용한 다양한 좌표값 테스트(정수, 부동소수점, 음수, 0, 극값). 왕복 변환 일관성 검증: world → screen → world 변환 후 원래 좌표와의 오차 허용범위(1픽셀) 내 확인. 카메라 이동, 줌 레벨 변경에 따른 변환 정확성 테스트.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-14T00:25:06.943Z",
+      "updated": "2025-08-14T12:12:07.294Z",
       "description": "Tasks for master context"
     }
   }
