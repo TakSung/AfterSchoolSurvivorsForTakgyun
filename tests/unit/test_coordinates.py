@@ -551,3 +551,361 @@ class TestCoordinateTransformationEdgeCases:
 
             except (ZeroDivisionError, OverflowError) as e:
                 pytest.fail(f'작은 화면 크기 {screen_size}에서 예외 발생: {e}')
+
+
+class TestCoordinateTransformerPolymorphism:
+    """Test polymorphic interface compatibility for all coordinate transformers."""
+
+    @pytest.fixture
+    def screen_size(self) -> Vector2:
+        """Return standard screen size for testing."""
+        return Vector2(1024, 768)
+
+    @pytest.fixture
+    def transformer_implementations(
+        self, screen_size: Vector2
+    ) -> list[ICoordinateTransformer]:
+        """Return all transformer implementations for polymorphism testing."""
+        return [
+            CameraBasedTransformer(screen_size),
+            CachedCameraTransformer(screen_size, cache_size=50),
+        ]
+
+    def test_인터페이스_메서드_시그니처_호환성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """1. 인터페이스 메서드 시그니처 호환성 검증 (성공 시나리오)
+
+        목적: 모든 구현체가 ICoordinateTransformer 인터페이스를 올바르게 구현하는지 검증
+        테스트할 범위: 모든 추상 메서드와 속성의 시그니처 호환성
+        커버하는 함수 및 데이터: ICoordinateTransformer의 모든 메서드
+        기대되는 안정성: 모든 구현체가 동일한 인터페이스 제공
+        """
+        required_methods = [
+            'world_to_screen',
+            'screen_to_world',
+            'get_camera_offset',
+            'set_camera_offset',
+            'invalidate_cache',
+            'transform',
+            'is_point_visible',
+        ]
+
+        required_properties = ['zoom_level', 'screen_size']
+
+        for transformer in transformer_implementations:
+            # Given - 각 변환기 구현체
+            transformer_type = type(transformer).__name__
+
+            # When & Then - 필수 메서드 존재 확인
+            for method_name in required_methods:
+                assert hasattr(transformer, method_name), (
+                    f'{transformer_type}에 {method_name} 메서드가 없음'
+                )
+                method = getattr(transformer, method_name)
+                assert callable(method), (
+                    f'{transformer_type}.{method_name}이 호출 가능하지 않음'
+                )
+
+            # When & Then - 필수 속성 존재 확인
+            for property_name in required_properties:
+                assert hasattr(transformer, property_name), (
+                    f'{transformer_type}에 {property_name} 속성이 없음'
+                )
+
+    def test_모든_구현체_기본_변환_동작_일관성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """2. 모든 구현체 기본 변환 동작 일관성 검증 (성공 시나리오)
+
+        목적: 모든 구현체가 동일한 입력에 대해 일관된 변환 결과를 제공하는지 검증
+        테스트할 범위: 기본 world_to_screen, screen_to_world 변환 일관성
+        커버하는 함수 및 데이터: 표준 좌표값들의 변환 결과 비교
+        기대되는 안정성: 구현체별로 동일한 변환 결과 보장
+        """
+        test_coordinates = [
+            Vector2(0.0, 0.0),
+            Vector2(100.0, 50.0),
+            Vector2(-100.0, -50.0),
+            Vector2(500.0, 250.0),
+        ]
+
+        # Given - 모든 구현체를 동일한 초기 상태로 설정
+        for transformer in transformer_implementations:
+            transformer.set_camera_offset(Vector2.zero())
+            transformer.zoom_level = 1.0
+            transformer.screen_size = Vector2(1024, 768)
+
+        for world_pos in test_coordinates:
+            # When - 각 구현체에서 변환 수행
+            screen_results = []
+            for transformer in transformer_implementations:
+                screen_pos = transformer.world_to_screen(world_pos)
+                screen_results.append(screen_pos)
+
+            # Then - 모든 구현체의 결과가 일관되는지 검증
+            reference_result = screen_results[0]
+            for i, screen_result in enumerate(screen_results[1:], 1):
+                distance = reference_result.distance_to(screen_result)
+                assert distance < 0.001, (
+                    f'월드 좌표 {world_pos}에서 구현체 간 변환 결과 불일치: '
+                    f'{type(transformer_implementations[0]).__name__}={reference_result}, '
+                    f'{type(transformer_implementations[i]).__name__}={screen_result}, '
+                    f'차이={distance}'
+                )
+
+    def test_속성_설정_동작_일관성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """3. 속성 설정 동작 일관성 검증 (성공 시나리오)
+
+        목적: 모든 구현체가 속성 설정 시 동일한 동작을 보이는지 검증
+        테스트할 범위: zoom_level, screen_size, camera_offset 속성 설정
+        커버하는 함수 및 데이터: 다양한 속성값 설정과 조회
+        기대되는 안정성: 속성 설정/조회 동작 일관성
+        """
+        test_cases = [
+            {
+                'zoom_level': 2.0,
+                'screen_size': Vector2(1920, 1080),
+                'camera_offset': Vector2(100.0, 50.0),
+            },
+            {
+                'zoom_level': 0.5,
+                'screen_size': Vector2(800, 600),
+                'camera_offset': Vector2(-50.0, -25.0),
+            },
+        ]
+
+        for test_case in test_cases:
+            for transformer in transformer_implementations:
+                transformer_type = type(transformer).__name__
+
+                # When - 속성 설정
+                transformer.zoom_level = test_case['zoom_level']
+                transformer.screen_size = test_case['screen_size']
+                transformer.set_camera_offset(test_case['camera_offset'])
+
+                # Then - 속성 조회 결과 확인
+                assert (
+                    abs(transformer.zoom_level - test_case['zoom_level'])
+                    < 0.001
+                ), f'{transformer_type}: 줌 레벨 설정 불일치'
+                assert transformer.screen_size == test_case['screen_size'], (
+                    f'{transformer_type}: 화면 크기 설정 불일치'
+                )
+                assert (
+                    transformer.get_camera_offset()
+                    == test_case['camera_offset']
+                ), f'{transformer_type}: 카메라 오프셋 설정 불일치'
+
+    def test_변환기_교체_시_동작_일관성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """4. 변환기 교체 시 동작 일관성 검증 (성공 시나리오)
+
+        목적: 런타임에 변환기를 교체해도 동일한 결과를 얻을 수 있는지 검증
+        테스트할 범위: 변환기 교체 후 동일 상태에서의 변환 결과 일관성
+        커버하는 함수 및 데이터: 상태 복사 및 교체 시나리오
+        기대되는 안정성: 변환기 교체 시에도 결과 일관성 보장
+        """
+        # Given - 기준 변환기 설정
+        reference_transformer = transformer_implementations[0]
+        reference_transformer.zoom_level = 1.5
+        reference_transformer.screen_size = Vector2(1280, 720)
+        reference_transformer.set_camera_offset(Vector2(200.0, 100.0))
+
+        test_world = Vector2(150.0, 75.0)
+        reference_screen = reference_transformer.world_to_screen(test_world)
+
+        # When & Then - 다른 변환기들을 동일 상태로 설정하여 결과 비교
+        for other_transformer in transformer_implementations[1:]:
+            # 동일한 상태로 설정
+            other_transformer.zoom_level = reference_transformer.zoom_level
+            other_transformer.screen_size = reference_transformer.screen_size
+            other_transformer.set_camera_offset(
+                reference_transformer.get_camera_offset()
+            )
+
+            # 변환 결과 비교
+            other_screen = other_transformer.world_to_screen(test_world)
+            distance = reference_screen.distance_to(other_screen)
+
+            assert distance < 0.001, (
+                f'변환기 교체 시 결과 불일치: '
+                f'{type(reference_transformer).__name__}={reference_screen}, '
+                f'{type(other_transformer).__name__}={other_screen}, '
+                f'차이={distance}'
+            )
+
+    def test_transform_메서드_다형성_호환성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """5. transform 메서드 다형성 호환성 검증 (성공 시나리오)
+
+        목적: ICoordinateTransformer의 transform 메서드가 모든 구현체에서 올바르게 작동하는지 검증
+        테스트할 범위: CoordinateSpace enum을 사용한 transform 메서드
+        커버하는 함수 및 데이터: WORLD-SCREEN 양방향 변환
+        기대되는 안정성: 통합 transform 메서드의 다형성 지원
+        """
+        from src.core.coordinate_transformer import CoordinateSpace
+
+        test_position = Vector2(100.0, 50.0)
+
+        for transformer in transformer_implementations:
+            transformer_type = type(transformer).__name__
+
+            # When - transform 메서드로 양방향 변환
+            screen_via_transform = transformer.transform(
+                test_position, CoordinateSpace.WORLD, CoordinateSpace.SCREEN
+            )
+
+            world_via_transform = transformer.transform(
+                test_position, CoordinateSpace.SCREEN, CoordinateSpace.WORLD
+            )
+
+            # Then - 직접 메서드 호출 결과와 비교
+            screen_via_direct = transformer.world_to_screen(test_position)
+            world_via_direct = transformer.screen_to_world(test_position)
+
+            assert screen_via_transform == screen_via_direct, (
+                f'{transformer_type}: transform 메서드와 직접 호출 결과 불일치 (world_to_screen)'
+            )
+            assert world_via_transform == world_via_direct, (
+                f'{transformer_type}: transform 메서드와 직접 호출 결과 불일치 (screen_to_world)'
+            )
+
+            # 동일 공간 변환 테스트
+            same_space_result = transformer.transform(
+                test_position, CoordinateSpace.WORLD, CoordinateSpace.WORLD
+            )
+            assert same_space_result == test_position, (
+                f'{transformer_type}: 동일 공간 변환 시 원본 반환해야 함'
+            )
+
+    def test_is_point_visible_메서드_호환성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """6. is_point_visible 메서드 호환성 검증 (성공 시나리오)
+
+        목적: 모든 구현체의 is_point_visible 메서드가 일관된 결과를 제공하는지 검증
+        테스트할 범위: 화면 내외부 좌표에 대한 가시성 판단
+        커버하는 함수 및 데이터: 화면 중앙, 경계, 외부 좌표
+        기대되는 안정성: 가시성 판단 결과 일관성
+        """
+        # Given - 모든 구현체를 동일한 상태로 설정
+        for transformer in transformer_implementations:
+            transformer.screen_size = Vector2(800, 600)
+            transformer.set_camera_offset(Vector2.zero())
+            transformer.zoom_level = 1.0
+
+        test_cases = [
+            (Vector2(0.0, 0.0), True),  # 화면 중앙 (가시)
+            (Vector2(-500.0, 0.0), False),  # 화면 왼쪽 외부 (불가시)
+            (Vector2(500.0, 0.0), False),  # 화면 오른쪽 외부 (불가시)
+            (Vector2(0.0, -400.0), False),  # 화면 위쪽 외부 (불가시)
+            (Vector2(0.0, 400.0), False),  # 화면 아래쪽 외부 (불가시)
+        ]
+
+        for world_pos, expected_visible in test_cases:
+            visibility_results = []
+
+            # When - 각 구현체에서 가시성 판단
+            for transformer in transformer_implementations:
+                is_visible = transformer.is_point_visible(world_pos)
+                visibility_results.append(is_visible)
+
+            # Then - 모든 구현체의 결과가 일관되는지 검증
+            for i, is_visible in enumerate(visibility_results):
+                transformer_type = type(
+                    transformer_implementations[i]
+                ).__name__
+                assert is_visible == expected_visible, (
+                    f'{transformer_type}: {world_pos}의 가시성 판단 오류 '
+                    f'(예상: {expected_visible}, 실제: {is_visible})'
+                )
+
+            # 모든 구현체 간 결과 일치 확인
+            reference_result = visibility_results[0]
+            for i, result in enumerate(visibility_results[1:], 1):
+                assert result == reference_result, (
+                    f'{world_pos}에서 구현체 간 가시성 판단 불일치: '
+                    f'{type(transformer_implementations[0]).__name__}={reference_result}, '
+                    f'{type(transformer_implementations[i]).__name__}={result}'
+                )
+
+    def test_캐시_무효화_동작_일관성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """7. 캐시 무효화 동작 일관성 검증 (성공 시나리오)
+
+        목적: invalidate_cache 메서드가 모든 구현체에서 올바르게 작동하는지 검증
+        테스트할 범위: 캐시 무효화 후 변환 결과 일관성
+        커버하는 함수 및 데이터: 캐시 무효화 전후 변환 결과 비교
+        기대되는 안정성: 캐시 상태와 관계없이 일관된 변환 결과
+        """
+        test_world = Vector2(100.0, 50.0)
+
+        for transformer in transformer_implementations:
+            transformer_type = type(transformer).__name__
+
+            # Given - 초기 변환 수행
+            initial_screen = transformer.world_to_screen(test_world)
+
+            # When - 캐시 무효화
+            transformer.invalidate_cache()
+
+            # Then - 캐시 무효화 후에도 동일한 결과
+            after_invalidation_screen = transformer.world_to_screen(test_world)
+
+            distance = initial_screen.distance_to(after_invalidation_screen)
+            assert distance < 0.001, (
+                f'{transformer_type}: 캐시 무효화 후 변환 결과 변경됨 '
+                f'(이전: {initial_screen}, 이후: {after_invalidation_screen}, 차이: {distance})'
+            )
+
+    def test_여러_구현체_동시_사용_독립성_검증_성공_시나리오(
+        self, transformer_implementations: list[ICoordinateTransformer]
+    ) -> None:
+        """8. 여러 구현체 동시 사용 독립성 검증 (성공 시나리오)
+
+        목적: 여러 변환기 인스턴스가 서로 영향을 주지 않고 독립적으로 작동하는지 검증
+        테스트할 범위: 다른 설정의 여러 변환기 동시 운용
+        커버하는 함수 및 데이터: 독립적인 상태 관리
+        기대되는 안정성: 변환기 간 상태 격리 보장
+        """
+        # Given - 각 구현체를 서로 다른 설정으로 구성
+        configs = [
+            {'zoom': 1.0, 'offset': Vector2(0.0, 0.0)},
+            {'zoom': 2.0, 'offset': Vector2(100.0, 50.0)},
+        ]
+
+        configured_transformers = []
+        for i, transformer in enumerate(transformer_implementations):
+            config = configs[i % len(configs)]
+            transformer.zoom_level = config['zoom']
+            transformer.set_camera_offset(config['offset'])
+            configured_transformers.append((transformer, config))
+
+        test_world = Vector2(50.0, 25.0)
+
+        # When & Then - 각 변환기가 독립적인 결과 생성
+        results = []
+        for transformer, expected_config in configured_transformers:
+            # 설정이 유지되는지 확인
+            assert (
+                abs(transformer.zoom_level - expected_config['zoom']) < 0.001
+            ), '변환기 설정이 다른 인스턴스에 의해 영향받음'
+            assert (
+                transformer.get_camera_offset() == expected_config['offset']
+            ), '변환기 오프셋이 다른 인스턴스에 의해 영향받음'
+
+            screen_result = transformer.world_to_screen(test_world)
+            results.append(screen_result)
+
+        # 서로 다른 설정으로 인해 다른 결과가 나와야 함
+        if len(results) > 1:
+            distance = results[0].distance_to(results[1])
+            assert distance > 1.0, (
+                '서로 다른 설정의 변환기들이 동일한 결과를 생성함 (독립성 문제 의심)'
+            )
