@@ -15,6 +15,7 @@ import sys
 import pygame
 
 from src.components.camera_component import CameraComponent
+from src.core.events import EventBus
 from src.components.map_component import MapComponent
 from src.components.player_component import PlayerComponent
 from src.components.player_movement_component import PlayerMovementComponent
@@ -30,8 +31,8 @@ from src.systems.player_movement_system import PlayerMovementSystem
 class InfiniteCameraSystem(CameraSystem):
     """무한 스크롤 카메라 시스템 - 데드존 토글 및 무한 오프셋 기능 포함."""
 
-    def __init__(self, priority: int = 10):
-        super().__init__(priority=priority)
+    def __init__(self, priority: int = 10, event_bus: EventBus | None = None):
+        super().__init__(priority=priority, event_bus=event_bus)
         self.dead_zone_enabled = (
             False  # 데드존 비활성화 상태로 시작 (무한 스크롤)
         )
@@ -140,6 +141,9 @@ def main():
 
     # Initialize coordinate manager
     coordinate_manager = CoordinateManager.get_instance()
+    
+    # Initialize event bus for camera events
+    event_bus = EventBus()
 
     # Entity Manager and System setup
     entity_manager = EntityManager()
@@ -151,7 +155,7 @@ def main():
     # - 주의사항: 우선순위 번호가 낮을수록 먼저 실행됨
     player_movement_system = PlayerMovementSystem(priority=5)
     camera_system = InfiniteCameraSystem(
-        priority=10
+        priority=10, event_bus=event_bus
     )  # 무한 스크롤 카메라 시스템 사용
     map_render_system = MapRenderSystem(priority=15, screen=screen)
 
@@ -163,6 +167,9 @@ def main():
     system_orchestrator.register_system(player_movement_system)
     system_orchestrator.register_system(camera_system)
     system_orchestrator.register_system(map_render_system)
+    
+    # Subscribe MapRenderSystem to camera offset events
+    event_bus.subscribe(map_render_system)
 
     # Create map entity with checkerboard configuration
     map_entity = entity_manager.create_entity()
@@ -301,6 +308,9 @@ def main():
 
         # Update all systems (MapRenderSystem will render tiles automatically)
         system_orchestrator.update_systems(entity_manager, delta_time)
+        
+        # Process camera offset events
+        event_bus.process_events()
 
         # AI-DEV : pygame 화면 지우기를 맵 렌더링 전에 수행
         # - 문제: 이전 프레임의 타일이 남아있어 시각적 잔상 발생

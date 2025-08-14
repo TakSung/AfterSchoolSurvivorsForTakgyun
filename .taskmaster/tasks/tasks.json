@@ -1145,7 +1145,7 @@
             "description": "좌표계 추가로 인한 AI 시스템의 거리 계산을 월드 좌표 기준으로 재구현하고, attack_range와 chase_range를 활용한 상태 전환 로직을 구현합니다.",
             "dependencies": [],
             "details": "CoordinateSystem을 활용하여 월드 좌표에서 적과 플레이어 간의 거리를 계산하는 로직을 구현합니다. EnemyAIComponent에 attack_range, chase_range, movement_speed 필드를 추가하고, 이를 기반으로 IDLE, CHASE, ATTACK 상태를 전환하는 로직을 작성합니다. 좌표계 변환이 필요한 부분에서 ICoordinateTransformer 인터페이스를 활용하여 화면-월드 간 변환을 처리합니다.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-14T00:06:19.813Z",
+      "updated": "2025-08-14T00:25:06.943Z",
       "description": "Tasks for master context"
     }
   }
