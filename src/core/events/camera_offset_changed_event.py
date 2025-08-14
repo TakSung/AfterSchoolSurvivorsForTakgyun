@@ -6,7 +6,7 @@ other systems to react to camera movement without tight coupling.
 """
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from .base_event import BaseEvent
@@ -43,6 +43,9 @@ class CameraOffsetChangedEvent(BaseEvent):
     previous_offset: tuple[float, float] | None = None
     """Previous offset for delta calculations (optional)"""
 
+    def get_event_type(self) -> EventType:  # noqa: D102
+        return EventType.CAMERA_OFFSET_CHANGED
+
     def __post_init__(self) -> None:
         """Initialize the event with camera-specific data."""
         # AI-DEV : screen_center float 값 자동 정수 변환 처리
@@ -69,7 +72,7 @@ class CameraOffsetChangedEvent(BaseEvent):
             object.__setattr__(self, 'screen_center', converted_center)
 
         # Set event type before calling parent's __post_init__
-        object.__setattr__(self, 'event_type', EventType.CAMERA_OFFSET_CHANGED)
+        assert self.get_event_type() is EventType.CAMERA_OFFSET_CHANGED, "반드시 CAMERA_OFFSET_CHANGED 타입이여야 한다."  # noqa: E501
 
         # Set timestamp if not provided
         if not hasattr(self, 'timestamp') or self.timestamp == 0.0:
@@ -134,8 +137,7 @@ class CameraOffsetChangedEvent(BaseEvent):
 
         # 기본 이벤트 검증
         if (
-            not hasattr(self, 'event_type')
-            or self.event_type != EventType.CAMERA_OFFSET_CHANGED
+            self.get_event_type() != EventType.CAMERA_OFFSET_CHANGED
         ):
             return False
 

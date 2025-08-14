@@ -10,9 +10,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
+from .event_types import EventType
 
 if TYPE_CHECKING:
-    from .event_types import EventType
+    pass
 
 
 @dataclass
@@ -32,9 +33,17 @@ class BaseEvent(ABC):
     # - 이유: 게임 시스템 간 느슨한 결합을 위한 이벤트 기반 통신 필요
     # - 요구사항: 타임스탬프 자동 설정, 데이터 불변성, 검증 메커니즘
     # - 히스토리: 초기 구현 - 모든 이벤트의 기본 구조 정의
-    event_type: 'EventType'
     timestamp: float
     created_at: datetime | None
+    
+    @abstractmethod
+    def get_event_type(self) -> EventType:
+        """Event-Type은 반드시 있어야 한다.
+
+        Returns:
+            EventType: 이벤트 타입
+        """
+        pass
 
     def __post_init__(self) -> None:
         """
@@ -102,6 +111,6 @@ class BaseEvent(ABC):
         """String representation of the event."""
         return (
             f'{self.__class__.__name__}('
-            f'type={self.event_type.display_name}, '
+            f'type={self.get_event_type().display_name}, '
             f'timestamp={self.timestamp:.3f})'
         )

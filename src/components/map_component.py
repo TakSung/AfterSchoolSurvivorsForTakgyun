@@ -36,13 +36,13 @@ class MapComponent(Component):
     world_width: float = 2000.0  # 월드 전체 너비 (픽셀)
     world_height: float = 2000.0  # 월드 전체 높이 (픽셀)
 
-    # AI-NOTE : 2025-08-13 맵 시각적 속성 설정 (Task 17 체스판 패턴)
-    # - 이유: 타일 구분을 위한 시각적 피드백 제공
-    # - 요구사항: 밝은 회색(240,240,240)과 어두운 회색(220,220,220) 체스판
-    # - 히스토리: 단조로운 배경에서 체스판 패턴으로 시각적 개선
-    light_tile_color: tuple[int, int, int] = (240, 240, 240)  # 밝은 타일
-    dark_tile_color: tuple[int, int, int] = (220, 220, 220)  # 어두운 타일
-    grid_color: tuple[int, int, int] = (0, 0, 0)  # 1픽셀 검은색 경계선
+    # AI-NOTE : 2025-08-14 맵 시각적 속성 설정 - 플레이어 움직임 가시성 개선
+    # - 이유: 타일 구분을 위한 시각적 피드백 제공 및 플레이어 움직임 시각화
+    # - 요구사항: 대비가 강한 격자 패턴으로 상대적 움직임 명확히 표시
+    # - 히스토리: 기존 회색 계열에서 더 강한 대비의 격자 패턴으로 개선
+    light_tile_color: tuple[int, int, int] = (250, 250, 250)  # 밝은 타일 (거의 흰색)
+    dark_tile_color: tuple[int, int, int] = (200, 200, 200)  # 어두운 타일 (회색)
+    grid_color: tuple[int, int, int] = (120, 120, 120)  # 중간 회색 격자선 (더 명확한 구분)
 
     # AI-DEV : 무한 스크롤링을 위한 타일 패턴 설정
     # - 문제: 맵 경계를 벗어날 때 빈 공간 표시 문제

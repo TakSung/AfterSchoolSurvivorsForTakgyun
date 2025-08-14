@@ -84,14 +84,14 @@ class MapRenderSystem(System, IEventSubscriber):
         if transformer is None:
             pass  # 좌표 변환기 상태 확인만
 
-    def get_required_components(self) -> tuple[type, ...]:
+    def get_required_components(self) -> list[type]:
         """
         Get the required component types for this system.
 
         Returns:
-            Tuple containing MapComponent type.
+            List containing MapComponent type.
         """
-        return (MapComponent,)
+        return [MapComponent]
 
     def update(
         self, entity_manager: 'EntityManager', delta_time: float
@@ -111,6 +111,7 @@ class MapRenderSystem(System, IEventSubscriber):
 
         # 맵 엔티티들을 필터링
         map_entities = self.filter_entities(entity_manager)
+        print(f"MapRenderSystem: 맵 엔티티 수 = {len(map_entities)}")
 
         for map_entity in map_entities:
             map_comp = entity_manager.get_component(map_entity, MapComponent)
@@ -119,8 +120,12 @@ class MapRenderSystem(System, IEventSubscriber):
 
             # 현재 카메라 오프셋 가져오기
             camera_offset = self._get_current_camera_offset(entity_manager)
+            # AI-DEV : 카메라 오프셋이 없어도 맵 렌더링은 계속 진행
+            # - 문제: 이벤트 기반 캐시가 아직 초기화되지 않아 렌더링 중단
+            # - 해결책: 기본 오프셋 (0, 0)으로도 맵 렌더링 수행
+            # - 주의사항: 첫 프레임에서도 맵이 보이도록 보장
             if camera_offset is None:
-                continue
+                camera_offset = (0.0, 0.0)  # 기본 오프셋으로 렌더링 계속
 
             # 가시 타일 범위 계산 (캐시 활용)
             tile_range = self._get_visible_tile_range_cached(
@@ -238,7 +243,7 @@ class MapRenderSystem(System, IEventSubscriber):
 
         # 현재 프레임의 가시 타일 세트 계산
         current_visible_tiles = set()
-        render_tiles : list[dict[str,int|float]] = []
+        render_tiles: list[dict[str, int | float]] = []
 
         for tile_y in range(min_tile_y, max_tile_y + 1):
             for tile_x in range(min_tile_x, max_tile_x + 1):
@@ -263,7 +268,7 @@ class MapRenderSystem(System, IEventSubscriber):
                 screen_x = world_pos[0] + camera_offset[0]
                 screen_y = world_pos[1] + camera_offset[1]
 
-                render_tile_data:dict[str, int|float] = {
+                render_tile_data: dict[str, int | float] = {
                     'tile_x': tile_x,
                     'tile_y': tile_y,
                     'screen_x': screen_x,
@@ -288,7 +293,9 @@ class MapRenderSystem(System, IEventSubscriber):
             self._render_tiles_to_screen(render_tiles, map_comp)
 
     def _render_tiles_to_screen(
-        self, render_tiles: list[dict[str,int|float]], map_comp: MapComponent
+        self,
+        render_tiles: list[dict[str, int | float]],
+        map_comp: MapComponent,
     ) -> None:
         """
         Render tiles to pygame screen surface with checkerboard pattern.
@@ -297,6 +304,15 @@ class MapRenderSystem(System, IEventSubscriber):
             render_tiles: List of tile render data
             map_comp: Map component for tile configuration
         """
+        # AI-NOTE : 2025-08-14 맵 렌더링 시작 시 배경 클리어 - 격자 가시성 확보
+        # - 이유: 잔상 제거를 맵 렌더링과 통합하여 격자 패턴 가시성 보장
+        # - 요구사항: 맵 타일과 조화로운 밝은 회색으로 배경 클리어
+        # - 히스토리: demo 메인루프 클리어에서 맵 시스템 내부 클리어로 이동
+        self._screen.fill((230, 230, 230))  # 맵 타일과 조화로운 밝은 회색
+        
+        # AI-DEV : 디버그용 렌더링 확인 로그
+        print(f"MapRenderSystem: 렌더링 타일 수 = {len(render_tiles)}")
+        
         # AI-DEV : pygame.draw.rect를 사용한 효율적인 타일 렌더링
         # - 문제: 대량의 타일을 매 프레임 렌더링 시 성능 고려 필요
         # - 해결책: 화면 클리핑과 배치 렌더링으로 최적화
@@ -454,7 +470,7 @@ class MapRenderSystem(System, IEventSubscriber):
             event: The event to handle. Expected to be CameraOffsetChangedEvent.
         """
         # 타입 체크를 통한 안전한 이벤트 처리
-        if event.event_type != EventType.CAMERA_OFFSET_CHANGED:
+        if event.get_event_type() != EventType.CAMERA_OFFSET_CHANGED:
             return
 
         # TYPE_CHECKING을 위한 import 처리

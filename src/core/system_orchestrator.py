@@ -52,6 +52,16 @@ class SystemOrchestrator:
         self._event_bus = event_bus
         self._event_subscribers: list[IEventSubscriber] = []
 
+    def subscribe(self, subscriber: 'IEventSubscriber') -> None:
+        """
+        Register a subscriber to receive events.
+
+        Args:
+            subscriber: The subscriber to register.
+        """
+        raise NotImplementedError("subscribe 구현해주세요.")
+        
+
     def register_system(
         self, system: 'ISystem', name: str | None = None
     ) -> None:
@@ -132,6 +142,17 @@ class SystemOrchestrator:
                     f'Warning: Failed to set EventBus for system {system_name}: {e}'
                 )
 
+
+    def unsubscribe(self, subscriber: 'IEventSubscriber') -> None:
+        """
+        Unregister a subscriber from receiving events.
+
+        Args:
+            subscriber: The subscriber to unregister.
+        """
+        
+        raise NotImplementedError("unsubscribe 구현해주세요.")
+    
     def unregister_system(self, name: str) -> 'ISystem | None':
         """
         Unregister a system from the orchestrator.
@@ -204,6 +225,17 @@ class SystemOrchestrator:
             True if the system is registered, False otherwise
         """
         return name in self._systems
+
+
+    def publish_event(self, event: 'BaseEvent') -> None:
+        """
+        Publish an event to all interested subscribers.
+
+        Args:
+            event: The event to publish. Must be a valid BaseEvent instance.
+        """
+        
+        raise NotImplementedError("unsubscribe 구현해주세요.")
 
     def update_systems(
         self, entity_manager: 'EntityManager', delta_time: float

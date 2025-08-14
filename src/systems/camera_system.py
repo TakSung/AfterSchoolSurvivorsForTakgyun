@@ -145,43 +145,38 @@ class CameraSystem(System):
         if target_position is None:
             return
 
-        # AI-NOTE : 2025-08-11 플레이어 중앙 고정을 위한 역방향 카메라 이동
+        # AI-NOTE : 2025-08-14 플레이어 중앙 고정을 위한 역방향 카메라 이동 수정
         # - 이유: 플레이어가 화면 중앙에 고정되도록 월드를 반대방향으로 이동
         # - 요구사항: 플레이어 이동 시 카메라가 역방향으로 동일한 거리 이동
-        # - 히스토리: 기본 추적에서 중앙 고정 방식으로 변경
+        # - 히스토리: 좌표 변환기 직접 업데이트로 변경하여 확실한 반영
 
-        # 화면 중앙에서 타겟 위치를 뺀 값이 새로운 월드 오프셋
-        new_offset_x = camera_comp.screen_center[0] - target_position[0]
-        new_offset_y = camera_comp.screen_center[1] - target_position[1]
-        new_offset = (new_offset_x, new_offset_y)
+        # 타겟 위치에서 화면 중앙을 뺀 값이 새로운 월드 오프셋 (부호 수정)
+        new_offset = (-target_position[0], -target_position[1])
 
         # 월드 경계 제한 적용하여 오프셋 업데이트
         offset_changed = camera_comp.update_world_offset(new_offset)
 
-        # 카메라 오프셋이 변경된 경우 이벤트 발행
+        # AI-DEV : 좌표 변환기 직접 업데이트 - 이벤트 시스템과 병행하여 확실한 반영
+        # - 문제: 이벤트 시스템이 실패하거나 지연될 경우 좌표 변환이 반영되지 않음
+        # - 해결책: 직접 업데이트와 이벤트 시스템을 병행하여 안정성 확보
+        # - 주의사항: 중복 업데이트 방지를 위한 캐시 최적화 적용
+        if offset_changed:
+            from ..utils.vector2 import Vector2
+            
+            transformer = self._coordinate_manager.get_transformer()
+            if transformer and hasattr(transformer, 'set_camera_offset'):
+                camera_offset = Vector2(new_offset[0], new_offset[1])
+                transformer.set_camera_offset(camera_offset)
+                
+                # 캐시 무효화 (임계값 기반 최적화)
+                if hasattr(transformer, 'invalidate_cache'):
+                    transformer.invalidate_cache()
+
+        # 카메라 오프셋이 변경된 경우 이벤트 발행 (추가적인 시스템 알림용)
         if offset_changed and self._event_bus is not None:
             self._publish_camera_offset_changed_event(
                 camera_comp, target, delta_time
             )
-
-        # 기존 직접 변환기 호출 제거 - 이제 이벤트를 통해 처리됨
-        # 하지만 이벤트가 없는 경우를 위한 폴백
-        if offset_changed and self._event_bus is None:
-            # 폴백: 직접 좌표 변환기 업데이트
-            from ..utils.vector2 import Vector2
-
-            transformer = self._coordinate_manager.get_transformer()
-            if transformer and hasattr(transformer, 'set_camera_offset'):
-                camera_offset = Vector2(
-                    -target_position[0], -target_position[1]
-                )
-                transformer.set_camera_offset(camera_offset)
-
-            # 캐시 무효화 (임계값 기반 최적화)
-            if self._should_invalidate_cache(
-                camera_comp.world_offset, new_offset
-            ) and hasattr(transformer, 'invalidate_cache'):
-                transformer.invalidate_cache()
 
     def _handle_mouse_tracking(
         self, camera_comp: CameraComponent, delta_time: float
@@ -398,15 +393,19 @@ class CameraSystem(System):
 
         try:
             # 이벤트 생성
+            print("# 이벤트 생성")
             event = CameraOffsetChangedEvent(
-                event_type=EventType.CAMERA_OFFSET_CHANGED,  # Pass the actual EventType
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=camera_comp.world_offset,
                 screen_center=camera_comp.screen_center,
-                camera_entity_id=target.entity_id,  # Entity의 hash 값 사용
+                camera_entity_id=target.entity_id,  # Entity의 ID
                 previous_offset=self._previous_offset,
             )
+            print(
+                "CameraOffsetChangedEvent : ", event,
+                "| _event_bus : ", str(self._event_bus)
+                )
 
             # 이벤트 발행
             success = self._event_bus.publish(event)
@@ -417,9 +416,13 @@ class CameraSystem(System):
             # 이전 오프셋 업데이트
             self._previous_offset = camera_comp.world_offset
 
-        except Exception:  # noqa: S110
+        except Exception as e:  # noqa: S110
             # 이벤트 발행 실패 시에도 게임이 계속 진행되도록 예외 처리
             # Warning: CameraSystem failed to publish offset changed event
+            print(
+                "이벤트 발행 실패 시에도 게임이 계속 진행되도록 예외 처리 : "
+                , str(e)
+                )
             pass
 
     def set_event_bus(self, event_bus: 'EventBus') -> None:

@@ -35,10 +35,13 @@ class EnemyDeathEvent(BaseEvent):
 
     enemy_entity_id: str
 
+    def get_event_type(self) -> EventType:  # noqa: D102
+        return EventType.ENEMY_DEATH
+
     def __post_init__(self) -> None:
         """Initialize the EnemyDeathEvent with proper event type."""
         # 이벤트 타입 자동 설정
-        object.__setattr__(self, 'event_type', EventType.ENEMY_DEATH)
+        assert self.get_event_type() is EventType.ENEMY_DEATH, "반드시 ENEMY_DEATH 타입이여야 한다."  # noqa: E501
 
         # 부모 클래스의 __post_init__ 호출
         super().__post_init__()
@@ -97,7 +100,6 @@ class EnemyDeathEvent(BaseEvent):
             raise ValueError('Entity must have a valid ID')
 
         return cls(
-            event_type=EventType.ENEMY_DEATH,  # 명시적으로 설정하지만 __post_init__에서 덮어씀
             timestamp=timestamp
             if timestamp is not None
             else 0.0,  # 0.0이면 자동 설정
@@ -127,7 +129,6 @@ class EnemyDeathEvent(BaseEvent):
             ValueError: If the entity ID is invalid.
         """
         return cls(
-            event_type=EventType.ENEMY_DEATH,  # 명시적으로 설정하지만 __post_init__에서 덮어씀
             timestamp=timestamp
             if timestamp is not None
             else 0.0,  # 0.0이면 자동 설정

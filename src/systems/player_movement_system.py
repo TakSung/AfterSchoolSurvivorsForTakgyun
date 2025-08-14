@@ -125,8 +125,10 @@ class PlayerMovementSystem(System):
             self._update_world_position(movement_comp, delta_time)
 
             # PositionComponent에 위치 동기화
-            position_comp.x = movement_comp.world_position[0]
-            position_comp.y = movement_comp.world_position[1]
+            position_comp.set_position(
+                movement_comp.world_position[0],
+                movement_comp.world_position[1]
+            )
 
     def _update_mouse_position(self) -> None:
         """Update cached mouse position from pygame."""

@@ -350,7 +350,7 @@ class EventBus:
         Args:
             event: Event to deliver to subscribers.
         """
-        subscribers = self._get_subscribers_for_event(event.event_type)
+        subscribers = self._get_subscribers_for_event(event.get_event_type())
 
         if not subscribers:
             self._logger.debug(f'No subscribers for event: {event}')

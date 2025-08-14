@@ -34,7 +34,7 @@ class CameraBasedTransformer(ICoordinateTransformer):
         ) = None
 
     def world_to_screen(self, world_pos: Vector2) -> Vector2:
-        relative_pos = world_pos - self._camera_offset
+        relative_pos = world_pos + self._camera_offset  # 오프셋 부호 수정
         scaled_pos = relative_pos * self._zoom_level
         screen_center = self._screen_size / 2
         return scaled_pos + screen_center
@@ -43,7 +43,7 @@ class CameraBasedTransformer(ICoordinateTransformer):
         screen_center = self._screen_size / 2
         relative_pos = screen_pos - screen_center
         scaled_pos = relative_pos / self._zoom_level
-        return scaled_pos + self._camera_offset
+        return scaled_pos - self._camera_offset  # 오프셋 부호 수정
 
     def get_camera_offset(self) -> Vector2:
         return self._camera_offset.copy()
@@ -101,8 +101,8 @@ class CameraBasedTransformer(ICoordinateTransformer):
             # sx, sy: scale, tx, ty: translation
             sx = self._zoom_level
             sy = self._zoom_level
-            tx = screen_center.x - self._camera_offset.x * self._zoom_level
-            ty = screen_center.y - self._camera_offset.y * self._zoom_level
+            tx = screen_center.x + self._camera_offset.x * self._zoom_level
+            ty = screen_center.y + self._camera_offset.y * self._zoom_level
 
             self._transformation_matrix_cache = (sx, 0.0, tx, 0.0, sy, ty)
 
@@ -116,8 +116,12 @@ class CameraBasedTransformer(ICoordinateTransformer):
 
             # 역변환 매트릭스
             inv_scale = 1.0 / self._zoom_level
-            inv_tx = self._camera_offset.x - screen_center.x / self._zoom_level
-            inv_ty = self._camera_offset.y - screen_center.y / self._zoom_level
+            inv_tx = (
+                -self._camera_offset.x - screen_center.x / self._zoom_level
+            )
+            inv_ty = (
+                -self._camera_offset.y - screen_center.y / self._zoom_level
+            )
 
             self._inverse_matrix_cache = (
                 inv_scale,

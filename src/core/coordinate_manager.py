@@ -223,7 +223,7 @@ class CoordinateManager(IEventSubscriber):
             event: The event to handle. Expected to be CameraOffsetChangedEvent.
         """
         # 타입 체크를 통한 안전한 이벤트 처리
-        if event.event_type != EventType.CAMERA_OFFSET_CHANGED:
+        if event.get_event_type() != EventType.CAMERA_OFFSET_CHANGED:
             return
 
         # TYPE_CHECKING을 위한 import 처리
@@ -242,11 +242,15 @@ class CoordinateManager(IEventSubscriber):
             camera_offset = Vector2(
                 event.world_offset[0], event.world_offset[1]
             )
-            assert hasattr(transformer, 'set_camera_offset'), "인터페이스 계약에 따라 set_camera_offset 반드시 존재"
-            assert hasattr(transformer, 'invalidate_cache'), "인터페이스 계약에 따라 invalidate_cache 반드시 존재"
-            
+            assert hasattr(transformer, 'set_camera_offset'), (
+                '인터페이스 계약에 따라 set_camera_offset 반드시 존재'
+            )
+            assert hasattr(transformer, 'invalidate_cache'), (
+                '인터페이스 계약에 따라 invalidate_cache 반드시 존재'
+            )
+
             transformer.set_camera_offset(camera_offset)
-            transformer.invalidate_cache() # 캐시 무효화
+            transformer.invalidate_cache()  # 캐시 무효화
 
             # 옵저버들에게 알림 (기존 시스템과의 호환성 유지)
             self.notify_observers(transformer)
