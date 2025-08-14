@@ -1,6 +1,6 @@
 import threading
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 
@@ -551,7 +551,6 @@ class TestCoordinateManager:
             # 카메라 오프셋 변경 이벤트 생성
             with patch('time.time', return_value=1234567890.5):
                 event = CameraOffsetChangedEvent(
-                    event_type=None,  # __post_init__에서 자동 설정됨
                     timestamp=0.0,  # __post_init__에서 자동 설정됨
                     created_at=None,  # __post_init__에서 자동 설정됨
                     world_offset=(100.0, 150.0),
@@ -596,8 +595,8 @@ class TestCoordinateManager:
             patch.object(manager, 'notify_observers') as mock_notify,
         ):
             # 다른 타입의 이벤트 생성
-            other_event = Mock(spec=BaseEvent)
-            other_event.event_type = EventType.ENEMY_DEATH  # 다른 이벤트 타입
+            other_event= MagicMock(spec=BaseEvent)
+            other_event.get_event_type.return_value = EventType.ENEMY_DEATH
 
             # When - 이벤트 처리
             manager.handle_event(other_event)
@@ -628,8 +627,8 @@ class TestCoordinateManager:
             patch.object(manager, 'notify_observers') as mock_notify,
         ):
             # 올바른 event_type이지만 잘못된 인스턴스 타입
-            wrong_instance_event = Mock(spec=BaseEvent)
-            wrong_instance_event.event_type = EventType.CAMERA_OFFSET_CHANGED
+            wrong_instance_event = MagicMock(spec=BaseEvent)
+            wrong_instance_event.get_event_type.return_value = EventType.CAMERA_OFFSET_CHANGED
 
             # When - 이벤트 처리
             manager.handle_event(wrong_instance_event)
@@ -665,7 +664,6 @@ class TestCoordinateManager:
             # 카메라 오프셋 변경 이벤트 생성
             with patch('time.time', return_value=1234567890.5):
                 event = CameraOffsetChangedEvent(
-                    event_type=None,  # __post_init__에서 자동 설정됨
                     timestamp=0.0,  # __post_init__에서 자동 설정됨
                     created_at=None,  # __post_init__에서 자동 설정됨
                     world_offset=(100.0, 150.0),

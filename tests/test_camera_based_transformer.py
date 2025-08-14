@@ -86,9 +86,9 @@ class TestCameraBasedTransformer:
         screen_pos_with_offset = transformer.world_to_screen(world_pos)
 
         # Then - 오프셋 적용 확인
-        # 카메라 오프셋(50, 30)만큼 화면에서 객체가 이동해야 함
+        # 카메라 오프셋(50, 30)을 설정하면 화면에서 객체가 반대방향(-50, -30)으로 이동
         offset_difference = screen_pos_no_offset - screen_pos_with_offset
-        assert offset_difference.distance_to(Vector2(50, 30)) < 0.001, (
+        assert offset_difference.distance_to(Vector2(-50, -30)) < 0.001, (
             '카메라 오프셋이 올바르게 적용되어야 함'
         )
 
@@ -289,10 +289,10 @@ class TestCameraBasedTransformer:
             '가시 영역 높이가 정확해야 함'
         )
 
-        # 카메라 오프셋 중심으로 영역이 계산되어야 함
+        # 카메라 오프셋에 따른 영역 중심 계산 (오프셋 부호 변경으로 반대방향)
         center_x = (top_left.x + bottom_right.x) / 2
         center_y = (top_left.y + bottom_right.y) / 2
-        expected_center = Vector2(100, 100)  # 카메라 오프셋
+        expected_center = Vector2(-100, -100)  # 카메라 오프셋 반대방향
 
         assert abs(center_x - expected_center.x) < 0.001, (
             '가시 영역 중심 X가 카메라 오프셋과 일치해야 함'

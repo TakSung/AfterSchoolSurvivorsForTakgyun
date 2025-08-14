@@ -88,11 +88,13 @@ class TestPlayerCameraIntegration:
         assert updated_world_pos[0] > 0.0, '플레이어가 우측으로 이동해야 함'
 
         # 카메라 오프셋이 플레이어 이동의 역방향으로 설정되었는지 확인
+        # AI-NOTE : 2025-08-14 카메라 오프셋 계산 방식 변경 반영
+        # - 이유: 플레이어 중앙 고정을 위한 단순한 역방향 오프셋 적용
+        # - 요구사항: new_offset = -player_position (화면 중앙 기준 불필요)
+        # - 히스토리: 기존 (screen_center - player_pos)에서 (-player_pos)로 변경
         camera_offset = camera_comp.world_offset
-        expected_offset_x = (
-            400 - updated_world_pos[0]
-        )  # 화면 중앙 - 플레이어 위치
-        expected_offset_y = 300 - updated_world_pos[1]
+        expected_offset_x = -updated_world_pos[0]  # 플레이어 위치의 역방향
+        expected_offset_y = -updated_world_pos[1]
 
         assert abs(camera_offset[0] - expected_offset_x) < 0.1, (
             f'카메라 X 오프셋 불일치: {camera_offset[0]} != {expected_offset_x}'
@@ -248,14 +250,10 @@ class TestPlayerCameraIntegration:
 
         # AI-DEV : 초기 카메라 오프셋을 플레이어 위치 기준으로 설정
         # - 문제: (0,0) 초기화로 인해 첫 업데이트에서 큰 변화 발생
-        # - 해결책: 화면 중앙에서 플레이어 위치를 뺀 값으로 초기화
-        # - 주의사항: 테스트와 실제 게임 모두 올바른 초기화 패턴 적용
-        initial_offset_x = (
-            400 - movement_comp.world_position[0]
-        )  # 400 - 0 = 400
-        initial_offset_y = (
-            300 - movement_comp.world_position[1]
-        )  # 300 - 0 = 300
+        # - 해결책: 플레이어 위치의 역방향으로 초기화 (새로운 방식 적용)
+        # - 주의사항: 카메라 시스템 변경사항 반영하여 -player_position 사용
+        initial_offset_x = -movement_comp.world_position[0]  # -0 = 0
+        initial_offset_y = -movement_comp.world_position[1]  # -0 = 0
 
         camera_comp = CameraComponent(
             world_offset=(initial_offset_x, initial_offset_y),
@@ -363,9 +361,13 @@ class TestPlayerCameraIntegration:
         )
 
         # 카메라가 플레이어를 정확히 추적하고 있는지 확인
+        # AI-NOTE : 2025-08-14 다중 업데이트 테스트에서 카메라 오프셋 검증 방식 수정
+        # - 이유: 카메라 시스템 변경으로 오프셋 = -player_position 방식 적용
+        # - 요구사항: 연속 업데이트에서도 일관된 추적 동작 검증
+        # - 히스토리: 기존 화면 중앙 기준에서 단순 역방향 방식으로 변경
         camera_offset = camera_comp.world_offset
-        expected_offset_x = 400 - final_world_pos[0]
-        expected_offset_y = 300 - final_world_pos[1]
+        expected_offset_x = -final_world_pos[0]  # 플레이어 위치의 역방향
+        expected_offset_y = -final_world_pos[1]
 
         assert abs(camera_offset[0] - expected_offset_x) < 0.1, (
             '카메라 X 오프셋이 플레이어 추적에 실패함'

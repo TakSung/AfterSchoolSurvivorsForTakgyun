@@ -5,9 +5,11 @@ Tests the comprehensive functionality of the EventBus class including
 queue management, subscriber management, event processing, and performance monitoring.
 """
 
+from dataclasses import dataclass
 import time
 from datetime import datetime
 
+from src.core.events import event_types
 from src.core.events.base_event import BaseEvent
 from src.core.events.event_bus import EventBus
 from src.core.events.event_types import EventType
@@ -205,7 +207,11 @@ class TestEventBus:
         """
 
         # Given - Mock 이벤트 클래스
+        @dataclass
         class MockQueueEvent(BaseEvent):
+            event_type :EventType
+            def get_event_type(self) -> EventType:
+                return self.event_type
             def validate(self) -> bool:
                 return True
 
@@ -248,12 +254,13 @@ class TestEventBus:
 
         # Given - 유효하지 않은 이벤트
         class MockInvalidEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.WEAPON_FIRED
             def validate(self) -> bool:
                 return False
 
         event_bus = EventBus()
         invalid_event = MockInvalidEvent(
-            event_type=EventType.WEAPON_FIRED,
             timestamp=2000.0,
             created_at=datetime.now(),
         )
@@ -284,6 +291,8 @@ class TestEventBus:
         event_bus = EventBus(max_queue_size=small_queue_size)
 
         class MockOverflowEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.ENEMY_SPAWNED
             def validate(self) -> bool:
                 return True
 
@@ -292,7 +301,6 @@ class TestEventBus:
         results = []
         for i in range(5):  # 3개 제한에 5개 시도
             event = MockOverflowEvent(
-                event_type=EventType.ENEMY_SPAWNED,
                 timestamp=float(i),
                 created_at=datetime.now(),
             )
@@ -337,7 +345,11 @@ class TestEventBus:
             def get_subscriber_name(self) -> str:
                 return self.name
 
+        @dataclass
         class MockProcessEvent(BaseEvent):
+            event_type : EventType
+            def get_event_type(self) -> EventType:
+                return self.event_type
             def validate(self) -> bool:
                 return True
 
@@ -440,6 +452,8 @@ class TestEventBus:
                 return 'SuccessSubscriber'
 
         class MockExceptionEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.PROJECTILE_HIT
             def validate(self) -> bool:
                 return True
 
@@ -453,7 +467,6 @@ class TestEventBus:
 
         # 이벤트 발행
         event = MockExceptionEvent(
-            event_type=EventType.PROJECTILE_HIT,
             timestamp=4000.0,
             created_at=datetime.now(),
         )
@@ -501,6 +514,8 @@ class TestEventBus:
                 return 'ReentrantSubscriber'
 
         class MockReentrantEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.BOSS_DEFEATED
             def validate(self) -> bool:
                 return True
 
@@ -510,7 +525,6 @@ class TestEventBus:
 
         # 이벤트 발행
         event = MockReentrantEvent(
-            event_type=EventType.BOSS_DEFEATED,
             timestamp=5000.0,
             created_at=datetime.now(),
         )
@@ -536,6 +550,8 @@ class TestEventBus:
 
         # Given - 이벤트가 있는 EventBus
         class MockManagementEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.EXPERIENCE_GAIN
             def validate(self) -> bool:
                 return True
 
@@ -544,7 +560,6 @@ class TestEventBus:
         # 여러 이벤트 발행
         for i in range(5):
             event = MockManagementEvent(
-                event_type=EventType.EXPERIENCE_GAIN,
                 timestamp=float(i),
                 created_at=datetime.now(),
             )
@@ -583,6 +598,8 @@ class TestEventBus:
                 return 'StatsSubscriber'
 
         class MockStatsEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.LEVEL_UP
             def validate(self) -> bool:
                 return True
 
@@ -593,7 +610,6 @@ class TestEventBus:
         # When - 이벤트 발행 및 처리
         for i in range(3):
             event = MockStatsEvent(
-                event_type=EventType.LEVEL_UP,
                 timestamp=float(i),
                 created_at=datetime.now(),
             )
@@ -669,13 +685,14 @@ class TestEventBus:
         event_bus = EventBus(max_queue_size=small_queue)
 
         class MockHealthEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.GAME_OVER
             def validate(self) -> bool:
                 return True
 
         # When - 70% 초과 사용률 (경고 상태)
         for i in range(8):  # 80% 사용률
             event = MockHealthEvent(
-                event_type=EventType.GAME_OVER,
                 timestamp=float(i),
                 created_at=datetime.now(),
             )
@@ -691,7 +708,6 @@ class TestEventBus:
         # When - 90% 초과 사용률 (에러 상태)
         for i in range(2):  # 추가로 2개 더 (총 100% 사용률)
             event = MockHealthEvent(
-                event_type=EventType.GAME_OVER,
                 timestamp=float(i + 8),
                 created_at=datetime.now(),
             )
@@ -726,6 +742,8 @@ class TestEventBus:
                 return 'ResetSubscriber'
 
         class MockResetEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.GAME_PAUSED
             def validate(self) -> bool:
                 return True
 
@@ -734,7 +752,6 @@ class TestEventBus:
         event_bus.subscribe(subscriber)
 
         event = MockResetEvent(
-            event_type=EventType.GAME_PAUSED,
             timestamp=6000.0,
             created_at=datetime.now(),
         )
@@ -797,6 +814,8 @@ class TestEventBus:
                 return 'StringSubscriber'
 
         class MockStringEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.GAME_RESUMED
             def validate(self) -> bool:
                 return True
 
@@ -805,7 +824,6 @@ class TestEventBus:
         event_bus.subscribe(subscriber)
 
         event = MockStringEvent(
-            event_type=EventType.GAME_RESUMED,
             timestamp=7000.0,
             created_at=datetime.now(),
         )

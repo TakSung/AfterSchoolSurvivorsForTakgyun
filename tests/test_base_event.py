@@ -31,6 +31,8 @@ class TestBaseEvent:
 
         # Given - Mock 이벤트 클래스 정의
         class MockGameEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.ENEMY_DEATH
             def validate(self) -> bool:
                 return True
 
@@ -38,7 +40,6 @@ class TestBaseEvent:
 
         # When - 이벤트 생성
         event = MockGameEvent(
-            event_type=EventType.ENEMY_DEATH,
             timestamp=0.0,  # 이 값은 __post_init__에서 덮어써짐
             created_at=None,  # 이 값도 덮어써짐
         )
@@ -68,24 +69,25 @@ class TestBaseEvent:
 
         # Given - Mock 이벤트 클래스
         class MockCombatEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.WEAPON_FIRED
             def validate(self) -> bool:
                 return True
 
         # When - 전투 이벤트 생성
         event = MockCombatEvent(
-            event_type=EventType.WEAPON_FIRED,
             timestamp=time.time(),
             created_at=datetime.now(),
         )
 
         # Then - 이벤트 타입 정확성 확인
-        assert event.event_type == EventType.WEAPON_FIRED, (
+        assert event.get_event_type() == EventType.WEAPON_FIRED, (
             '이벤트 타입이 정확해야 함'
         )
-        assert event.event_type.display_name == '무기 발사', (
+        assert event.get_event_type().display_name == '무기 발사', (
             '한국어 표시명이 정확해야 함'
         )
-        assert event.event_type.is_combat_event, '전투 이벤트로 분류되어야 함'
+        assert event.get_event_type().is_combat_event, '전투 이벤트로 분류되어야 함'
 
     def test_이벤트_나이_계산_정확성_검증_성공_시나리오(self) -> None:
         """3. 이벤트 나이 계산 정확성 검증 (성공 시나리오)
@@ -98,12 +100,13 @@ class TestBaseEvent:
 
         # Given - 특정 시간의 Mock 이벤트
         class MockTimedEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.ITEM_DROP
             def validate(self) -> bool:
                 return True
 
         base_time = 1000.0
         event = MockTimedEvent(
-            event_type=EventType.ITEM_DROP,
             timestamp=base_time,
             created_at=datetime.now(),
         )
@@ -133,12 +136,13 @@ class TestBaseEvent:
 
         # Given - 과거 시점의 이벤트
         class MockExpirableEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.BOSS_SPAWNED
             def validate(self) -> bool:
                 return True
 
         old_time = 1000.0
         event = MockExpirableEvent(
-            event_type=EventType.BOSS_SPAWNED,
             timestamp=old_time,
             created_at=datetime.now(),
         )
@@ -171,12 +175,13 @@ class TestBaseEvent:
 
         # Given - Mock 이벤트
         class MockStringEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.LEVEL_UP
             def validate(self) -> bool:
                 return True
 
         timestamp = 1234.567
         event = MockStringEvent(
-            event_type=EventType.LEVEL_UP,
             timestamp=timestamp,
             created_at=datetime.now(),
         )
@@ -211,7 +216,6 @@ class TestBaseEvent:
         # When & Then - 인스턴스 생성 시 에러 발생
         with pytest.raises(TypeError) as exc_info:
             IncompleteEvent(
-                event_type=EventType.GAME_STARTED,
                 timestamp=time.time(),
                 created_at=datetime.now(),
             )
@@ -231,6 +235,8 @@ class TestBaseEvent:
 
         # Given - Mock 이벤트 클래스
         class MockDataclassEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                return EventType.LEVEL_UP
             def validate(self) -> bool:
                 return True
 
@@ -238,7 +244,6 @@ class TestBaseEvent:
         base_annotations = BaseEvent.__annotations__
 
         # Then - 타입 힌트 확인
-        assert 'event_type' in base_annotations, 'event_type 필드가 있어야 함'
         assert 'timestamp' in base_annotations, 'timestamp 필드가 있어야 함'
         assert 'created_at' in base_annotations, 'created_at 필드가 있어야 함'
 
@@ -247,4 +252,4 @@ class TestBaseEvent:
             'dataclass로 정의되어야 함'
         )
         fields = MockDataclassEvent.__dataclass_fields__
-        assert len(fields) >= 3, '최소 3개 필드가 있어야 함'
+        assert len(fields) >= 2, '최소 2개 필드가 있어야 함'

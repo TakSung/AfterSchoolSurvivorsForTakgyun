@@ -5,6 +5,7 @@ Tests the IEventSubscriber, IEventPublisher, and IEventHandler
 interfaces to ensure proper contracts and implementation requirements.
 """
 
+from dataclasses import dataclass
 import pytest
 
 from src.core.events.base_event import BaseEvent
@@ -68,6 +69,8 @@ class TestIEventSubscriber:
 
         # Mock Event 클래스
         class MockEvent(BaseEvent):
+            def get_event_type(self) -> EventType:
+                raise NotImplementedError()
             def validate(self) -> bool:
                 return True
 
@@ -118,13 +121,17 @@ class TestIEventSubscriber:
             def handle_event(self, event: BaseEvent) -> None:
                 # 이벤트 타입과 타임스탬프 기록
                 self.processed_events.append(
-                    (event.event_type, event.timestamp)
+                    (event.get_event_type(), event.timestamp)
                 )
 
             def get_subscribed_events(self) -> list[EventType]:
                 return [EventType.WEAPON_FIRED, EventType.PROJECTILE_HIT]
 
+        @dataclass
         class MockCombatEvent(BaseEvent):
+            event_type:EventType
+            def get_event_type(self) -> EventType:
+                return self.event_type
             def validate(self) -> bool:
                 return True
 
@@ -208,7 +215,7 @@ class TestIEventPublisher:
                 self.published_events.append(event)
                 # 구독자들에게 이벤트 전달
                 for subscriber in self.subscribers:
-                    if subscriber.is_subscribed_to(event.event_type):
+                    if subscriber.is_subscribed_to(event.get_event_type()):
                         subscriber.handle_event(event)
 
             def subscribe(self, subscriber: IEventSubscriber) -> None:
@@ -297,7 +304,7 @@ class TestIEventHandler:
                 self.last_handled_event: BaseEvent | None = None
 
             def handle(self, event: BaseEvent) -> bool:
-                if self.can_handle(event.event_type):
+                if self.can_handle(event.get_event_type()):
                     self.handled_count += 1
                     self.last_handled_event = event
                     return True
@@ -306,7 +313,11 @@ class TestIEventHandler:
             def can_handle(self, event_type: EventType) -> bool:
                 return event_type == EventType.ENEMY_DEATH
 
+        @dataclass
         class MockDeathEvent(BaseEvent):
+            event_type:EventType
+            def get_event_type(self) -> EventType:
+                return self.event_type
             def validate(self) -> bool:
                 return True
 
@@ -326,7 +337,9 @@ class TestIEventHandler:
 
         # 이벤트 처리 테스트
         death_event = MockDeathEvent(
-            event_type=EventType.ENEMY_DEATH, timestamp=2000.0, created_at=None
+            event_type=EventType.ENEMY_DEATH,
+            timestamp=2000.0,
+            created_at=None
         )
 
         result = handler.handle(death_event)
@@ -340,7 +353,9 @@ class TestIEventHandler:
 
         # 처리할 수 없는 이벤트 테스트
         item_event = MockDeathEvent(
-            event_type=EventType.ITEM_PICKUP, timestamp=2001.0, created_at=None
+            event_type=EventType.ITEM_PICKUP,
+            timestamp=2001.0,
+            created_at=None
         )
 
         result = handler.handle(item_event)

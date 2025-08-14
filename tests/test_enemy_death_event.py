@@ -33,7 +33,7 @@ class TestEnemyDeathEvent:
 
         # Then - 기본 속성 확인
         assert event.enemy_entity_id == enemy_id, '적 엔티티 ID가 정확해야 함'
-        assert event.event_type == EventType.ENEMY_DEATH, (
+        assert event.get_event_type() == EventType.ENEMY_DEATH, (
             '이벤트 타입이 ENEMY_DEATH여야 함'
         )
         assert event.timestamp > 0, '타임스탬프가 설정되어야 함'
@@ -102,7 +102,7 @@ class TestEnemyDeathEvent:
             '엔티티 ID가 올바르게 추출되어야 함'
         )
         assert event.validate() is True, '생성된 이벤트가 유효해야 함'
-        assert event.event_type == EventType.ENEMY_DEATH, (
+        assert event.get_event_type() == EventType.ENEMY_DEATH, (
             '이벤트 타입이 올바르게 설정되어야 함'
         )
 
@@ -255,13 +255,13 @@ class TestEnemyDeathEvent:
         event2 = EnemyDeathEvent.create_from_entity(mock_entity)
 
         # Then - 모든 이벤트의 타입 일관성 확인
-        assert event1.event_type == EventType.ENEMY_DEATH, (
+        assert event1.get_event_type() == EventType.ENEMY_DEATH, (
             '첫 번째 이벤트 타입 확인'
         )
-        assert event2.event_type == EventType.ENEMY_DEATH, (
+        assert event2.get_event_type() == EventType.ENEMY_DEATH, (
             '두 번째 이벤트 타입 확인'
         )
-        assert event1.event_type == event2.event_type, (
+        assert event1.get_event_type() == event2.get_event_type(), (
             '모든 이벤트 타입이 동일해야 함'
         )
 

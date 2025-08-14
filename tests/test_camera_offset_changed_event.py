@@ -39,7 +39,6 @@ class TestCameraOffsetChangedEvent:
 
             # When - 이벤트 객체 생성 (BaseEvent 필수 파라미터 포함)
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=world_offset,
@@ -48,7 +47,7 @@ class TestCameraOffsetChangedEvent:
             )
 
             # Then - 자동 초기화 검증
-            assert event.event_type == EventType.CAMERA_OFFSET_CHANGED, (
+            assert event.get_event_type() == EventType.CAMERA_OFFSET_CHANGED, (
                 '이벤트 타입이 자동 설정되어야 함'
             )
             assert event.timestamp == 1234567890.5, (
@@ -83,7 +82,6 @@ class TestCameraOffsetChangedEvent:
         # Given - 모든 필드가 올바른 이벤트 객체
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),
@@ -119,7 +117,6 @@ class TestCameraOffsetChangedEvent:
         # Given - previous_offset이 설정된 이벤트 객체
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(200.0, 300.0),
@@ -158,7 +155,6 @@ class TestCameraOffsetChangedEvent:
         # Given - 임계값보다 큰 변화량을 가진 이벤트
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(105.0, 100.0),
@@ -184,7 +180,6 @@ class TestCameraOffsetChangedEvent:
         # Test Case 1: world_offset 길이 부족
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),
@@ -201,7 +196,6 @@ class TestCameraOffsetChangedEvent:
         # Test Case 2: screen_center 타입 오류
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),
@@ -220,7 +214,6 @@ class TestCameraOffsetChangedEvent:
         # Test Case 3: camera_entity_id 타입 오류
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),
@@ -247,7 +240,6 @@ class TestCameraOffsetChangedEvent:
         # Given - previous_offset=None인 이벤트 객체
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(200.0, 300.0),
@@ -277,7 +269,6 @@ class TestCameraOffsetChangedEvent:
         # Given - previous_offset=None인 이벤트 객체
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(200.0, 300.0),
@@ -307,7 +298,6 @@ class TestCameraOffsetChangedEvent:
         # Given - 임계값보다 작은 변화량을 가진 이벤트
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.5, 100.3),
@@ -338,7 +328,6 @@ class TestCameraOffsetChangedEvent:
         # Given - 완전히 설정된 이벤트 객체
         with patch('time.time', return_value=1234567890.5):
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),
@@ -387,7 +376,6 @@ class TestCameraOffsetChangedEvent:
         with patch('time.time', return_value=mock_time):
             # When - 이벤트 생성
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(0.0, 0.0),
@@ -419,7 +407,6 @@ class TestCameraOffsetChangedEvent:
 
             # When - 이벤트 생성
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,  # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(0.0, 0.0),
@@ -448,7 +435,6 @@ class TestCameraOffsetChangedEvent:
         with patch('time.time', return_value=1234567890.5):
             # When - float screen_center로 이벤트 생성
             event = CameraOffsetChangedEvent(
-                event_type=None,  # __post_init__에서 자동 설정됨
                 timestamp=0.0,    # __post_init__에서 자동 설정됨
                 created_at=None,  # __post_init__에서 자동 설정됨
                 world_offset=(100.0, 150.0),

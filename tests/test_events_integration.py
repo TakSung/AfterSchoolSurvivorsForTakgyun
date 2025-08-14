@@ -66,7 +66,7 @@ class TestEventsIntegration:
         assert received_event.enemy_entity_id == 'enemy_integration_test', (
             '받은 이벤트의 적 ID가 일치해야 함'
         )
-        assert received_event.event_type == EventType.ENEMY_DEATH, (
+        assert received_event.get_event_type() == EventType.ENEMY_DEATH, (
             '받은 이벤트의 타입이 ENEMY_DEATH여야 함'
         )
 
@@ -155,10 +155,12 @@ class TestEventsIntegration:
         class MockItemEvent(BaseEvent):
             def __init__(self):
                 super().__init__(
-                    event_type=EventType.ITEM_DROP,
                     timestamp=0.0,
                     created_at=None,
                 )
+                
+            def get_event_type(self) -> EventType:
+                return EventType.ITEM_DROP
 
             def validate(self) -> bool:
                 return True
@@ -195,7 +197,7 @@ class TestEventsIntegration:
             '아이템 전용 구독자는 1개 이벤트만 받아야 함'
         )
         assert (
-            item_only_subscriber.received_events[0].event_type
+            item_only_subscriber.received_events[0].get_event_type()
             == EventType.ITEM_DROP
         ), '아이템 전용 구독자는 ITEM_DROP 이벤트를 받아야 함'
 
@@ -293,10 +295,12 @@ class TestEventsIntegration:
         class MockInvalidEvent(BaseEvent):
             def __init__(self):
                 super().__init__(
-                    event_type=EventType.ENEMY_DEATH,
                     timestamp=0.0,
                     created_at=None,
                 )
+                
+            def get_event_type(self) -> EventType:
+                return EventType.ENEMY_DEATH
 
             def validate(self) -> bool:
                 return False  # 항상 검증 실패
