@@ -5,6 +5,7 @@ This system processes weapon-equipped entities for automatic targeting,
 cooldown management, and projectile creation using world coordinate system.
 """
 
+import logging
 from typing import TYPE_CHECKING, Optional
 
 from ..components.enemy_component import EnemyComponent
@@ -17,6 +18,8 @@ from ..utils.vector2 import Vector2
 if TYPE_CHECKING:
     from ..core.entity import Entity
     from ..core.entity_manager import EntityManager
+
+logger = logging.getLogger(__name__)
 
 
 class AutoAttackSystem(System):
@@ -78,6 +81,7 @@ class AutoAttackSystem(System):
             return
 
         weapon_entities = self.filter_entities(entity_manager)
+        # logger.info(f"AutoAttackSystem: Found {len(weapon_entities)} weapon entities.")
 
         for entity in weapon_entities:
             self._process_auto_attack(entity, entity_manager, delta_time)
@@ -104,6 +108,8 @@ class AutoAttackSystem(System):
         if not weapon or not weapon_pos:
             return
 
+        # logger.info(f"Processing auto attack for entity {weapon_entity.entity_id}")
+
         # AI-NOTE : 2025-08-13 시간 기반 공격 쿨다운 시스템 구현
         # - 이유: FPS와 독립적인 안정적인 공격 주기 제공
         # - 요구사항: attack_speed를 초당 공격 횟수로 처리
@@ -114,11 +120,13 @@ class AutoAttackSystem(System):
 
         # 쿨다운이 완료되었으면 공격 시도
         if self._can_attack(weapon):
+            # logger.info("Attack cooldown finished. Finding target.")
             target = self._find_nearest_enemy_in_world(
                 weapon_pos, weapon.range, entity_manager
             )
 
             if target:
+                # logger.info(f"Found target: {target.entity_id}")
                 target_pos = entity_manager.get_component(
                     target, PositionComponent
                 )
@@ -127,6 +135,10 @@ class AutoAttackSystem(System):
                         weapon, weapon_pos, target_pos, entity_manager
                     )
                     self._reset_attack_cooldown(weapon)
+            # else:
+                # logger.info("No target found in range.")
+        # else:
+            # logger.info("Attack on cooldown.")
 
     def _update_attack_cooldown(
         self, weapon: WeaponComponent, delta_time: float
@@ -200,6 +212,7 @@ class AutoAttackSystem(System):
         enemy_entities = entity_manager.get_entities_with_components(
             EnemyComponent, PositionComponent
         )
+        # logger.info(f"Found {len(enemy_entities)} enemies to check.")
 
         closest_enemy = None
         closest_distance = weapon_range
@@ -237,6 +250,7 @@ class AutoAttackSystem(System):
             target_pos: Target position for the projectile (world coordinates)
             entity_manager: Entity manager for creating projectiles
         """
+        logger.info(f"Executing attack from {start_pos} to {target_pos}")
         # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
         # - 이유: 월드 좌표에서 스크린 좌표 독립적인 투사체 생성
         # - 요구사항: 월드 좌표 방향 계산, Vector2 정규화 활용
