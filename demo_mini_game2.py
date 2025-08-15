@@ -3,7 +3,7 @@ Mini Game Demo 2 - Complete ECS with Attack System and Camera
 
 Advanced demo showcasing the complete experience and level-up system with:
 - Player movement following mouse with camera tracking
-- Automatic projectile attack system  
+- Automatic projectile attack system
 - Enemy AI with different types and behaviors
 - Experience gain from enemy kills with level-up
 - Real-time UI showing experience, level, health, and weapon stats
@@ -22,15 +22,16 @@ import pygame
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 from src.components.camera_component import CameraComponent
-from src.components.collision_component import (CollisionComponent,
-                                                CollisionLayer)
+from src.components.collision_component import (
+    CollisionComponent,
+    CollisionLayer,
+)
 from src.components.enemy_component import EnemyComponent
 from src.components.experience_component import ExperienceComponent
 from src.components.health_component import HealthComponent
 from src.components.player_component import PlayerComponent
 from src.components.player_movement_component import PlayerMovementComponent
 from src.components.position_component import PositionComponent
-from src.components.projectile_component import ProjectileComponent
 from src.components.render_component import RenderComponent, RenderLayer
 from src.components.rotation_component import RotationComponent
 from src.components.weapon_component import WeaponComponent, WeaponType
@@ -78,68 +79,81 @@ class MiniGameDemo2:
         # pygame 초기화
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("고급 경험치 시스템 데모 v2 - After School Survivors")
+        pygame.display.set_caption(
+            '고급 경험치 시스템 데모 v2 - After School Survivors'
+        )
         self.clock = pygame.time.Clock()
-        
+
         # 폰트 설정 (한글 지원)
         try:
             # 한글 폰트 시도 (macOS)
-            self.font_large = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 32)
-            self.font_medium = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 24)
-            self.font_small = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 18)
+            self.font_large = pygame.font.Font(
+                '/System/Library/Fonts/AppleSDGothicNeo.ttc', 32
+            )
+            self.font_medium = pygame.font.Font(
+                '/System/Library/Fonts/AppleSDGothicNeo.ttc', 24
+            )
+            self.font_small = pygame.font.Font(
+                '/System/Library/Fonts/AppleSDGothicNeo.ttc', 18
+            )
         except:
             try:
                 # 한글 폰트 시도 (일반적인 경로)
-                self.font_large = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 32)
-                self.font_medium = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 24)  
-                self.font_small = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 18)
+                self.font_large = pygame.font.Font(
+                    '/System/Library/Fonts/Arial Unicode MS.ttf', 32
+                )
+                self.font_medium = pygame.font.Font(
+                    '/System/Library/Fonts/Arial Unicode MS.ttf', 24
+                )
+                self.font_small = pygame.font.Font(
+                    '/System/Library/Fonts/Arial Unicode MS.ttf', 18
+                )
             except:
                 # 기본 폰트로 fallback
                 self.font_large = pygame.font.Font(None, 32)
                 self.font_medium = pygame.font.Font(None, 24)
                 self.font_small = pygame.font.Font(None, 18)
-        
+
         # ECS 시스템 초기화
         self.entity_manager = EntityManager()
         self.event_bus = EventBus()
         self.system_orchestrator = SystemOrchestrator(event_bus=self.event_bus)
-        
+
         # 좌표 변환 시스템 설정
         self.coordinate_manager = CoordinateManager.get_instance()
         self._setup_coordinate_system()
-        
+
         # 게임 상태
         self.running = True
         self.paused = False
-        
+
         # 엔티티 참조들
         self.player_entity = None
         self.camera_entity = None
         self.enemies: list[Any] = []
-        self.projectiles: list[Any] = []
-        
+
         # 게임 타이밍
         self.last_enemy_spawn = 0.0
         self.enemy_spawn_interval = 2.0
         self.game_start_time = time.time()
-        
+
         # 통계
         self.enemies_killed = 0
         self.shots_fired = 0
-        
+
         # 성능 모니터링
         self.frame_count = 0
         self.fps_timer = 0.0
         self.current_fps = 60.0
-        
+
         # 초기화
         self._setup_systems()
         self._create_player()
         self._create_camera()
-        
-        print("=== 고급 미니 게임 데모 v2 시작 ===")
-        print("🎮 마우스로 이동, 자동 공격으로 적을 처치하세요!")
-        print("⚡ 경험치를 얻어 레벨업하고 더 강해지세요!")
+
+        print('=== 고급 미니 게임 데모 v2 시작 ===')
+        print('🎮 마우스로 이동, 자동 공격으로 적을 처치하세요!')
+        print('⚡ 경험치를 얻어 레벨업하고 더 강해지세요!')
 
     def _setup_coordinate_system(self) -> None:
         """좌표 변환 시스템 설정"""
@@ -162,16 +176,22 @@ class MiniGameDemo2:
 
         # 자동 공격 시스템
         auto_attack_system = AutoAttackSystem(priority=15)
-        self.system_orchestrator.register_system(auto_attack_system, 'auto_attack')
+        self.system_orchestrator.register_system(
+            auto_attack_system, 'auto_attack'
+        )
 
         # 투사체 시스템
         projectile_system = ProjectileSystem(priority=18)
-        self.system_orchestrator.register_system(projectile_system, 'projectile')
+        self.system_orchestrator.register_system(
+            projectile_system, 'projectile'
+        )
 
         # 경험치 시스템
         experience_system = ExperienceSystem(priority=20)
         experience_system.set_event_bus(self.event_bus)
-        self.system_orchestrator.register_system(experience_system, 'experience')
+        self.system_orchestrator.register_system(
+            experience_system, 'experience'
+        )
 
         # 플레이어 스탯 시스템
         player_stats_system = PlayerStatsSystem(priority=25)
@@ -192,11 +212,11 @@ class MiniGameDemo2:
         self.entity_manager.add_component(
             self.player_entity, PlayerComponent()
         )
-        
+
         self.entity_manager.add_component(
             self.player_entity, PositionComponent(x=0.0, y=0.0)
         )
-        
+
         self.entity_manager.add_component(
             self.player_entity, RotationComponent(angle=0.0)
         )
@@ -208,14 +228,14 @@ class MiniGameDemo2:
                 speed=200.0,
                 angular_velocity_limit=math.pi * 3.0,
                 dead_zone_radius=15.0,
-            )
+            ),
         )
 
         # 플레이어 렌더링
         player_surface = pygame.Surface((30, 30), pygame.SRCALPHA)
         player_surface.fill(COLORS['player'])
         pygame.draw.circle(player_surface, (255, 255, 255), (15, 15), 13, 2)
-        
+
         render_comp = RenderComponent(
             sprite=player_surface,
             size=(30, 30),
@@ -226,14 +246,13 @@ class MiniGameDemo2:
 
         # 경험치 컴포넌트
         self.entity_manager.add_component(
-            self.player_entity,
-            ExperienceComponent(current_exp=0, level=1)
+            self.player_entity, ExperienceComponent(current_exp=0, level=1)
         )
 
         # 체력 컴포넌트
         self.entity_manager.add_component(
             self.player_entity,
-            HealthComponent(current_health=100, max_health=100)
+            HealthComponent(current_health=100, max_health=100),
         )
 
         # 무기 컴포넌트
@@ -245,7 +264,7 @@ class MiniGameDemo2:
                 attack_speed=2.0,  # 초당 2발
                 range=300.0,
                 last_attack_time=0.0,
-            )
+            ),
         )
 
         # 충돌 컴포넌트
@@ -256,13 +275,13 @@ class MiniGameDemo2:
                 height=30.0,
                 layer=CollisionLayer.PLAYER,
                 collision_mask={CollisionLayer.ENEMY},
-            )
+            ),
         )
 
     def _create_camera(self) -> None:
         """카메라 엔티티 생성 - 플레이어 중앙 고정"""
         self.camera_entity = self.entity_manager.create_entity()
-        
+
         player_pos = self.entity_manager.get_component(
             self.player_entity, PositionComponent
         )
@@ -305,15 +324,11 @@ class MiniGameDemo2:
         game_time = time.time() - self.game_start_time
         if game_time > 120:  # 2분 후 보스 등장
             enemy_type = random.choices(
-                ['basic', 'enhanced', 'boss'],
-                weights=[30, 50, 20],
-                k=1
+                ['basic', 'enhanced', 'boss'], weights=[30, 50, 20], k=1
             )[0]
         elif game_time > 60:  # 1분 후 강화 적 등장
             enemy_type = random.choices(
-                ['basic', 'enhanced'],
-                weights=[50, 50],
-                k=1
+                ['basic', 'enhanced'], weights=[50, 50], k=1
             )[0]
         else:
             enemy_type = 'basic'
@@ -336,14 +351,10 @@ class MiniGameDemo2:
             health = 50
 
         # 위치 컴포넌트
-        self.entity_manager.add_component(
-            enemy, PositionComponent(x=x, y=y)
-        )
+        self.entity_manager.add_component(enemy, PositionComponent(x=x, y=y))
 
         # 회전 컴포넌트
-        self.entity_manager.add_component(
-            enemy, RotationComponent(angle=0.0)
-        )
+        self.entity_manager.add_component(enemy, RotationComponent(angle=0.0))
 
         # 적 렌더링
         enemy_surface = pygame.Surface(size, pygame.SRCALPHA)
@@ -366,14 +377,17 @@ class MiniGameDemo2:
                 (center[0], 5),
                 (size[0] - 5, center[1]),
                 (center[0], size[1] - 5),
-                (5, center[1])
+                (5, center[1]),
             ]
             pygame.draw.polygon(enemy_surface, (255, 255, 255), points, 2)
         else:
             # 기본 적은 원
             pygame.draw.circle(
-                enemy_surface, (255, 255, 255), 
-                (size[0] // 2, size[1] // 2), size[0] // 2 - 2, 2
+                enemy_surface,
+                (255, 255, 255),
+                (size[0] // 2, size[1] // 2),
+                size[0] // 2 - 2,
+                2,
             )
 
         render_comp = RenderComponent(
@@ -399,8 +413,11 @@ class MiniGameDemo2:
                 width=size[0],
                 height=size[1],
                 layer=CollisionLayer.ENEMY,
-                collision_mask={CollisionLayer.PLAYER, CollisionLayer.PROJECTILE},
-            )
+                collision_mask={
+                    CollisionLayer.PLAYER,
+                    CollisionLayer.PROJECTILE,
+                },
+            ),
         )
 
         # 적 정보 저장
@@ -423,9 +440,13 @@ class MiniGameDemo2:
             return
 
         for enemy in self.enemies[:]:
-            enemy_pos = self.entity_manager.get_component(enemy, PositionComponent)
-            enemy_health = self.entity_manager.get_component(enemy, HealthComponent)
-            
+            enemy_pos = self.entity_manager.get_component(
+                enemy, PositionComponent
+            )
+            enemy_health = self.entity_manager.get_component(
+                enemy, HealthComponent
+            )
+
             if not enemy_pos or not enemy_health:
                 continue
 
@@ -443,12 +464,14 @@ class MiniGameDemo2:
                 # 정규화된 방향벡터
                 move_x = (dx / distance) * enemy.speed * delta_time
                 move_y = (dy / distance) * enemy.speed * delta_time
-                
+
                 enemy_pos.x += move_x
                 enemy_pos.y += move_y
-                
+
                 # 회전 업데이트
-                rotation = self.entity_manager.get_component(enemy, RotationComponent)
+                rotation = self.entity_manager.get_component(
+                    enemy, RotationComponent
+                )
                 if rotation:
                     rotation.angle = math.atan2(dy, dx)
 
@@ -464,7 +487,7 @@ class MiniGameDemo2:
             min_interval = 0.8
             self.enemy_spawn_interval = max(
                 min_interval,
-                2.0 - (game_time / 90.0)  # 1.5분마다 약간씩 단축
+                2.0 - (game_time / 90.0),  # 1.5분마다 약간씩 단축
             )
 
     def _kill_enemy(self, enemy: Any) -> None:
@@ -473,10 +496,9 @@ class MiniGameDemo2:
             return
 
         # 적 사망 이벤트 생성
-        enemy_id = f"enemy_{enemy.enemy_type}_{enemy.entity_id}"
+        enemy_id = f'enemy_{enemy.enemy_type}_{enemy.entity_id}'
         death_event = EnemyDeathEvent.create_from_id(
-            enemy_entity_id=enemy_id,
-            timestamp=time.time()
+            enemy_entity_id=enemy_id, timestamp=time.time()
         )
 
         # 경험치 시스템에 이벤트 전달
@@ -508,14 +530,18 @@ class MiniGameDemo2:
 
         # 레이어별로 정렬
         entities_with_render.sort(
-            key=lambda x: self.entity_manager.get_component(x[0], RenderComponent).layer
+            key=lambda x: self.entity_manager.get_component(
+                x[0], RenderComponent
+            ).layer
         )
 
         for entity, render_comp in entities_with_render:
             if not render_comp.visible:
                 continue
 
-            pos_comp = self.entity_manager.get_component(entity, PositionComponent)
+            pos_comp = self.entity_manager.get_component(
+                entity, PositionComponent
+            )
             if not pos_comp:
                 continue
 
@@ -534,24 +560,34 @@ class MiniGameDemo2:
                     # 스프라이트 렌더링
                     if render_comp.sprite:
                         sprite_rect = render_comp.sprite.get_rect()
-                        sprite_rect.center = (int(screen_pos.x), int(screen_pos.y))
+                        sprite_rect.center = (
+                            int(screen_pos.x),
+                            int(screen_pos.y),
+                        )
                         self.screen.blit(render_comp.sprite, sprite_rect)
 
                     # 체력바 표시 (적만)
                     if (
                         entity in self.enemies
-                        and self.entity_manager.has_component(entity, HealthComponent)
+                        and self.entity_manager.has_component(
+                            entity, HealthComponent
+                        )
                     ):
                         health_comp = self.entity_manager.get_component(
                             entity, HealthComponent
                         )
-                        if health_comp and health_comp.get_health_ratio() < 1.0:
+                        if (
+                            health_comp
+                            and health_comp.get_health_ratio() < 1.0
+                        ):
                             self._draw_health_bar(screen_pos, health_comp)
 
             except:
                 continue  # 변환 실패 시 무시
 
-    def _draw_health_bar(self, screen_pos: Vector2, health_comp: HealthComponent) -> None:
+    def _draw_health_bar(
+        self, screen_pos: Vector2, health_comp: HealthComponent
+    ) -> None:
         """적 체력바 그리기"""
         bar_width = 30
         bar_height = 4
@@ -567,7 +603,9 @@ class MiniGameDemo2:
         health_width = int(bar_width * health_ratio)
         if health_width > 0:
             health_rect = pygame.Rect(bar_x, bar_y, health_width, bar_height)
-            color = COLORS['health_bar'] if health_ratio > 0.3 else (255, 100, 100)
+            color = (
+                COLORS['health_bar'] if health_ratio > 0.3 else (255, 100, 100)
+            )
             pygame.draw.rect(self.screen, color, health_rect)
 
         # 테두리
@@ -603,7 +641,7 @@ class MiniGameDemo2:
 
         # 레벨 표시
         level_text = self.font_medium.render(
-            f"레벨: {exp_comp.level}", True, COLORS['ui_text']
+            f'레벨: {exp_comp.level}', True, COLORS['ui_text']
         )
         self.screen.blit(level_text, (20, y_offset))
         y_offset += 25
@@ -622,8 +660,9 @@ class MiniGameDemo2:
 
         # 경험치 텍스트
         exp_text = self.font_small.render(
-            f"EXP: {exp_comp.current_exp}/{exp_comp.get_exp_to_next_level()}",
-            True, COLORS['ui_text']
+            f'EXP: {exp_comp.current_exp}/{exp_comp.get_exp_to_next_level()}',
+            True,
+            COLORS['ui_text'],
         )
         self.screen.blit(exp_text, (22, y_offset + 2))
         y_offset += 25
@@ -636,14 +675,17 @@ class MiniGameDemo2:
         health_fill_width = int(320 * health_ratio)
         if health_fill_width > 0:
             health_fill_rect = pygame.Rect(20, y_offset, health_fill_width, 16)
-            pygame.draw.rect(self.screen, COLORS['health_bar'], health_fill_rect)
+            pygame.draw.rect(
+                self.screen, COLORS['health_bar'], health_fill_rect
+            )
 
         pygame.draw.rect(self.screen, COLORS['ui_text'], health_bar_rect, 1)
 
         # 체력 텍스트
         health_text = self.font_small.render(
-            f"HP: {health_comp.current_health}/{health_comp.max_health}",
-            True, COLORS['ui_text']
+            f'HP: {health_comp.current_health}/{health_comp.max_health}',
+            True,
+            COLORS['ui_text'],
         )
         self.screen.blit(health_text, (22, y_offset + 2))
         y_offset += 25
@@ -651,58 +693,70 @@ class MiniGameDemo2:
         # 무기 정보
         if weapon_comp:
             weapon_text = self.font_small.render(
-                f"무기: {weapon_comp.weapon_type.display_name} "
-                f"(데미지: {weapon_comp.damage}, 속도: {weapon_comp.attack_speed:.1f}/s)",
-                True, COLORS['ui_text']
+                f'무기: {weapon_comp.weapon_type.display_name} '
+                f'(데미지: {weapon_comp.damage}, 속도: {weapon_comp.attack_speed:.1f}/s)',
+                True,
+                COLORS['ui_text'],
             )
             self.screen.blit(weapon_text, (20, y_offset))
 
         # 게임 통계
         stats_y = 170
+
+        # 실제 투사체 개수를 ProjectileSystem에서 가져오기
+        projectile_system = self.system_orchestrator.get_system('projectile')
+        projectile_count = 0
+        if projectile_system:
+            projectile_count = projectile_system.get_projectile_count(
+                self.entity_manager
+            )
+
         stats_texts = [
-            f"적 처치: {self.enemies_killed}",
-            f"현재 적: {len(self.enemies)}",
-            f"투사체: {len(self.projectiles)}",
-            f"FPS: {self.current_fps:.1f}",
-            f"게임 시간: {int(time.time() - self.game_start_time)}초",
+            f'적 처치: {self.enemies_killed}',
+            f'현재 적: {len(self.enemies)}',
+            f'투사체: {projectile_count}',
+            f'FPS: {self.current_fps:.1f}',
+            f'게임 시간: {int(time.time() - self.game_start_time)}초',
         ]
 
         for i, text in enumerate(stats_texts):
-            stat_surface = self.font_small.render(text, True, COLORS['ui_text'])
+            stat_surface = self.font_small.render(
+                text, True, COLORS['ui_text']
+            )
             self.screen.blit(stat_surface, (20, stats_y + i * 20))
 
     def _render_instructions(self) -> None:
         """게임 조작법 표시"""
         instructions = [
-            "=== 고급 미니 게임 데모 v2 ===",
-            "",
-            "조작법:",
-            "• 마우스 이동 - 플레이어 이동",
-            "• 자동 공격 - 가장 가까운 적 공격",
-            "• SPACE - 일시정지/재개",
-            "• ESC - 종료",
-            "",
-            "시스템:",
-            "• 월드 좌표 + 카메라 추적",
-            "• 자동 투사체 공격",
-            "• 경험치 획득 & 레벨업",
-            "• 적 AI & 타입별 차별화",
-            "",
-            "적 타입:",
-            "• 빨강 원 - 기본 적 (50 EXP)",
-            "• 주황 다이아몬드 - 강화 적 (75 EXP)",
-            "• 보라 육각형 - 보스 (200 EXP)",
+            '=== 고급 미니 게임 데모 v2 ===',
+            '',
+            '조작법:',
+            '• 마우스 이동 - 플레이어 이동',
+            '• 자동 공격 - 가장 가까운 적 공격',
+            '• SPACE - 일시정지/재개',
+            '• ESC - 종료',
+            '',
+            '시스템:',
+            '• 월드 좌표 + 카메라 추적',
+            '• 자동 투사체 공격',
+            '• 경험치 획득 & 레벨업',
+            '• 적 AI & 타입별 차별화',
+            '',
+            '적 타입:',
+            '• 빨강 원 - 기본 적 (50 EXP)',
+            '• 주황 다이아몬드 - 강화 적 (75 EXP)',
+            '• 보라 육각형 - 보스 (200 EXP)',
         ]
 
         start_y = SCREEN_HEIGHT - 400
         for i, text in enumerate(instructions):
-            if text.startswith("==="):
+            if text.startswith('==='):
                 color = (255, 255, 100)
                 font = self.font_medium
-            elif text.startswith("•"):
+            elif text.startswith('•'):
                 color = (200, 200, 255)
                 font = self.font_small
-            elif text in ["조작법:", "시스템:", "적 타입:"]:
+            elif text in ['조작법:', '시스템:', '적 타입:']:
                 color = (100, 255, 100)
                 font = self.font_small
             else:
@@ -712,11 +766,8 @@ class MiniGameDemo2:
             if text:  # 빈 줄이 아닌 경우만
                 instruction_surface = font.render(text, True, color)
                 self.screen.blit(
-                    instruction_surface,
-                    (SCREEN_WIDTH - 280, start_y + i * 20)
+                    instruction_surface, (SCREEN_WIDTH - 280, start_y + i * 20)
                 )
-
-    
 
     def _update_fps(self, delta_time: float) -> None:
         """FPS 계산"""
@@ -734,7 +785,9 @@ class MiniGameDemo2:
 
         while self.running:
             current_time = pygame.time.get_ticks()
-            delta_time = (current_time - last_time) / 1000.0 if not self.paused else 0.0
+            delta_time = (
+                (current_time - last_time) / 1000.0 if not self.paused else 0.0
+            )
             last_time = current_time
 
             # 이벤트 처리
@@ -746,7 +799,7 @@ class MiniGameDemo2:
                         self.running = False
                     elif event.key == pygame.K_SPACE:
                         self.paused = not self.paused
-                        print(f"게임 {'일시정지' if self.paused else '재개'}")
+                        print(f'게임 {"일시정지" if self.paused else "재개"}')
 
             if not self.paused:
                 # 시스템 업데이트
@@ -767,14 +820,13 @@ class MiniGameDemo2:
             # 일시정지 표시
             if self.paused:
                 pause_text = self.font_large.render(
-                    "⏸️ 일시정지 - SPACE로 재개", True, (255, 255, 0)
+                    '⏸️ 일시정지 - SPACE로 재개', True, (255, 255, 0)
                 )
                 text_rect = pause_text.get_rect(
                     center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
                 )
                 pygame.draw.rect(
-                    self.screen, (0, 0, 0, 180),
-                    text_rect.inflate(20, 10)
+                    self.screen, (0, 0, 0, 180), text_rect.inflate(20, 10)
                 )
                 self.screen.blit(pause_text, text_rect)
 
@@ -808,24 +860,25 @@ class MiniGameDemo2:
                 final_health = health_comp.current_health
 
         play_time = int(time.time() - self.game_start_time)
-        
-        print(f"\n{'='*50}")
-        print("🎮 게임 종료 통계")
-        print(f"{'='*50}")
-        print(f"⚡ 최종 레벨: {final_level}")
-        print(f"📊 총 경험치: {final_exp}")
-        print(f"💖 최종 체력: {final_health}")
-        print(f"💀 적 처치 수: {self.enemies_killed}")
-        print(f"⏱️  플레이 시간: {play_time}초")
-        print(f"📈 평균 FPS: {self.current_fps:.1f}")
-        print(f"{'='*50}")
+
+        print(f'\n{"=" * 50}')
+        print('🎮 게임 종료 통계')
+        print(f'{"=" * 50}')
+        print(f'⚡ 최종 레벨: {final_level}')
+        print(f'📊 총 경험치: {final_exp}')
+        print(f'💖 최종 체력: {final_health}')
+        print(f'💀 적 처치 수: {self.enemies_killed}')
+        print(f'⏱️  플레이 시간: {play_time}초')
+        print(f'📈 평균 FPS: {self.current_fps:.1f}')
+        print(f'{"=" * 50}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         demo = MiniGameDemo2()
         demo.run()
     except Exception as e:
-        print(f"❌ 게임 실행 오류: {e}")
+        print(f'❌ 게임 실행 오류: {e}')
         import traceback
+
         traceback.print_exc()
