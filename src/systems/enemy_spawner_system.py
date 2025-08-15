@@ -6,9 +6,9 @@ configurable spawn rates, maximum enemy limits, and difficulty scaling.
 """
 
 import random
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from ..components.collision_component import CollisionComponent
+from ..components.collision_component import CollisionComponent, CollisionLayer
 from ..components.enemy_ai_component import AIType, EnemyAIComponent
 from ..components.enemy_component import EnemyComponent
 from ..components.health_component import HealthComponent
@@ -16,6 +16,7 @@ from ..components.position_component import PositionComponent
 from ..components.render_component import RenderComponent
 from ..components.velocity_component import VelocityComponent
 from ..core.coordinate_manager import CoordinateManager
+from ..core.difficulty_manager import DifficultyManager
 from ..core.system import System
 from ..utils.vector2 import Vector2
 
@@ -53,14 +54,21 @@ class EnemySpawnerSystem(System):
         self._base_spawn_interval: float = 2.0  # 기본 스폰 간격 (초)
         self._current_spawn_timer: float = 0.0  # 현재 스폰 타이머
         self._max_enemies: int = 20  # 최대 적 수
-        self._spawn_distance_from_edge: float = 50.0  # 화면 가장자리로부터 스폰 거리
+        self._spawn_distance_from_edge: float = (
+            50.0  # 화면 가장자리로부터 스폰 거리
+        )
 
         # 난이도 조정 관련
         self._game_time: float = 0.0  # 게임 경과 시간
-        self._difficulty_scale_interval: float = 30.0  # 난이도 증가 간격 (30초)
+        self._difficulty_scale_interval: float = (
+            30.0  # 난이도 증가 간격 (30초)
+        )
 
         # 좌표 관리자
         self._coordinate_manager: CoordinateManager | None = None
+
+        # 난이도 관리자
+        self._difficulty_manager: DifficultyManager | None = None
 
     def initialize(self) -> None:
         """Initialize the enemy spawner system."""
@@ -71,6 +79,7 @@ class EnemySpawnerSystem(System):
         # - 해결책: 시스템 초기화 시점에 좌표 관리자 설정
         # - 주의사항: 다른 시스템들과 동일한 패턴 사용
         self._coordinate_manager = CoordinateManager.get_instance()
+        self._difficulty_manager = DifficultyManager.get_instance()
 
     def get_required_components(self) -> list[type]:
         """
@@ -96,6 +105,10 @@ class EnemySpawnerSystem(System):
 
         # 게임 경과 시간 업데이트
         self._game_time += delta_time
+
+        # 난이도 관리자 업데이트
+        if self._difficulty_manager:
+            self._difficulty_manager.update(delta_time)
 
         # 스폰 타이머 업데이트
         self._current_spawn_timer += delta_time
@@ -177,15 +190,23 @@ class EnemySpawnerSystem(System):
         Returns:
             Current spawn interval in seconds.
         """
-        # AI-NOTE : 2025-08-15 시간 기반 난이도 조정 - 스폰 간격 단축
-        # - 이유: 게임 진행에 따른 점진적 난이도 증가 요구사항
-        # - 요구사항: 30초마다 스폰 간격 5% 단축, 최소 0.5초까지
-        # - 히스토리: 고정 간격에서 동적 간격으로 변경
+        # AI-NOTE : 2025-08-15 난이도 관리자 기반 스폰 간격 계산
+        # - 이유: 중앙집중식 난이도 관리로 일관된 게임 밸런스 제공
+        # - 요구사항: DifficultyManager에서 제공하는 스폰 간격 배율 사용
+        # - 히스토리: 로컬 난이도 계산에서 중앙 관리 방식으로 변경
 
-        difficulty_level = self._game_time / self._difficulty_scale_interval
-        difficulty_multiplier = max(0.25, 1.0 - (difficulty_level * 0.05))
-        
-        return max(0.5, self._base_spawn_interval * difficulty_multiplier)
+        if self._difficulty_manager:
+            multiplier = (
+                self._difficulty_manager.get_spawn_interval_multiplier()
+            )
+            return self._base_spawn_interval * multiplier
+        else:
+            # 난이도 관리자가 없을 때 기본 로직 (fallback)
+            difficulty_level = (
+                self._game_time / self._difficulty_scale_interval
+            )
+            difficulty_multiplier = max(0.25, 1.0 - (difficulty_level * 0.05))
+            return max(0.5, self._base_spawn_interval * difficulty_multiplier)
 
     def _reset_spawn_timer(self) -> None:
         """Reset the spawn timer to zero."""
@@ -212,7 +233,9 @@ class EnemySpawnerSystem(System):
         enemy_entity = entity_manager.create_entity()
 
         # 3. 기본 컴포넌트 추가
-        self._add_basic_components(entity_manager, enemy_entity, spawn_world_pos)
+        self._add_basic_components(
+            entity_manager, enemy_entity, spawn_world_pos
+        )
 
         # 4. AI 컴포넌트 추가
         self._add_ai_component(entity_manager, enemy_entity)
@@ -220,7 +243,7 @@ class EnemySpawnerSystem(System):
         # 5. 물리/충돌 컴포넌트 추가
         self._add_physics_components(entity_manager, enemy_entity)
 
-    def _calculate_spawn_position(self) -> Optional[tuple[float, float]]:
+    def _calculate_spawn_position(self) -> tuple[float, float] | None:
         """
         Calculate a random spawn position at screen edges.
 
@@ -306,9 +329,21 @@ class EnemySpawnerSystem(System):
         # 적 식별 컴포넌트
         entity_manager.add_component(enemy_entity, EnemyComponent())
 
-        # 체력 컴포넌트 (기본값)
+        # 체력 컴포넌트 (난이도 기반 스케일링)
+        base_health = 100
+        if self._difficulty_manager:
+            health_multiplier = (
+                self._difficulty_manager.get_health_multiplier()
+            )
+            scaled_health = int(base_health * health_multiplier)
+        else:
+            scaled_health = base_health
+
         entity_manager.add_component(
-            enemy_entity, HealthComponent(current_health=100, max_health=100)
+            enemy_entity,
+            HealthComponent(
+                current_health=scaled_health, max_health=scaled_health
+            ),
         )
 
         # 렌더링 컴포넌트 (기본 적 색상)
@@ -316,9 +351,7 @@ class EnemySpawnerSystem(System):
             enemy_entity,
             RenderComponent(
                 color=(255, 100, 100),  # 연한 빨간색
-                width=20,
-                height=20,
-                shape='rectangle',
+                size=(20, 20),
             ),
         )
 
@@ -341,14 +374,21 @@ class EnemySpawnerSystem(System):
         ai_types = [AIType.AGGRESSIVE, AIType.DEFENSIVE, AIType.PATROL]
         selected_ai_type = random.choice(ai_types)
 
-        # AI 컴포넌트 추가
+        # AI 컴포넌트 추가 (난이도 기반 속도 스케일링)
+        base_speed = 80.0
+        if self._difficulty_manager:
+            speed_multiplier = self._difficulty_manager.get_speed_multiplier()
+            scaled_speed = base_speed * speed_multiplier
+        else:
+            scaled_speed = base_speed
+
         entity_manager.add_component(
             enemy_entity,
             EnemyAIComponent(
                 ai_type=selected_ai_type,
                 chase_range=150.0,
                 attack_range=50.0,
-                movement_speed=80.0,
+                movement_speed=scaled_speed,
             ),
         )
 
@@ -371,7 +411,13 @@ class EnemySpawnerSystem(System):
         entity_manager.add_component(
             enemy_entity,
             CollisionComponent(
-                width=20, height=20, collision_type='enemy'
+                width=20,
+                height=20,
+                layer=CollisionLayer.ENEMY,
+                collision_mask={
+                    CollisionLayer.PLAYER,
+                    CollisionLayer.PROJECTILE,
+                },
             ),
         )
 
@@ -409,3 +455,15 @@ class EnemySpawnerSystem(System):
             'max_enemies': self._max_enemies,
             'game_time': self._game_time,
         }
+
+    def get_difficulty_info(self) -> dict[str, float | str]:
+        """
+        Get current difficulty information.
+
+        Returns:
+            Dictionary with current difficulty stats, empty if manager unavailable
+        """
+        if self._difficulty_manager:
+            return self._difficulty_manager.get_difficulty_info()
+        else:
+            return {}
