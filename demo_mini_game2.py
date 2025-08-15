@@ -218,8 +218,7 @@ class MiniGameDemo2:
                 weapon_type=WeaponType.SOCCER_BALL,
                 damage=25,
                 attack_speed=2.0,  # 초당 2발
-                attack_range=300.0,
-                projectile_speed=400.0,
+                range=300.0,
                 last_attack_time=0.0,
             )
         )
