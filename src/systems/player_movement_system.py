@@ -12,6 +12,7 @@ import pygame
 
 from ..components.player_movement_component import PlayerMovementComponent
 from ..components.position_component import PositionComponent
+from ..components.rotation_component import RotationComponent
 from ..core.coordinate_manager import CoordinateManager
 from ..core.system import System
 
@@ -115,6 +116,9 @@ class PlayerMovementSystem(System):
             position_comp = entity_manager.get_component(
                 player_entity, PositionComponent
             )
+            rotation_comp = entity_manager.get_component(
+                player_entity, RotationComponent
+            )
             if movement_comp is None or position_comp is None:
                 continue
 
@@ -129,6 +133,12 @@ class PlayerMovementSystem(System):
                 movement_comp.world_position[0],
                 movement_comp.world_position[1]
             )
+            
+            # RotationComponent 업데이트 (마우스 방향으로)
+            if rotation_comp is not None:
+                self._update_player_rotation(
+                    player_entity, movement_comp, rotation_comp, entity_manager
+                )
 
     def _update_mouse_position(self) -> None:
         """Update cached mouse position from pygame."""
@@ -320,6 +330,53 @@ class PlayerMovementSystem(System):
             factor: Smoothing factor (0.0 = no rotate, 1.0 = instant)
         """
         self._rotation_smoothing_factor = max(0.0, min(1.0, factor))
+
+    def _update_player_rotation(
+        self,
+        player_entity,
+        movement_comp: PlayerMovementComponent,
+        rotation_comp: RotationComponent,
+        entity_manager: 'EntityManager',
+    ) -> None:
+        """
+        Update player rotation to face mouse direction.
+        
+        Args:
+            player_entity: Player entity
+            movement_comp: Player movement component
+            rotation_comp: Player rotation component
+            entity_manager: Entity manager
+        """
+        if not self._cached_mouse_pos:
+            return
+            
+        # 현재 플레이어 위치를 화면 좌표로 변환
+        transformer = self._coordinate_manager.get_transformer()
+        if not transformer:
+            return
+            
+        from ..utils.vector2 import Vector2
+        
+        # 플레이어 월드 위치
+        player_world_pos = Vector2(
+            movement_comp.world_position[0],
+            movement_comp.world_position[1]
+        )
+        
+        # 플레이어 화면 위치
+        player_screen_pos = transformer.world_to_screen(player_world_pos)
+        
+        # 마우스 위치
+        mouse_x, mouse_y = self._cached_mouse_pos
+        
+        # 마우스 방향 벡터 계산
+        dx = mouse_x - player_screen_pos.x
+        dy = mouse_y - player_screen_pos.y
+        
+        # 마우스 방향으로의 각도 계산
+        if dx != 0 or dy != 0:
+            target_angle = math.atan2(dy, dx)
+            rotation_comp.angle = target_angle
 
     def cleanup(self) -> None:
         """Clean up player movement system resources."""

@@ -122,25 +122,25 @@ class AutoAttackSystem(System):
 
         # 쿨다운이 완료되었으면 공격 시도
         if self._can_attack(weapon):
-            # logger.info("Attack cooldown finished. Finding target.")
-            target = self._find_nearest_enemy_in_world(
-                weapon_pos, weapon.range, entity_manager
+            # logger.info("Attack cooldown completed, attempting attack")
+            # 플레이어의 회전 방향 가져오기
+            from ..components.rotation_component import RotationComponent
+
+            rotation_comp = entity_manager.get_component(
+                weapon_entity, RotationComponent
             )
 
-            if target:
-                # logger.info(f"Found target: {target.entity_id}")
-                target_pos = entity_manager.get_component(
-                    target, PositionComponent
+            if rotation_comp:
+                # logger.info(f"Player rotation angle: {rotation_comp.angle}")
+                # 플레이어가 바라보는 방향으로 발사
+                self._execute_direction_attack(
+                    weapon, weapon_pos, rotation_comp.angle, entity_manager
                 )
-                if target_pos:
-                    self._execute_world_attack(
-                        weapon, weapon_pos, target_pos, entity_manager
-                    )
-                    self._reset_attack_cooldown(weapon)
-            # else:
-                # logger.info("No target found in range.")
+                self._reset_attack_cooldown(weapon)
+            else:
+                logger.warning("No rotation component found on weapon entity")
         # else:
-            # logger.info("Attack on cooldown.")
+        # logger.info("Attack on cooldown.")
 
     def _update_attack_cooldown(
         self, weapon: WeaponComponent, delta_time: float
@@ -236,23 +236,23 @@ class AutoAttackSystem(System):
 
         return closest_enemy
 
-    def _execute_world_attack(
+    def _execute_direction_attack(
         self,
         weapon: WeaponComponent,
         start_pos: PositionComponent,
-        target_pos: PositionComponent,
+        direction_angle: float,
         entity_manager: 'EntityManager',
     ) -> None:
         """
-        Execute an attack by creating a projectile with world coordinates.
+        Execute an attack by creating a projectile in a specific direction.
 
         Args:
             weapon: Weapon component with attack properties
             start_pos: Starting position for the projectile (world coordinates)
-            target_pos: Target position for the projectile (world coordinates)
+            direction_angle: Angle in radians for the projectile direction
             entity_manager: Entity manager for creating projectiles
         """
-        # logger.info(f"Executing attack from {start_pos} to {target_pos}")
+        logger.info(f"Executing direction attack from {start_pos} at angle {direction_angle}")
         # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
         # - 이유: 월드 좌표에서 스크린 좌표 독립적인 투사체 생성
         # - 요구사항: 월드 좌표 방향 계산, Vector2 정규화 활용
@@ -270,10 +270,17 @@ class AutoAttackSystem(System):
             # 1. 투사체 엔티티 생성
             projectile_entity = entity_manager.create_entity()
 
-            # 2. 월드 좌표 기반 ProjectileComponent 생성
-            projectile_comp = ProjectileComponent.create_towards_target(
-                start_pos=(start_pos.x, start_pos.y),
-                target_pos=(target_pos.x, target_pos.y),
+            # 2. 방향 기반 ProjectileComponent 생성
+            import math
+            from ..utils.vector2 import Vector2
+
+            # 방향 벡터 계산
+            direction = Vector2(
+                math.cos(direction_angle), math.sin(direction_angle)
+            )
+
+            projectile_comp = ProjectileComponent(
+                direction=direction,
                 velocity=400.0,  # 기본 투사체 속도
                 damage=weapon.get_effective_damage(),
                 lifetime=2.5,  # 기본 수명 2.5초
@@ -289,8 +296,10 @@ class AutoAttackSystem(System):
             # 투사체 스프라이트 생성
             projectile_surface = pygame.Surface((6, 6), pygame.SRCALPHA)
             projectile_surface.fill((255, 255, 0))  # 노란색 투사체
-            pygame.draw.circle(projectile_surface, (255, 255, 255), (3, 3), 2, 1)  # 흰색 테두리
-            
+            pygame.draw.circle(
+                projectile_surface, (255, 255, 255), (3, 3), 2, 1
+            )  # 흰색 테두리
+
             render_comp = RenderComponent(
                 sprite=projectile_surface,
                 size=(6, 6),  # 6x6 픽셀 크기

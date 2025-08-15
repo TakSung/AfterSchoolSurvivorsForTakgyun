@@ -10,12 +10,16 @@ Advanced demo showcasing the complete experience and level-up system with:
 - World coordinate system with camera following
 """
 
+import logging
 import math
 import random
 import time
 from typing import Any
 
 import pygame
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 from src.components.camera_component import CameraComponent
 from src.components.collision_component import (CollisionComponent,

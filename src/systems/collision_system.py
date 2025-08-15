@@ -473,10 +473,29 @@ class CollisionSystem(System):
         col2: 'CollisionComponent',
     ) -> None:
         """Handle collision between player and enemy."""
-        # TODO: 플레이어 피해 처리 구현 예정
-        logger.info(
-            f'Player-Enemy collision: player={entity1.entity_id if col1.layer.value == 0 else entity2.entity_id}'
+        from ..components.health_component import HealthComponent
+        from ..components.collision_component import CollisionLayer
+        import time
+
+        # 플레이어와 적 구분
+        if col1.layer == CollisionLayer.PLAYER:
+            player_entity = entity1
+            enemy_entity = entity2
+        else:
+            player_entity = entity2
+            enemy_entity = entity1
+
+        # 플레이어 체력 컴포넌트 가져오기
+        player_health = entity_manager.get_component(
+            player_entity, HealthComponent
         )
+
+        if player_health:
+            # 적과 충돌 시 플레이어 체력 감소 (데미지 10)
+            player_health.take_damage(10, time.time())
+            logger.info(
+                f'Player-Enemy collision: player took 10 damage, health: {player_health.current_health}/{player_health.max_health}'
+            )
 
     def _handle_player_item_collision(
         self,
@@ -501,23 +520,41 @@ class CollisionSystem(System):
         """Handle collision between projectile and enemy."""
         from ..components.health_component import HealthComponent
         from ..components.projectile_component import ProjectileComponent
+        from ..components.collision_component import CollisionLayer
         import time
 
-        if col1.layer.value == 4: # PROJECTILE = 4
+        # 투사체와 적 구분
+        if col1.layer == CollisionLayer.PROJECTILE:
             projectile_entity = entity1
             enemy_entity = entity2
         else:
             projectile_entity = entity2
             enemy_entity = entity1
 
-        projectile = entity_manager.get_component(projectile_entity, ProjectileComponent)
-        enemy_health = entity_manager.get_component(enemy_entity, HealthComponent)
+        projectile = entity_manager.get_component(
+            projectile_entity, ProjectileComponent
+        )
+        enemy_health = entity_manager.get_component(
+            enemy_entity, HealthComponent
+        )
 
         if projectile and enemy_health:
-            enemy_health.take_damage(projectile.damage, time.time())
+            # 적에게 데미지 적용
+            damage_dealt = projectile.damage
+            enemy_health.take_damage(damage_dealt, time.time())
+
+            # 투사체 제거
             entity_manager.destroy_entity(projectile_entity)
 
-            logger.info(f'Projectile-Enemy collision: damage {projectile.damage} applied to enemy {enemy_entity.entity_id}')
+            logger.info(
+                f'Projectile-Enemy collision: {damage_dealt} damage applied to enemy {enemy_entity.entity_id}, enemy health: {enemy_health.current_health}/{enemy_health.max_health}'
+            )
+
+            # 적이 죽었는지 확인
+            if enemy_health.is_dead():
+                logger.info(
+                    f'Enemy {enemy_entity.entity_id} was killed by projectile!'
+                )
 
     def _apply_collision_physics(
         self,
