@@ -77,10 +77,23 @@ class MiniGameDemo2:
         pygame.display.set_caption("고급 경험치 시스템 데모 v2 - After School Survivors")
         self.clock = pygame.time.Clock()
         
-        # 폰트 설정
-        self.font_large = pygame.font.Font(None, 32)
-        self.font_medium = pygame.font.Font(None, 24)
-        self.font_small = pygame.font.Font(None, 18)
+        # 폰트 설정 (한글 지원)
+        try:
+            # 한글 폰트 시도 (macOS)
+            self.font_large = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 32)
+            self.font_medium = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 24)
+            self.font_small = pygame.font.Font("/System/Library/Fonts/AppleSDGothicNeo.ttc", 18)
+        except:
+            try:
+                # 한글 폰트 시도 (일반적인 경로)
+                self.font_large = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 32)
+                self.font_medium = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 24)  
+                self.font_small = pygame.font.Font("/System/Library/Fonts/Arial Unicode MS.ttf", 18)
+            except:
+                # 기본 폰트로 fallback
+                self.font_large = pygame.font.Font(None, 32)
+                self.font_medium = pygame.font.Font(None, 24)
+                self.font_small = pygame.font.Font(None, 18)
         
         # ECS 시스템 초기화
         self.entity_manager = EntityManager()

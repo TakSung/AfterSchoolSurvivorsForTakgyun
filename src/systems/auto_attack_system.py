@@ -8,6 +8,8 @@ cooldown management, and projectile creation using world coordinate system.
 import logging
 from typing import TYPE_CHECKING, Optional
 
+import pygame
+
 from ..components.enemy_component import EnemyComponent
 from ..components.position_component import PositionComponent
 from ..components.weapon_component import WeaponComponent
@@ -250,7 +252,7 @@ class AutoAttackSystem(System):
             target_pos: Target position for the projectile (world coordinates)
             entity_manager: Entity manager for creating projectiles
         """
-        logger.info(f"Executing attack from {start_pos} to {target_pos}")
+        # logger.info(f"Executing attack from {start_pos} to {target_pos}")
         # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
         # - 이유: 월드 좌표에서 스크린 좌표 독립적인 투사체 생성
         # - 요구사항: 월드 좌표 방향 계산, Vector2 정규화 활용
@@ -284,8 +286,13 @@ class AutoAttackSystem(System):
             entity_manager.add_component(projectile_entity, position_comp)
 
             # 4. RenderComponent 추가 (투사체 시각화)
+            # 투사체 스프라이트 생성
+            projectile_surface = pygame.Surface((6, 6), pygame.SRCALPHA)
+            projectile_surface.fill((255, 255, 0))  # 노란색 투사체
+            pygame.draw.circle(projectile_surface, (255, 255, 255), (3, 3), 2, 1)  # 흰색 테두리
+            
             render_comp = RenderComponent(
-                color=(255, 255, 0),  # 노란색 투사체
+                sprite=projectile_surface,
                 size=(6, 6),  # 6x6 픽셀 크기
                 layer=RenderLayer.PROJECTILES,
                 visible=True,
