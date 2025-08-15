@@ -19,8 +19,8 @@ from src.components.position_component import PositionComponent
 from src.components.camera_component import CameraComponent
 from src.components.player_movement_component import PlayerMovementComponent
 from src.components.player_component import PlayerComponent
-from src.components.enemy_component import EnemyComponent
-from src.components.weapon_component import WeaponComponent
+from src.components.enemy_component import EnemyComponent, EnemyType
+from src.components.weapon_component import WeaponComponent, WeaponType
 from src.components.projectile_component import ProjectileComponent
 from src.components.render_component import RenderComponent
 from src.components.rotation_component import RotationComponent
@@ -122,9 +122,9 @@ class TestCoordinateGameSystemIntegration:
         
         # 카메라 컴포넌트
         camera_comp = CameraComponent(
-            offset=Vector2(0, 0),
-            target_entity=player_entity,
-            smoothing_factor=0.9
+            world_offset=(0.0, 0.0),
+            follow_target=player_entity,
+            dead_zone_radius=10.0
         )
         component_registry.add_component(camera_entity, camera_comp)
         
@@ -147,12 +147,12 @@ class TestCoordinateGameSystemIntegration:
                     mock_surface.return_value.get_size.return_value = (1024, 768)
                     
                     # 시스템 업데이트
-                    env['systems']['player_movement'].update([player_entity], delta_time)
-                    env['systems']['camera'].update([camera_entity], delta_time)
+                    env['systems']['player_movement'].update(entity_manager, delta_time)
+                    env['systems']['camera'].update(entity_manager, delta_time)
             
             # 좌표 일관성 기록
             current_world_pos = Vector2(*player_pos.get_position())
-            current_camera_offset = camera_comp.offset
+            current_camera_offset = Vector2(*camera_comp.world_offset)
             screen_pos = coordinate_manager.world_to_screen(current_world_pos)
             
             coordinate_history.append({
@@ -210,21 +210,18 @@ class TestCoordinateGameSystemIntegration:
         # 적 설정 (플레이어로부터 100 유닛 떨어진 위치)
         enemy_pos = PositionComponent(x=100.0, y=100.0)
         enemy_comp = EnemyComponent(
-            health=100,
-            max_health=100,
-            speed=50.0,
-            attack_damage=10,
-            chase_range=150.0,
-            attack_range=30.0
+            enemy_type=EnemyType.KOREAN,
+            difficulty_level=1,
+            experience_reward=10
         )
-        enemy_render = RenderComponent(color=(255, 0, 0), size=Vector2(20, 20))
+        enemy_render = RenderComponent(color=(255, 0, 0), size=(20, 20))
         
         component_registry.add_component(enemy_entity, enemy_pos)
         component_registry.add_component(enemy_entity, enemy_comp)
         component_registry.add_component(enemy_entity, enemy_render)
         
         # 카메라를 플레이어 위치로 설정
-        coordinate_manager.get_transformer().set_camera_offset(player_pos.position)
+        coordinate_manager.get_transformer().set_camera_offset(Vector2(*player_pos.get_position()))
         
         # When - 적 AI 업데이트 (플레이어 추적 시뮬레이션)
         delta_time = 1.0 / 60.0
@@ -235,15 +232,17 @@ class TestCoordinateGameSystemIntegration:
         for frame in range(frames):
             # 플레이어를 약간씩 이동 (적이 추적하도록)
             if frame % 30 == 0:  # 0.5초마다 플레이어 위치 변경
-                player_pos.position += Vector2(20, 10)
-                coordinate_manager.get_transformer().set_camera_offset(player_pos.position)
+                current_pos = Vector2(*player_pos.get_position())
+                new_pos = current_pos + Vector2(20, 10)
+                player_pos.set_position(new_pos.x, new_pos.y)
+                coordinate_manager.get_transformer().set_camera_offset(new_pos)
             
             # 적 AI 업데이트
-            env['systems']['enemy_ai'].update([enemy_entity], delta_time)
+            env['systems']['enemy_ai'].update(entity_manager, delta_time)
             
             # 현재 상태 기록
-            enemy_world_pos = enemy_pos.position
-            player_world_pos = player_pos.position
+            enemy_world_pos = Vector2(*enemy_pos.get_position())
+            player_world_pos = Vector2(*player_pos.get_position())
             
             # 화면 좌표 계산
             enemy_screen_pos = coordinate_manager.world_to_screen(enemy_world_pos)
@@ -309,25 +308,22 @@ class TestCoordinateGameSystemIntegration:
         enemy_entity = entity_manager.create_entity()
         
         # 플레이어 설정 (원점에서 우측으로 200유닛)
-        player_pos = PositionComponent(Vector2(0, 0))
+        player_pos = PositionComponent(x=0.0, y=0.0)
         weapon = WeaponComponent(
-            weapon_type=1,  # 테스트용 무기
+            weapon_type=WeaponType.BASKETBALL,  # 테스트용 무기
             damage=25,
             attack_speed=1.0,
-            weapon_range=300.0
+            range=300.0
         )
         component_registry.add_component(player_entity, player_pos)
         component_registry.add_component(player_entity, weapon)
         
         # 적 설정 (플레이어로부터 정확히 100유닛 우측)
-        enemy_pos = PositionComponent(Vector2(100, 0))
+        enemy_pos = PositionComponent(x=100.0, y=0.0)
         enemy_comp = EnemyComponent(
-            health=100,
-            max_health=100,
-            speed=0,  # 이동하지 않음
-            attack_damage=10,
-            chase_range=50.0,
-            attack_range=20.0
+            enemy_type=EnemyType.KOREAN,
+            difficulty_level=1,
+            experience_reward=10
         )
         component_registry.add_component(enemy_entity, enemy_pos)
         component_registry.add_component(enemy_entity, enemy_comp)
@@ -341,7 +337,7 @@ class TestCoordinateGameSystemIntegration:
             damage=25,
             lifetime=2.0
         )
-        projectile_pos = PositionComponent(Vector2(0, 0))
+        projectile_pos = PositionComponent(x=0.0, y=0.0)
         
         component_registry.add_component(projectile_entity, projectile_comp)
         component_registry.add_component(projectile_entity, projectile_pos)
@@ -356,10 +352,10 @@ class TestCoordinateGameSystemIntegration:
         
         for frame in range(frames):
             # 투사체 시스템 업데이트
-            env['systems']['projectile'].update([projectile_entity], delta_time)
+            env['systems']['projectile'].update(entity_manager, delta_time)
             
             # 현재 투사체 위치 기록
-            current_world_pos = projectile_pos.position
+            current_world_pos = Vector2(*projectile_pos.get_position())
             current_screen_pos = coordinate_manager.world_to_screen(current_world_pos)
             
             # 예상 위치 계산 (직선 이동)
@@ -375,7 +371,7 @@ class TestCoordinateGameSystemIntegration:
             })
             
             # 충돌 검사 (간단한 거리 기반 충돌)
-            distance_to_enemy = current_world_pos.distance_to(enemy_pos.position)
+            distance_to_enemy = current_world_pos.distance_to(Vector2(*enemy_pos.get_position()))
             if distance_to_enemy < 10 and not collision_occurred:  # 10 유닛 이내면 충돌
                 collision_occurred = True
                 collision_frame = frame
@@ -422,10 +418,10 @@ class TestCoordinateGameSystemIntegration:
         
         # 플레이어 엔티티
         entities['player'] = entity_manager.create_entity()
-        player_pos = PositionComponent(Vector2(0, 0))
-        player_movement = PlayerMovementComponent(speed=100.0)
+        player_pos = PositionComponent(x=0.0, y=0.0)
+        player_movement = PlayerMovementComponent(world_position=(0.0, 0.0), speed=100.0)
         player_comp = PlayerComponent()
-        weapon = WeaponComponent(weapon_type=1, damage=25, attack_speed=2.0, weapon_range=150.0)
+        weapon = WeaponComponent(weapon_type=WeaponType.BASKETBALL, damage=25, attack_speed=2.0, range=150.0)
         
         component_registry.add_component(entities['player'], player_pos)
         component_registry.add_component(entities['player'], player_movement)
@@ -434,7 +430,7 @@ class TestCoordinateGameSystemIntegration:
         
         # 카메라 엔티티
         entities['camera'] = entity_manager.create_entity()
-        camera_comp = CameraComponent(target_entity=entities['player'])
+        camera_comp = CameraComponent(follow_target=entities['player'])
         component_registry.add_component(entities['camera'], camera_comp)
         
         # 다수의 적 엔티티 (원형으로 배치)
@@ -444,17 +440,14 @@ class TestCoordinateGameSystemIntegration:
         for i in range(enemy_count):
             angle = (2 * math.pi * i) / enemy_count
             enemy_entity = entity_manager.create_entity()
-            enemy_pos = PositionComponent(Vector2(
-                100 * math.cos(angle),
-                100 * math.sin(angle)
-            ))
+            enemy_pos = PositionComponent(
+                x=100 * math.cos(angle),
+                y=100 * math.sin(angle)
+            )
             enemy_comp = EnemyComponent(
-                health=50,
-                max_health=50,
-                speed=30.0,
-                attack_damage=10,
-                chase_range=120.0,
-                attack_range=25.0
+                enemy_type=EnemyType.KOREAN,
+                difficulty_level=1,
+                experience_reward=10
             )
             
             component_registry.add_component(enemy_entity, enemy_pos)
@@ -484,17 +477,17 @@ class TestCoordinateGameSystemIntegration:
                         all_entities = [entities['player'], entities['camera']] + entities['enemies']
                         
                         # 시스템 오케스트레이터 업데이트
-                        system_orchestrator.update(all_entities, delta_time)
+                        system_orchestrator.update_systems(entity_manager, delta_time)
                         
                         # 좌표 일관성 데이터 수집
-                        player_world_pos = component_registry.get_component(entities['player'], PositionComponent).position
-                        camera_offset = component_registry.get_component(entities['camera'], CameraComponent).offset
+                        player_world_pos = Vector2(*component_registry.get_component(entities['player'], PositionComponent).get_position())
+                        camera_offset = component_registry.get_component(entities['camera'], CameraComponent).world_offset
                         player_screen_pos = coordinate_manager.world_to_screen(player_world_pos)
                         
                         # 적들의 월드/화면 좌표
                         enemy_positions = []
                         for enemy_entity in entities['enemies']:
-                            enemy_world_pos = component_registry.get_component(enemy_entity, PositionComponent).position
+                            enemy_world_pos = Vector2(*component_registry.get_component(enemy_entity, PositionComponent).get_position())
                             enemy_screen_pos = coordinate_manager.world_to_screen(enemy_world_pos)
                             enemy_positions.append({
                                 'world': enemy_world_pos.copy(),
@@ -575,8 +568,8 @@ class TestCoordinateGameSystemIntegration:
         
         # 플레이어 생성
         entities['player'] = entity_manager.create_entity()
-        player_pos = PositionComponent(Vector2(0, 0))
-        weapon = WeaponComponent(weapon_type=1, damage=25, attack_speed=10.0, weapon_range=200.0)
+        player_pos = PositionComponent(x=0.0, y=0.0)
+        weapon = WeaponComponent(weapon_type=WeaponType.BASKETBALL, damage=25, attack_speed=10.0, range=200.0)
         component_registry.add_component(entities['player'], player_pos)
         component_registry.add_component(entities['player'], weapon)
         
@@ -584,17 +577,14 @@ class TestCoordinateGameSystemIntegration:
         import random
         for i in range(50):
             enemy_entity = entity_manager.create_entity()
-            enemy_pos = PositionComponent(Vector2(
-                random.uniform(-300, 300),
-                random.uniform(-300, 300)
-            ))
+            enemy_pos = PositionComponent(
+                x=random.uniform(-300, 300),
+                y=random.uniform(-300, 300)
+            )
             enemy_comp = EnemyComponent(
-                health=30,
-                max_health=30,
-                speed=random.uniform(20, 40),
-                attack_damage=5,
-                chase_range=100.0,
-                attack_range=20.0
+                enemy_type=EnemyType.KOREAN,
+                difficulty_level=1,
+                experience_reward=5
             )
             
             component_registry.add_component(enemy_entity, enemy_pos)
@@ -609,7 +599,7 @@ class TestCoordinateGameSystemIntegration:
         
         for frame in range(frames):
             # 플레이어를 중심으로 카메라 설정
-            player_world_pos = component_registry.get_component(entities['player'], PositionComponent).position
+            player_world_pos = Vector2(*component_registry.get_component(entities['player'], PositionComponent).get_position())
             coordinate_manager.get_transformer().set_camera_offset(player_world_pos)
             
             # 모든 엔티티 위치 수집 (변환 전)
@@ -623,11 +613,11 @@ class TestCoordinateGameSystemIntegration:
                 if enemy_pos:  # 엔티티가 살아있는 경우만
                     pre_update_positions['enemies'].append({
                         'entity': enemy_entity,
-                        'world_pos': enemy_pos.position.copy()
+                        'world_pos': Vector2(*enemy_pos.get_position())
                     })
             
             # 시스템 업데이트 (적 AI만)
-            env['systems']['enemy_ai'].update(entities['enemies'], delta_time)
+            env['systems']['enemy_ai'].update(entity_manager, delta_time)
             
             # 투사체 생성 시뮬레이션 (매 15프레임마다)
             if frame % 15 == 0 and len(entities['enemies']) > 0:
@@ -635,11 +625,11 @@ class TestCoordinateGameSystemIntegration:
                 closest_enemy = min(
                     entities['enemies'],
                     key=lambda e: player_world_pos.distance_to(
-                        component_registry.get_component(e, PositionComponent).position
+                        Vector2(*component_registry.get_component(e, PositionComponent).get_position())
                     )
                 )
                 
-                target_pos = component_registry.get_component(closest_enemy, PositionComponent).position
+                target_pos = Vector2(*component_registry.get_component(closest_enemy, PositionComponent).get_position())
                 
                 projectile_entity = entity_manager.create_entity()
                 projectile_comp = ProjectileComponent.create_towards_target(
@@ -649,7 +639,7 @@ class TestCoordinateGameSystemIntegration:
                     damage=25,
                     lifetime=1.0
                 )
-                projectile_pos = PositionComponent(player_world_pos.copy())
+                projectile_pos = PositionComponent(x=player_world_pos.x, y=player_world_pos.y)
                 
                 component_registry.add_component(projectile_entity, projectile_comp)
                 component_registry.add_component(projectile_entity, projectile_pos)
@@ -657,7 +647,7 @@ class TestCoordinateGameSystemIntegration:
             
             # 투사체 업데이트
             if entities['projectiles']:
-                env['systems']['projectile'].update(entities['projectiles'], delta_time)
+                env['systems']['projectile'].update(entity_manager, delta_time)
                 
                 # 만료된 투사체 제거 (수명 확인)
                 active_projectiles = []
@@ -676,7 +666,7 @@ class TestCoordinateGameSystemIntegration:
             for entity in all_active_entities:
                 pos_comp = component_registry.get_component(entity, PositionComponent)
                 if pos_comp:
-                    world_pos = pos_comp.position
+                    world_pos = Vector2(*pos_comp.get_position())
                     screen_pos = coordinate_manager.world_to_screen(world_pos)
                     
                     # 역변환으로 정확성 확인
