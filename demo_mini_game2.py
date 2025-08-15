@@ -812,6 +812,9 @@ class MiniGameDemo2:
                     self.entity_manager, delta_time
                 )
 
+                # 이벤트 처리 (투사체 등록 등을 위해)
+                self.event_bus.process_events()
+
                 # 커스텀 게임 로직
                 self._update_enemies(delta_time)
                 self._spawn_enemies()
