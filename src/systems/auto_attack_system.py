@@ -252,7 +252,7 @@ class AutoAttackSystem(System):
             direction_angle: Angle in radians for the projectile direction
             entity_manager: Entity manager for creating projectiles
         """
-        logger.info(f"Executing direction attack from {start_pos} at angle {direction_angle}")
+        # logger.info(f"Executing direction attack from {start_pos} at angle {direction_angle}")
         # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
         # - 이유: 월드 좌표에서 스크린 좌표 독립적인 투사체 생성
         # - 요구사항: 월드 좌표 방향 계산, Vector2 정규화 활용
