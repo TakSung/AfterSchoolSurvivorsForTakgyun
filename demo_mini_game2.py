@@ -255,7 +255,7 @@ class MiniGameDemo2:
             HealthComponent(current_health=100, max_health=100),
         )
 
-        # 무기 컴포넌트
+        # 무기 컴포넌트 - 즉시 공격 가능하도록 쿨다운 충분히 설정
         self.entity_manager.add_component(
             self.player_entity,
             WeaponComponent(
@@ -263,7 +263,7 @@ class MiniGameDemo2:
                 damage=25,
                 attack_speed=2.0,  # 초당 2발
                 range=300.0,
-                last_attack_time=0.0,
+                last_attack_time=1.0,  # 즉시 공격 가능하도록 충분한 시간 설정
             ),
         )
 

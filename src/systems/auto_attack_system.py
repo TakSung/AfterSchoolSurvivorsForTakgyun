@@ -108,6 +108,9 @@ class AutoAttackSystem(System):
         )
 
         if not weapon or not weapon_pos:
+            logger.warning(
+                f'Missing weapon or position component for entity {weapon_entity.entity_id}'
+            )
             return
 
         # logger.info(f"Processing auto attack for entity {weapon_entity.entity_id}")
@@ -137,10 +140,11 @@ class AutoAttackSystem(System):
                     weapon, weapon_pos, rotation_comp.angle, entity_manager
                 )
                 self._reset_attack_cooldown(weapon)
+                # logger.info("Projectile created successfully")
             else:
-                logger.warning("No rotation component found on weapon entity")
+                logger.warning('No rotation component found on weapon entity')
         # else:
-        # logger.info("Attack on cooldown.")
+        # logger.debug(f"Attack on cooldown. Time: {weapon.last_attack_time:.2f}, Required: {weapon.get_cooldown_duration():.2f}")
 
     def _update_attack_cooldown(
         self, weapon: WeaponComponent, delta_time: float
@@ -267,8 +271,11 @@ class AutoAttackSystem(System):
         from ..components.render_component import RenderComponent, RenderLayer
 
         try:
+            # logger.info(f"Creating projectile from position ({start_pos.x:.1f}, {start_pos.y:.1f}) at angle {direction_angle:.2f}")
+
             # 1. 투사체 엔티티 생성
             projectile_entity = entity_manager.create_entity()
+            # logger.info(f"Created projectile entity: {projectile_entity.entity_id}")
 
             # 2. 방향 기반 ProjectileComponent 생성
             import math
@@ -287,6 +294,7 @@ class AutoAttackSystem(System):
                 owner_id=None,  # TODO: 향후 owner 엔티티 ID 추가
             )
             entity_manager.add_component(projectile_entity, projectile_comp)
+            # logger.info(f"Added ProjectileComponent with direction: {direction}, velocity: 400.0")
 
             # 3. PositionComponent 추가 (월드 좌표 시작 위치)
             position_comp = PositionComponent(x=start_pos.x, y=start_pos.y)
@@ -324,7 +332,9 @@ class AutoAttackSystem(System):
             # - 해결책: 예외 처리로 개별 투사체 생성 실패 격리
             # - 주의사항: 실패 시에도 게임플레이에 영향을 주지 않도록 함
 
-        except Exception:
+        except Exception as e:
             # 투사체 생성 실패 시 안전한 처리 (게임 계속 진행)
-            # TODO: 로깅 시스템 구현 시 여기서 오류 기록
-            pass
+            logger.error(f'Failed to create projectile: {e}')
+            import traceback
+
+            logger.error(f'Traceback: {traceback.format_exc()}')
