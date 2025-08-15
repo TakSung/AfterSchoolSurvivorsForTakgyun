@@ -181,6 +181,7 @@ class MiniGameDemo2:
 
         # 자동 공격 시스템
         auto_attack_system = AutoAttackSystem(priority=15, event_bus=self.event_bus)
+        auto_attack_system.set_projectile_manager(self.projectile_manager)
         self.system_orchestrator.register_system(
             auto_attack_system, 'auto_attack'
         )

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from ..core.entity import Entity
     from ..core.entity_manager import EntityManager
     from ..core.events.event_bus import EventBus
+    from ..core.projectile_manager import ProjectileManager
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ class AutoAttackSystem(System):
 
         self._coordinate_manager: CoordinateManager | None = None
         self._event_bus: Optional['EventBus'] = event_bus
+        self._projectile_manager: Optional['ProjectileManager'] = None
 
     def initialize(self) -> None:
         """Initialize the auto attack system."""
@@ -72,6 +74,15 @@ class AutoAttackSystem(System):
             event_bus: Event bus instance
         """
         self._event_bus = event_bus
+
+    def set_projectile_manager(self, projectile_manager: 'ProjectileManager') -> None:
+        """
+        Set the projectile manager for immediate registration.
+        
+        Args:
+            projectile_manager: ProjectileManager instance
+        """
+        self._projectile_manager = projectile_manager
 
     def get_required_components(self) -> list[type]:
         """
@@ -349,18 +360,26 @@ class AutoAttackSystem(System):
             logger.info(f"  - RenderComponent: {entity_manager.has_component(projectile_entity, RenderComponent)}")
             logger.info(f"  - CollisionComponent: {entity_manager.has_component(projectile_entity, CollisionComponent)}")
 
-            # AI-NOTE : 2025-08-15 투사체 생성 이벤트 발행
-            # - 이유: ProjectileManager가 투사체를 추적할 수 있도록 이벤트 기반 등록
-            # - 요구사항: 투사체 생성 시 즉시 이벤트 발행하여 매니저에 등록
-            # - 히스토리: 사용자 제안으로 ECS 컴포넌트 필터링 문제 해결
-            if self._event_bus:
-                # 무기 엔티티를 owner로 하는 투사체 생성 이벤트 생성
+            # AI-NOTE : 2025-08-15 투사체 즉시 등록 및 이벤트 발행
+            # - 이유: ProjectileSystem 실행 전에 투사체가 등록되어야 렌더링 가능
+            # - 요구사항: 동기식 즉시 등록 + 이벤트 기반 알림
+            # - 히스토리: 이벤트 처리 타이밍 문제로 즉시 등록 방식 추가
+            
+            # 1. ProjectileManager에 즉시 등록 (동기식)
+            if self._projectile_manager:
                 creation_event = ProjectileCreatedEvent.create_from_ids(
                     projectile_entity_id=projectile_entity.entity_id,
                     owner_entity_id=weapon_entity.entity_id
                 )
-                
-                # 이벤트 버스를 통해 이벤트 발행
+                self._projectile_manager.handle_event(creation_event)
+                logger.info(f"Immediately registered projectile {projectile_entity.entity_id} in ProjectileManager")
+            
+            # 2. 이벤트 버스를 통해 다른 시스템들에 알림 (비동기식)
+            if self._event_bus:
+                creation_event = ProjectileCreatedEvent.create_from_ids(
+                    projectile_entity_id=projectile_entity.entity_id,
+                    owner_entity_id=weapon_entity.entity_id
+                )
                 self._event_bus.publish(creation_event)
                 logger.info(f"Published ProjectileCreatedEvent for projectile {projectile_entity.entity_id}")
             else:

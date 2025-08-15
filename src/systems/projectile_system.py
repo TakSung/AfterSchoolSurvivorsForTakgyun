@@ -16,9 +16,11 @@ from ..components.enemy_component import EnemyComponent
 from ..components.health_component import HealthComponent
 from ..components.position_component import PositionComponent
 from ..components.projectile_component import ProjectileComponent
+from ..core.coordinate_manager import CoordinateManager
 from ..core.projectile_manager import ProjectileManager
 from ..core.system import System
 from ..systems.collision_system import BruteForceCollisionDetector
+from ..utils.vector2 import Vector2
 
 if TYPE_CHECKING:
     from ..core.entity import Entity
@@ -67,6 +69,9 @@ class ProjectileSystem(System):
         self._collision_detector = BruteForceCollisionDetector()
         self._collision_pairs: list[tuple[Entity, Entity]] = []
 
+        # 좌표 변환 시스템
+        self._coordinate_manager: CoordinateManager | None = None
+
     def initialize(self) -> None:
         """Initialize the projectile system."""
         super().initialize()
@@ -80,6 +85,9 @@ class ProjectileSystem(System):
             self._screen_bounds = screen.get_rect()
             # 여유 공간을 둬서 화면 경계 근처에서 즉시 사라지지 않도록 함
             self._screen_bounds = self._screen_bounds.inflate(100, 100)
+
+        # 좌표 변환 시스템 초기화
+        self._coordinate_manager = CoordinateManager.get_instance()
 
     def set_projectile_manager(self, projectile_manager: ProjectileManager) -> None:
         """
@@ -118,27 +126,42 @@ class ProjectileSystem(System):
         # - 이유: ECS 컴포넌트 필터링 대신 이벤트 기반 관리로 안정적인 투사체 추적
         # - 요구사항: ProjectileManager에 등록된 투사체들을 Entity 객체로 변환
         # - 히스토리: 기존 filter_entities() 방식에서 변경
+        
+        # ProjectileManager 상태 디버깅
+        logging.info(f"ProjectileSystem: ProjectileManager status: {self._projectile_manager}")
+        
         projectile_entity_ids = self._projectile_manager.get_active_projectiles()
         projectile_entities = []
+        
+        logging.info(f"ProjectileSystem: Retrieved {len(projectile_entity_ids)} projectile IDs from manager")
+        for i, entity_id in enumerate(projectile_entity_ids):
+            logging.info(f"  ID {i+1}: {entity_id}")
         
         # Entity ID를 실제 Entity 객체로 변환
         for entity_id in projectile_entity_ids:
             entity = entity_manager.get_entity_by_id(entity_id)
             if entity:
                 projectile_entities.append(entity)
+                logging.info(f"Found entity for ID {entity_id}")
             else:
                 # Entity가 더 이상 존재하지 않으면 ProjectileManager에서 제거
+                logging.warning(f"Entity {entity_id} not found in entity manager, removing from ProjectileManager")
                 self._projectile_manager.unregister_projectile(entity_id)
         
         self._expired_projectiles.clear()
         self._collision_pairs.clear()
 
         # 투사체 추적 진단 정보
-        logging.info(f"ProjectileSystem: ProjectileManager has {len(projectile_entity_ids)} registered projectiles")
-        logging.info(f"ProjectileSystem: Found {len(projectile_entities)} valid projectile entities")
-
-        if projectile_entities:
-            logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
+        if projectile_entity_ids or projectile_entities:
+            logging.info(f"ProjectileSystem: ProjectileManager has {len(projectile_entity_ids)} registered projectiles")
+            logging.info(f"ProjectileSystem: Found {len(projectile_entities)} valid projectile entities")
+            
+            if projectile_entities:
+                logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
+                for i, entity in enumerate(projectile_entities):
+                    pos = entity_manager.get_component(entity, PositionComponent)
+                    if pos:
+                        logging.info(f"  Projectile {i+1}: {entity.entity_id} at ({pos.x:.1f}, {pos.y:.1f})")
 
         # 투사체 물리 업데이트
         for entity in projectile_entities:
@@ -199,10 +222,27 @@ class ProjectileSystem(System):
         Returns:
             True if projectile is out of bounds, False otherwise.
         """
-        if not self._screen_bounds:
+        if not self._screen_bounds or not self._coordinate_manager:
             return False
 
-        return not self._screen_bounds.collidepoint(position.x, position.y)
+        # AI-NOTE : 2025-08-15 월드 좌표를 화면 좌표로 변환하여 경계 검사
+        # - 이유: 투사체 위치는 월드 좌표이지만 _screen_bounds는 화면 좌표 기준
+        # - 요구사항: 좌표 변환 후 화면 경계와 비교
+        # - 히스토리: 기존에는 좌표계 불일치로 경계 검사가 작동하지 않았음
+        transformer = self._coordinate_manager.get_transformer()
+        if not transformer:
+            return False
+
+        try:
+            # 월드 좌표를 화면 좌표로 변환
+            world_pos = Vector2(position.x, position.y)
+            screen_pos = transformer.world_to_screen(world_pos)
+            
+            # 화면 경계 내에 있는지 확인
+            return not self._screen_bounds.collidepoint(screen_pos.x, screen_pos.y)
+        except:
+            # 변환 실패 시 제거하지 않음 (안전한 선택)
+            return False
 
     def _cleanup_expired_projectiles(
         self, entity_manager: 'EntityManager'
@@ -213,10 +253,14 @@ class ProjectileSystem(System):
         Args:
             entity_manager: Entity manager to remove entities from
         """
+        if self._expired_projectiles:
+            logging.info(f"Removing {len(self._expired_projectiles)} expired projectiles")
+            
         for entity in self._expired_projectiles:
             # ProjectileManager에서도 제거
             self._projectile_manager.unregister_projectile(entity.entity_id)
             entity_manager.destroy_entity(entity)
+            logging.info(f"Removed expired projectile {entity.entity_id}")
 
     def get_projectile_count(self, entity_manager: 'EntityManager') -> int:
         """
