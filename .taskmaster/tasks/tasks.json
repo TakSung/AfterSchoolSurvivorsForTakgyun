@@ -1223,7 +1223,7 @@
               "21.3"
             ],
             "details": "CoordinateManager와 CameraSystem, PlayerMovementSystem, EnemyAISystem 간 통합 테스트. 플레이어 이동에 따른 카메라 추적과 월드-스크린 좌표 동기화 검증. 적 AI의 월드 좌표 기반 추적 동작과 화면 렌더링 위치 일치성 테스트. 투사체 시스템의 궤적 계산과 충돌 감지 정확성 검증. 실제 게임 루프 환경에서 좌표계 안정성과 일관성 테스트. 다중 엔티티 상호작용 시나리오에서 좌표 변환 정확성 검증.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1940,7 +1940,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-14T13:38:02.792Z",
+      "updated": "2025-08-15T00:04:23.733Z",
       "description": "Tasks for master context"
     }
   }
