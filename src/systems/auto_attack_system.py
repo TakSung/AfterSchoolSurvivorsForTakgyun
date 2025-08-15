@@ -327,6 +327,13 @@ class AutoAttackSystem(System):
             )
             entity_manager.add_component(projectile_entity, collision_comp)
 
+            # 투사체 생성 완료 확인
+            logger.info(f"Projectile entity {projectile_entity.entity_id} created with components:")
+            logger.info(f"  - ProjectileComponent: {entity_manager.has_component(projectile_entity, ProjectileComponent)}")
+            logger.info(f"  - PositionComponent: {entity_manager.has_component(projectile_entity, PositionComponent)}")
+            logger.info(f"  - RenderComponent: {entity_manager.has_component(projectile_entity, RenderComponent)}")
+            logger.info(f"  - CollisionComponent: {entity_manager.has_component(projectile_entity, CollisionComponent)}")
+
             # AI-DEV : 투사체 생성 성공 시 안전한 처리
             # - 문제: 투사체 생성 실패 시에도 시스템이 계속 동작해야 함
             # - 해결책: 예외 처리로 개별 투사체 생성 실패 격리

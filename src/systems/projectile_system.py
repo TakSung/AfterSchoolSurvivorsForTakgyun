@@ -5,6 +5,7 @@ This system processes projectile entities for movement, lifetime management,
 collision detection, and cleanup of expired projectiles.
 """
 
+import logging
 import time
 from typing import TYPE_CHECKING
 
@@ -79,7 +80,9 @@ class ProjectileSystem(System):
         Returns:
             List of required component types.
         """
-        return [ProjectileComponent, PositionComponent, CollisionComponent]
+        # AI-NOTE: RenderComponent 추가 - 투사체 렌더링 및 시스템 필터링에 필요
+        from ..components.render_component import RenderComponent
+        return [ProjectileComponent, PositionComponent, CollisionComponent, RenderComponent]
 
     def update(
         self, entity_manager: 'EntityManager', delta_time: float
@@ -97,6 +100,11 @@ class ProjectileSystem(System):
         projectile_entities = self.filter_entities(entity_manager)
         self._expired_projectiles.clear()
         self._collision_pairs.clear()
+
+        # 투사체 찾기 시도 진단
+        all_entities = entity_manager.get_entities_with_component(ProjectileComponent)
+        logging.info(f"ProjectileSystem: Found {len(all_entities)} entities with ProjectileComponent")
+        logging.info(f"ProjectileSystem: filter_entities returned {len(projectile_entities)} entities")
 
         if projectile_entities:
             logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
