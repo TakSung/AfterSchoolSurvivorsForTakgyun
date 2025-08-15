@@ -14,12 +14,14 @@ from ..components.enemy_component import EnemyComponent
 from ..components.position_component import PositionComponent
 from ..components.weapon_component import WeaponComponent
 from ..core.coordinate_manager import CoordinateManager
+from ..core.events.projectile_created_event import ProjectileCreatedEvent
 from ..core.system import System
 from ..utils.vector2 import Vector2
 
 if TYPE_CHECKING:
     from ..core.entity import Entity
     from ..core.entity_manager import EntityManager
+    from ..core.events.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +36,13 @@ class AutoAttackSystem(System):
     - Create projectiles with world coordinate based targeting
     """
 
-    def __init__(self, priority: int = 15) -> None:
+    def __init__(self, priority: int = 15, event_bus: Optional['EventBus'] = None) -> None:
         """
         Initialize the AutoAttackSystem.
 
         Args:
             priority: System execution priority (15 = after movement/camera)
+            event_bus: Event bus for publishing projectile creation events
         """
         super().__init__(priority=priority)
 
@@ -49,6 +52,7 @@ class AutoAttackSystem(System):
         # - 히스토리: 기존 WeaponSystem과 분리하여 더 명확한 책임 분할
 
         self._coordinate_manager: CoordinateManager | None = None
+        self._event_bus: Optional['EventBus'] = event_bus
 
     def initialize(self) -> None:
         """Initialize the auto attack system."""
@@ -59,6 +63,15 @@ class AutoAttackSystem(System):
         # - 해결책: 시스템 초기화 시점에 좌표 관리자 설정
         # - 주의사항: 매번 호출 시 get_instance() 사용하여 안전성 보장
         self._coordinate_manager = CoordinateManager.get_instance()
+
+    def set_event_bus(self, event_bus: 'EventBus') -> None:
+        """
+        Set the event bus for publishing projectile creation events.
+        
+        Args:
+            event_bus: Event bus instance
+        """
+        self._event_bus = event_bus
 
     def get_required_components(self) -> list[type]:
         """
@@ -137,7 +150,7 @@ class AutoAttackSystem(System):
                 logger.info(f"Player rotation angle: {rotation_comp.angle}")
                 # 플레이어가 바라보는 방향으로 발사
                 self._execute_direction_attack(
-                    weapon, weapon_pos, rotation_comp.angle, entity_manager
+                    weapon, weapon_pos, rotation_comp.angle, entity_manager, weapon_entity
                 )
                 self._reset_attack_cooldown(weapon)
                 logger.info("Projectile created successfully")
@@ -246,6 +259,7 @@ class AutoAttackSystem(System):
         start_pos: PositionComponent,
         direction_angle: float,
         entity_manager: 'EntityManager',
+        weapon_entity: 'Entity',
     ) -> None:
         """
         Execute an attack by creating a projectile in a specific direction.
@@ -255,6 +269,7 @@ class AutoAttackSystem(System):
             start_pos: Starting position for the projectile (world coordinates)
             direction_angle: Angle in radians for the projectile direction
             entity_manager: Entity manager for creating projectiles
+            weapon_entity: Entity that owns the weapon (for event ownership)
         """
         # logger.info(f"Executing direction attack from {start_pos} at angle {direction_angle}")
         # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
@@ -333,6 +348,23 @@ class AutoAttackSystem(System):
             logger.info(f"  - PositionComponent: {entity_manager.has_component(projectile_entity, PositionComponent)}")
             logger.info(f"  - RenderComponent: {entity_manager.has_component(projectile_entity, RenderComponent)}")
             logger.info(f"  - CollisionComponent: {entity_manager.has_component(projectile_entity, CollisionComponent)}")
+
+            # AI-NOTE : 2025-08-15 투사체 생성 이벤트 발행
+            # - 이유: ProjectileManager가 투사체를 추적할 수 있도록 이벤트 기반 등록
+            # - 요구사항: 투사체 생성 시 즉시 이벤트 발행하여 매니저에 등록
+            # - 히스토리: 사용자 제안으로 ECS 컴포넌트 필터링 문제 해결
+            if self._event_bus:
+                # 무기 엔티티를 owner로 하는 투사체 생성 이벤트 생성
+                creation_event = ProjectileCreatedEvent.create_from_ids(
+                    projectile_entity_id=projectile_entity.entity_id,
+                    owner_entity_id=weapon_entity.entity_id
+                )
+                
+                # 이벤트 버스를 통해 이벤트 발행
+                self._event_bus.publish(creation_event)
+                logger.info(f"Published ProjectileCreatedEvent for projectile {projectile_entity.entity_id}")
+            else:
+                logger.warning("No event bus available to publish ProjectileCreatedEvent")
 
             # AI-DEV : 투사체 생성 성공 시 안전한 처리
             # - 문제: 투사체 생성 실패 시에도 시스템이 계속 동작해야 함

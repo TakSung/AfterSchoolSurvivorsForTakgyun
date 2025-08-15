@@ -30,6 +30,7 @@ class EventType(IntEnum):
     PROJECTILE_HIT = 2
     PLAYER_DAMAGED = 3
     ENEMY_SPAWNED = 4
+    PROJECTILE_CREATED = 5
 
     # Item Events (20-39)
     ITEM_DROP = 20
@@ -65,6 +66,7 @@ class EventType(IntEnum):
             2: '투사체 적중',  # PROJECTILE_HIT
             3: '플레이어 피해',  # PLAYER_DAMAGED
             4: '적 생성',  # ENEMY_SPAWNED
+            5: '투사체 생성',  # PROJECTILE_CREATED
             20: '아이템 드롭',  # ITEM_DROP
             21: '아이템 획득',  # ITEM_PICKUP
             22: '아이템 시너지 활성화',  # ITEM_SYNERGY_ACTIVATED

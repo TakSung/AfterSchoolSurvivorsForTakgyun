@@ -16,6 +16,7 @@ from ..components.enemy_component import EnemyComponent
 from ..components.health_component import HealthComponent
 from ..components.position_component import PositionComponent
 from ..components.projectile_component import ProjectileComponent
+from ..core.projectile_manager import ProjectileManager
 from ..core.system import System
 from ..systems.collision_system import BruteForceCollisionDetector
 
@@ -36,14 +37,21 @@ class ProjectileSystem(System):
     - Detect collisions with enemies and apply damage
     """
 
-    def __init__(self, priority: int = 15) -> None:
+    def __init__(self, priority: int = 15, projectile_manager: ProjectileManager | None = None) -> None:
         """
         Initialize the ProjectileSystem.
 
         Args:
             priority: System execution priority (15 = after weapons)
+            projectile_manager: ProjectileManager for event-based projectile tracking
         """
         super().__init__(priority=priority)
+
+        # AI-NOTE : 2025-08-15 ProjectileManager 기반 투사체 추적으로 변경
+        # - 이유: ECS 컴포넌트 필터링 문제로 투사체를 찾지 못하는 이슈 해결
+        # - 요구사항: 이벤트 기반 투사체 등록 및 추적으로 안정적인 관리
+        # - 히스토리: 사용자 제안으로 기존 컴포넌트 필터링 방식에서 변경
+        self._projectile_manager = projectile_manager or ProjectileManager()
 
         # AI-NOTE : 2025-08-12 투사체 시스템 초기화 - 화면 경계 관리
         # - 이유: 화면 밖으로 나간 투사체 자동 정리로 메모리 누수 방지
@@ -73,6 +81,15 @@ class ProjectileSystem(System):
             # 여유 공간을 둬서 화면 경계 근처에서 즉시 사라지지 않도록 함
             self._screen_bounds = self._screen_bounds.inflate(100, 100)
 
+    def set_projectile_manager(self, projectile_manager: ProjectileManager) -> None:
+        """
+        Set the projectile manager for event-based projectile tracking.
+        
+        Args:
+            projectile_manager: ProjectileManager instance
+        """
+        self._projectile_manager = projectile_manager
+
     def get_required_components(self) -> list[type]:
         """
         Get required component types for projectile entities.
@@ -97,14 +114,28 @@ class ProjectileSystem(System):
         if not self.enabled:
             return
 
-        projectile_entities = self.filter_entities(entity_manager)
+        # AI-NOTE : 2025-08-15 ProjectileManager를 통한 투사체 조회로 변경
+        # - 이유: ECS 컴포넌트 필터링 대신 이벤트 기반 관리로 안정적인 투사체 추적
+        # - 요구사항: ProjectileManager에 등록된 투사체들을 Entity 객체로 변환
+        # - 히스토리: 기존 filter_entities() 방식에서 변경
+        projectile_entity_ids = self._projectile_manager.get_active_projectiles()
+        projectile_entities = []
+        
+        # Entity ID를 실제 Entity 객체로 변환
+        for entity_id in projectile_entity_ids:
+            entity = entity_manager.get_entity_by_id(entity_id)
+            if entity:
+                projectile_entities.append(entity)
+            else:
+                # Entity가 더 이상 존재하지 않으면 ProjectileManager에서 제거
+                self._projectile_manager.unregister_projectile(entity_id)
+        
         self._expired_projectiles.clear()
         self._collision_pairs.clear()
 
-        # 투사체 찾기 시도 진단
-        all_entities = entity_manager.get_entities_with_component(ProjectileComponent)
-        logging.info(f"ProjectileSystem: Found {len(all_entities)} entities with ProjectileComponent")
-        logging.info(f"ProjectileSystem: filter_entities returned {len(projectile_entities)} entities")
+        # 투사체 추적 진단 정보
+        logging.info(f"ProjectileSystem: ProjectileManager has {len(projectile_entity_ids)} registered projectiles")
+        logging.info(f"ProjectileSystem: Found {len(projectile_entities)} valid projectile entities")
 
         if projectile_entities:
             logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
@@ -183,6 +214,8 @@ class ProjectileSystem(System):
             entity_manager: Entity manager to remove entities from
         """
         for entity in self._expired_projectiles:
+            # ProjectileManager에서도 제거
+            self._projectile_manager.unregister_projectile(entity.entity_id)
             entity_manager.destroy_entity(entity)
 
     def get_projectile_count(self, entity_manager: 'EntityManager') -> int:
@@ -195,7 +228,7 @@ class ProjectileSystem(System):
         Returns:
             Number of active projectile entities.
         """
-        return len(self.filter_entities(entity_manager))
+        return self._projectile_manager.get_projectile_count()
 
     def get_projectiles_by_owner(
         self, entity_manager: 'EntityManager', owner_id: str
