@@ -32,11 +32,9 @@ class TestEnemySpawnerSystem:
         self.entity_manager.component_registry = self.component_registry
         self.spawner_system = EnemySpawnerSystem(priority=5)
 
-        # 의존성 모킹 객체 생성
         self.mock_coordinate_manager = MagicMock(spec=CoordinateManager)
         self.mock_difficulty_manager = MagicMock(spec=DifficultyManager)
 
-        # 모킹 객체의 기본 반환값 설정
         self.mock_coordinate_manager.screen_to_world.return_value = Vector2(
             100, 100
         )
@@ -46,7 +44,6 @@ class TestEnemySpawnerSystem:
         self.mock_difficulty_manager.get_health_multiplier.return_value = 1.0
         self.mock_difficulty_manager.get_speed_multiplier.return_value = 1.0
 
-        # patch를 사용하여 get_instance 메서드 모킹
         patch_coord = patch(
             'src.systems.enemy_spawner_system.CoordinateManager.get_instance',
             return_value=self.mock_coordinate_manager,
@@ -56,7 +53,6 @@ class TestEnemySpawnerSystem:
             return_value=self.mock_difficulty_manager,
         )
 
-        # patch 시작 및 시스템 초기화
         self.patcher_coord = patch_coord.start()
         self.patcher_diff = patch_diff.start()
 
@@ -81,29 +77,55 @@ class TestEnemySpawnerSystem:
         assert self.spawner_system._is_spawn_time_ready() is True
 
     def test_최대_적_수_제한_동작_검증_성공_시나리오(self) -> None:
-        """3. 최대 적 수 제한 동작 검증 (성공 시나리오)"""
+        """3. 최대 적 수 제한 동작 검증 (성공 시나리오) - DEBUG"""
+        # Given - 최대 적 수를 5로 설정
         self.spawner_system.set_max_enemies(5)
+
+        # Given - 4개의 적 엔티티 생성
         for i in range(4):
             enemy = self.entity_manager.create_entity()
             self.entity_manager.add_component(enemy, EnemyComponent())
             self.entity_manager.add_component(
                 enemy, PositionComponent(x=i * 10, y=0)
             )
-        assert (
+
+        # When - 적 개수 제한 확인 (4마리)
+        is_within_limit_before = (
             self.spawner_system._is_enemy_count_within_limit(
                 self.entity_manager
             )
-            is True
         )
-        enemy = self.entity_manager.create_entity()
-        self.entity_manager.add_component(enemy, EnemyComponent())
-        self.entity_manager.add_component(enemy, PositionComponent(x=40, y=0))
-        assert (
+        assert is_within_limit_before is True, "4마리일 때는 스폰 가능해야 함"
+
+        # Given - 1개 적 추가 (총 5마리)
+        enemy_5 = self.entity_manager.create_entity()
+        self.entity_manager.add_component(enemy_5, EnemyComponent())
+        self.entity_manager.add_component(enemy_5, PositionComponent(x=40, y=0))
+
+        # --- DEBUG PRINT STATEMENTS ---
+        print("\n--- Debugging test_최대_적_수_제한_동작_검증_성공_시나리오 ---")
+        enemy_count_from_system = self.spawner_system._get_current_enemy_count(
+            self.entity_manager
+        )
+        print(f"스포너 시스템이 계산한 적의 수: {enemy_count_from_system}")
+        print(f"설정된 최대 적 수: {self.spawner_system._max_enemies}")
+
+        all_entities = self.entity_manager.get_all_entities()
+        print(f"EntityManager에 있는 총 엔티티 수: {len(all_entities)}")
+        for entity in all_entities:
+            # get_components_for_entity가 올바른 메서드 이름입니다.
+            components = self.entity_manager.get_components_for_entity(entity)
+            component_names = [c.__name__ for c in components.keys()]
+            print(f"  - Entity {entity.id}: {component_names}")
+        # --- END DEBUG ---
+
+        # When - 적 개수 제한 재확인 (5마리)
+        is_within_limit_after = (
             self.spawner_system._is_enemy_count_within_limit(
                 self.entity_manager
             )
-            is False
         )
+        assert is_within_limit_after is False, "5마리일 때는 스폰 불가능해야 함"
 
     def test_전체_스폰_조건_통합_검증_성공_시나리오(self) -> None:
         """4. 전체 스폰 조건 통합 검증 (성공 시나리오)"""
