@@ -18,6 +18,9 @@ from typing import Any
 import pygame
 
 from src.components.camera_component import CameraComponent
+from src.components.collision_component import (CollisionComponent,
+                                                CollisionLayer)
+from src.components.enemy_component import EnemyComponent
 from src.components.experience_component import ExperienceComponent
 from src.components.health_component import HealthComponent
 from src.components.player_component import PlayerComponent
@@ -33,12 +36,13 @@ from src.core.entity_manager import EntityManager
 from src.core.events.enemy_death_event import EnemyDeathEvent
 from src.core.events.event_bus import EventBus
 from src.core.system_orchestrator import SystemOrchestrator
+from src.systems.auto_attack_system import AutoAttackSystem
 from src.systems.camera_system import CameraSystem
+from src.systems.collision_system import CollisionSystem
 from src.systems.experience_system import ExperienceSystem
 from src.systems.player_movement_system import PlayerMovementSystem
 from src.systems.player_stats_system import PlayerStatsSystem
 from src.systems.projectile_system import ProjectileSystem
-from src.systems.weapon_system import WeaponSystem
 from src.utils.vector2 import Vector2
 
 # 게임 설정
@@ -139,9 +143,9 @@ class MiniGameDemo2:
         camera_system = CameraSystem(priority=10, event_bus=self.event_bus)
         self.system_orchestrator.register_system(camera_system, 'camera')
 
-        # 무기 시스템
-        weapon_system = WeaponSystem(priority=15)
-        self.system_orchestrator.register_system(weapon_system, 'weapon')
+        # 자동 공격 시스템
+        auto_attack_system = AutoAttackSystem(priority=15)
+        self.system_orchestrator.register_system(auto_attack_system, 'auto_attack')
 
         # 투사체 시스템
         projectile_system = ProjectileSystem(priority=18)
@@ -158,6 +162,10 @@ class MiniGameDemo2:
         self.system_orchestrator.register_system(
             player_stats_system, 'player_stats'
         )
+
+        # 충돌 시스템
+        collision_system = CollisionSystem(priority=100)
+        self.system_orchestrator.register_system(collision_system, 'collision')
 
     def _create_player(self) -> None:
         """플레이어 엔티티 생성"""
@@ -220,6 +228,17 @@ class MiniGameDemo2:
                 attack_speed=2.0,  # 초당 2발
                 range=300.0,
                 last_attack_time=0.0,
+            )
+        )
+
+        # 충돌 컴포넌트
+        self.entity_manager.add_component(
+            self.player_entity,
+            CollisionComponent(
+                width=30.0,
+                height=30.0,
+                layer=CollisionLayer.PLAYER,
+                collision_mask={CollisionLayer.ENEMY},
             )
         )
 
@@ -351,6 +370,20 @@ class MiniGameDemo2:
         # 체력 컴포넌트
         self.entity_manager.add_component(
             enemy, HealthComponent(current_health=health, max_health=health)
+        )
+
+        # 적 컴포넌트 (타겟팅용)
+        self.entity_manager.add_component(enemy, EnemyComponent())
+
+        # 충돌 컴포넌트
+        self.entity_manager.add_component(
+            enemy,
+            CollisionComponent(
+                width=size[0],
+                height=size[1],
+                layer=CollisionLayer.ENEMY,
+                collision_mask={CollisionLayer.PLAYER, CollisionLayer.PROJECTILE},
+            )
         )
 
         # 적 정보 저장
@@ -666,69 +699,7 @@ class MiniGameDemo2:
                     (SCREEN_WIDTH - 280, start_y + i * 20)
                 )
 
-    def _update_projectiles(self) -> None:
-        """투사체 업데이트 및 충돌 검사"""
-        # 투사체와 적의 충돌 검사
-        for projectile in self.projectiles[:]:
-            proj_pos = self.entity_manager.get_component(
-                projectile, PositionComponent
-            )
-            proj_comp = self.entity_manager.get_component(
-                projectile, ProjectileComponent
-            )
-            
-            if not proj_pos or not proj_comp:
-                continue
-
-            # 적들과의 충돌 검사
-            for enemy in self.enemies[:]:
-                enemy_pos = self.entity_manager.get_component(
-                    enemy, PositionComponent
-                )
-                if not enemy_pos:
-                    continue
-
-                # 거리 계산
-                dx = proj_pos.x - enemy_pos.x
-                dy = proj_pos.y - enemy_pos.y
-                distance = math.sqrt(dx * dx + dy * dy)
-
-                # 충돌 검사 (간단한 원형 충돌)
-                if distance < 20:  # 충돌 반경
-                    # 적에게 데미지 적용
-                    enemy_health = self.entity_manager.get_component(
-                        enemy, HealthComponent
-                    )
-                    if enemy_health:
-                        enemy_health.take_damage(proj_comp.damage, time.time())
-
-                    # 투사체 제거
-                    if projectile in self.projectiles:
-                        self.projectiles.remove(projectile)
-                    self.entity_manager.destroy_entity(projectile)
-                    break
-
-        # 화면 밖 투사체들 정리
-        transformer = self.coordinate_manager.get_transformer()
-        if transformer:
-            for projectile in self.projectiles[:]:
-                proj_pos = self.entity_manager.get_component(
-                    projectile, PositionComponent
-                )
-                if proj_pos:
-                    try:
-                        screen_pos = transformer.world_to_screen(
-                            Vector2(proj_pos.x, proj_pos.y)
-                        )
-                        # 화면에서 너무 멀리 나간 투사체 제거
-                        if (
-                            screen_pos.x < -100 or screen_pos.x > SCREEN_WIDTH + 100
-                            or screen_pos.y < -100 or screen_pos.y > SCREEN_HEIGHT + 100
-                        ):
-                            self.projectiles.remove(projectile)
-                            self.entity_manager.destroy_entity(projectile)
-                    except:
-                        continue
+    
 
     def _update_fps(self, delta_time: float) -> None:
         """FPS 계산"""
@@ -769,13 +740,6 @@ class MiniGameDemo2:
                 # 커스텀 게임 로직
                 self._update_enemies(delta_time)
                 self._spawn_enemies()
-                self._update_projectiles()
-
-                # 투사체 리스트 갱신
-                self.projectiles = [
-                    entity for entity in self.entity_manager.get_all_entities()
-                    if self.entity_manager.has_component(entity, ProjectileComponent)
-                ]
 
             # 렌더링
             self.screen.fill(COLORS['background'])

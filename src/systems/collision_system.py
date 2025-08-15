@@ -499,8 +499,25 @@ class CollisionSystem(System):
         col2: 'CollisionComponent',
     ) -> None:
         """Handle collision between projectile and enemy."""
-        # TODO: 적 피해 처리 및 투사체 제거 구현 예정
-        logger.info('Projectile-Enemy collision: damage applied')
+        from ..components.health_component import HealthComponent
+        from ..components.projectile_component import ProjectileComponent
+        import time
+
+        if col1.layer.value == 4: # PROJECTILE = 4
+            projectile_entity = entity1
+            enemy_entity = entity2
+        else:
+            projectile_entity = entity2
+            enemy_entity = entity1
+
+        projectile = entity_manager.get_component(projectile_entity, ProjectileComponent)
+        enemy_health = entity_manager.get_component(enemy_entity, HealthComponent)
+
+        if projectile and enemy_health:
+            enemy_health.take_damage(projectile.damage, time.time())
+            entity_manager.destroy_entity(projectile_entity)
+
+            logger.info(f'Projectile-Enemy collision: damage {projectile.damage} applied to enemy {enemy_entity.entity_id}')
 
     def _apply_collision_physics(
         self,
