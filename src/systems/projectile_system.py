@@ -98,6 +98,9 @@ class ProjectileSystem(System):
         self._expired_projectiles.clear()
         self._collision_pairs.clear()
 
+        if projectile_entities:
+            logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
+
         # 투사체 물리 업데이트
         for entity in projectile_entities:
             self._update_projectile(entity, entity_manager, delta_time)

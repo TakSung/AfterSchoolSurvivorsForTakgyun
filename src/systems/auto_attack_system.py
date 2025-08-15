@@ -83,7 +83,7 @@ class AutoAttackSystem(System):
             return
 
         weapon_entities = self.filter_entities(entity_manager)
-        # logger.info(f"AutoAttackSystem: Found {len(weapon_entities)} weapon entities.")
+        logger.info(f"AutoAttackSystem: Found {len(weapon_entities)} weapon entities.")
 
         for entity in weapon_entities:
             self._process_auto_attack(entity, entity_manager, delta_time)
@@ -113,7 +113,7 @@ class AutoAttackSystem(System):
             )
             return
 
-        # logger.info(f"Processing auto attack for entity {weapon_entity.entity_id}")
+        logger.info(f"Processing auto attack for entity {weapon_entity.entity_id}")
 
         # AI-NOTE : 2025-08-13 시간 기반 공격 쿨다운 시스템 구현
         # - 이유: FPS와 독립적인 안정적인 공격 주기 제공
@@ -125,7 +125,7 @@ class AutoAttackSystem(System):
 
         # 쿨다운이 완료되었으면 공격 시도
         if self._can_attack(weapon):
-            # logger.info("Attack cooldown completed, attempting attack")
+            logger.info("Attack cooldown completed, attempting attack")
             # 플레이어의 회전 방향 가져오기
             from ..components.rotation_component import RotationComponent
 
@@ -134,17 +134,17 @@ class AutoAttackSystem(System):
             )
 
             if rotation_comp:
-                # logger.info(f"Player rotation angle: {rotation_comp.angle}")
+                logger.info(f"Player rotation angle: {rotation_comp.angle}")
                 # 플레이어가 바라보는 방향으로 발사
                 self._execute_direction_attack(
                     weapon, weapon_pos, rotation_comp.angle, entity_manager
                 )
                 self._reset_attack_cooldown(weapon)
-                # logger.info("Projectile created successfully")
+                logger.info("Projectile created successfully")
             else:
                 logger.warning('No rotation component found on weapon entity')
-        # else:
-        # logger.debug(f"Attack on cooldown. Time: {weapon.last_attack_time:.2f}, Required: {weapon.get_cooldown_duration():.2f}")
+        else:
+            logger.info(f"Attack on cooldown. Time: {weapon.last_attack_time:.2f}, Required: {weapon.get_cooldown_duration():.2f}")
 
     def _update_attack_cooldown(
         self, weapon: WeaponComponent, delta_time: float
