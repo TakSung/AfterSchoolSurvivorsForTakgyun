@@ -541,6 +541,7 @@ class TestCoordinateGameSystemIntegration:
         screen_center = Vector2(512, 384)
         for data in stability_data[30:]:  # 초기 30프레임 제외하고 확인 (시스템 안정화 대기)
             # 플레이어 화면 중앙 고정 확인 (더 관대한 조건)
+            print(f"x : {data['player_screen'].x}<play>, {screen_center.x} || y : {data['player_screen'].y}<play>, {screen_center.y}")
             player_screen_distance = data['player_screen'].distance_to(screen_center)
             assert player_screen_distance < 50, (
                 f"프레임 {data['frame']}: 플레이어 중앙 고정 실패: {player_screen_distance}"
