@@ -32,10 +32,9 @@ class ProjectileCreatedEvent(BaseEvent):
     # - 요구사항: 투사체 생성 시 즉시 ProjectileManager에 등록
     # - 히스토리: 사용자 제안으로 이벤트 기반 투사체 관리 시스템 구현
     
+    # 상속받은 필드들: timestamp: float, created_at: datetime | None
     projectile_entity_id: str
     owner_entity_id: str
-    timestamp: float = 0.0
-    created_at: None = None
     
     def get_event_type(self) -> EventType:
         """Get the event type for projectile creation."""
@@ -80,9 +79,10 @@ class ProjectileCreatedEvent(BaseEvent):
             timestamp = time.time()
             
         return cls(
+            timestamp=timestamp,
+            created_at=None,
             projectile_entity_id=projectile_entity.entity_id,
-            owner_entity_id=owner_entity.entity_id,
-            timestamp=timestamp
+            owner_entity_id=owner_entity.entity_id
         )
     
     @classmethod
@@ -107,9 +107,10 @@ class ProjectileCreatedEvent(BaseEvent):
             timestamp = time.time()
             
         return cls(
+            timestamp=timestamp,
+            created_at=None,
             projectile_entity_id=projectile_entity_id,
-            owner_entity_id=owner_entity_id,
-            timestamp=timestamp
+            owner_entity_id=owner_entity_id
         )
     
     def __str__(self) -> str:

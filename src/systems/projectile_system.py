@@ -243,14 +243,14 @@ class ProjectileSystem(System):
         Returns:
             List of projectile entities owned by the specified entity.
         """
-        projectile_entities = self.filter_entities(entity_manager)
+        # ProjectileManager를 통해 owner별 투사체 ID 조회
+        projectile_entity_ids = self._projectile_manager.get_projectiles_by_owner(owner_id)
         owner_projectiles = []
 
-        for entity in projectile_entities:
-            projectile = entity_manager.get_component(
-                entity, ProjectileComponent
-            )
-            if projectile and projectile.owner_id == owner_id:
+        # Entity ID를 실제 Entity 객체로 변환
+        for entity_id in projectile_entity_ids:
+            entity = entity_manager.get_entity_by_id(entity_id)
+            if entity:
                 owner_projectiles.append(entity)
 
         return owner_projectiles

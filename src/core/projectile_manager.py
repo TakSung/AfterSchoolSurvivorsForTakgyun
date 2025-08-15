@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Dict, List, Set
 
 from .events.base_event import BaseEvent
 from .events.event_types import EventType
+from .events.interfaces import IEventSubscriber
 from .events.projectile_created_event import ProjectileCreatedEvent
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ProjectileManager:
+class ProjectileManager(IEventSubscriber):
     """
     Manager for tracking projectiles through event-based registration.
     
@@ -51,6 +52,15 @@ class ProjectileManager:
         self._total_removed = 0
         
         logger.info("ProjectileManager initialized")
+    
+    def get_subscribed_events(self) -> List[EventType]:
+        """
+        Get the list of event types this manager subscribes to.
+        
+        Returns:
+            List of EventType values for events this manager handles
+        """
+        return [EventType.PROJECTILE_CREATED]
     
     def handle_event(self, event: BaseEvent) -> None:
         """

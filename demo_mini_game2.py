@@ -40,6 +40,7 @@ from src.core.coordinate_manager import CoordinateManager
 from src.core.entity_manager import EntityManager
 from src.core.events.enemy_death_event import EnemyDeathEvent
 from src.core.events.event_bus import EventBus
+from src.core.projectile_manager import ProjectileManager
 from src.core.system_orchestrator import SystemOrchestrator
 from src.systems.auto_attack_system import AutoAttackSystem
 from src.systems.camera_system import CameraSystem
@@ -118,6 +119,10 @@ class MiniGameDemo2:
         self.entity_manager = EntityManager()
         self.event_bus = EventBus()
         self.system_orchestrator = SystemOrchestrator(event_bus=self.event_bus)
+        
+        # ProjectileManager 초기화 및 이벤트 구독
+        self.projectile_manager = ProjectileManager()
+        self.event_bus.subscribe(self.projectile_manager)
 
         # 좌표 변환 시스템 설정
         self.coordinate_manager = CoordinateManager.get_instance()
@@ -175,13 +180,13 @@ class MiniGameDemo2:
         self.system_orchestrator.register_system(camera_system, 'camera')
 
         # 자동 공격 시스템
-        auto_attack_system = AutoAttackSystem(priority=15)
+        auto_attack_system = AutoAttackSystem(priority=15, event_bus=self.event_bus)
         self.system_orchestrator.register_system(
             auto_attack_system, 'auto_attack'
         )
 
         # 투사체 시스템
-        projectile_system = ProjectileSystem(priority=18)
+        projectile_system = ProjectileSystem(priority=18, projectile_manager=self.projectile_manager)
         self.system_orchestrator.register_system(
             projectile_system, 'projectile'
         )
