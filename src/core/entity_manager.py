@@ -7,12 +7,18 @@ and their components throughout the game lifecycle.
 
 import weakref
 from collections.abc import Iterator
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from .component import Component
 from .component_registry import ComponentRegistry
 from .entity import Entity
 from .interfaces.i_component_registry import IComponentRegistry
+
+if TYPE_CHECKING:
+    from ..dto.spawn_result import SpawnResult
+    from ..managers.enemy_manager import EnemyManager
+    from .coordinate_manager import CoordinateManager
+    from .difficulty_manager import DifficultyManager
 
 T = TypeVar('T', bound=Component)
 
@@ -29,13 +35,20 @@ class EntityManager:
     """
 
     def __init__(
-        self, component_registry: IComponentRegistry | None = None
+        self, 
+        component_registry: IComponentRegistry | None = None,
+        coordinate_manager: 'CoordinateManager | None' = None,
+        difficulty_manager: 'DifficultyManager | None' = None
     ) -> None:
-        """Initialize the EntityManager with optional component registry injection.
+        """Initialize the EntityManager with optional dependencies injection.
 
         Args:
             component_registry: Optional component registry implementation.
                                If None, uses default ComponentRegistry.
+            coordinate_manager: Optional coordinate manager.
+                               If None, uses singleton instance.
+            difficulty_manager: Optional difficulty manager.
+                               If None, uses singleton instance.
         """
         # Use weak references to prevent memory leaks
         self._entities: weakref.WeakValueDictionary[str, Entity] = (
@@ -50,6 +63,18 @@ class EntityManager:
             if component_registry is not None
             else ComponentRegistry()
         )
+        
+        # AI-NOTE : 2025-01-16 세부 매니저들에 대한 의존성 주입 지원
+        # - 이유: EntityManager가 세부 매니저들을 관리하고 위임할 수 있도록 함
+        # - 요구사항: 테스트 시 Mock 매니저 주입, 운영 시 실제 매니저 사용
+        # - 비즈니스 가치: 시스템들이 EntityManager만 알면 되는 단순한 구조
+        
+        # Store injected dependencies
+        self._coordinate_manager = coordinate_manager
+        self._difficulty_manager = difficulty_manager
+        
+        # Specialized managers (lazy initialization)
+        self._enemy_manager: 'EnemyManager | None' = None
 
     def create_entity(self) -> Entity:
         """
