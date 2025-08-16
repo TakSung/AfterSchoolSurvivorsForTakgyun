@@ -2089,7 +2089,8 @@
         "testStrategy": "DTO 데이터 검증 로직 테스트. 직렬화/역직렬화 정확성 검증. pydantic validation 테스트",
         "priority": "medium",
         "dependencies": [
-          36
+          36,
+          "38"
         ],
         "status": "pending",
         "subtasks": [
@@ -2133,7 +2134,9 @@
         "details": "좌표변환시스템(58개 참조)을 최우선으로 처리하여 System.update(delta_time) 인터페이스로 변경합니다. EntityManager 직접 접근을 제거하고 Manager 인터페이스를 통한 접근으로 변경합니다. TDD 6단계 프로세스를 적용하여 안전하게 리팩토링합니다.",
         "testStrategy": "TDD 기반 테스트 작성. 기존 update() 호출 부분 모두 검증. 좌표변환시스템 우선 테스트",
         "priority": "high",
-        "dependencies": [],
+        "dependencies": [
+          "36"
+        ],
         "status": "pending",
         "subtasks": [
           {
