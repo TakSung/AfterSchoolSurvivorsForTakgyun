@@ -1990,7 +1990,7 @@
         "dependencies": [
           34
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1998,7 +1998,7 @@
             "description": "src/core/component.py에서 Component 추상 기본 클래스를 정의하고 표준 인터페이스 메서드들을 설계합니다.",
             "dependencies": [],
             "details": "ABC를 상속받는 Component 클래스를 정의하고 validate(), serialize(), deserialize() 추상 메서드를 선언합니다. @dataclass 활용을 위한 기본 구조를 설계하고, 타입 힌트를 적용한 공통 필드들을 정의합니다. 컴포넌트 고유 ID 생성 로직과 초기화 메서드를 포함합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2009,7 +2009,7 @@
               "35.1"
             ],
             "details": "src/components/ 디렉토리의 모든 컴포넌트 파일을 분석하여 공통 패턴과 차이점을 식별합니다. PositionComponent, HealthComponent, WeaponComponent 등의 구조를 분석하고, 각 컴포넌트별 특화된 검증 규칙을 정의합니다. 기존 코드와의 호환성을 유지하면서 표준화할 수 있는 방안을 수립합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2020,7 +2020,7 @@
               "35.2"
             ],
             "details": "각 컴포넌트별로 데이터 유효성 검증 로직을 구현합니다. HealthComponent의 current ≤ maximum 검증, WeaponComponent의 damage > 0 검증 등을 포함합니다. JSON 직렬화/역직렬화 메서드를 구현하고, @dataclass와 type hints를 활용하여 런타임 타입 검증을 추가합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2031,7 +2031,7 @@
               "35.3"
             ],
             "details": "tests/test_*_component.py 파일들을 새로운 인터페이스에 맞춰 수정합니다. 각 컴포넌트의 validate() 메서드에 대한 성공/실패 시나리오 테스트를 작성합니다. 직렬화/역직렬화 동작을 검증하는 테스트를 추가하고, 타입 안전성 검증 테스트를 포함합니다. pytest를 실행하여 모든 테스트가 통과하는지 확인합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -2456,7 +2456,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-16T21:30:13.852Z",
+      "updated": "2025-08-16T21:35:07.682Z",
       "description": "Tasks for master context"
     }
   }
