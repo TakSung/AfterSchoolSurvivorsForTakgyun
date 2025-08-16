@@ -6,12 +6,13 @@ and their components throughout the game lifecycle.
 """
 
 import weakref
-from collections import defaultdict
 from collections.abc import Iterator
-from typing import TypeVar, cast
+from typing import TypeVar
 
 from .component import Component
+from .component_registry import ComponentRegistry
 from .entity import Entity
+from .interfaces.i_component_registry import IComponentRegistry
 
 T = TypeVar('T', bound=Component)
 
@@ -22,24 +23,30 @@ class EntityManager:
 
     The EntityManager handles entity lifecycle, component assignment,
     and provides efficient querying capabilities for systems.
+    
+    Uses dependency injection for component registry to support
+    interface abstraction and testing.
     """
 
-    def __init__(self) -> None:
-        """Initialize the EntityManager."""
+    def __init__(self, component_registry: IComponentRegistry | None = None) -> None:
+        """Initialize the EntityManager with optional component registry injection.
+        
+        Args:
+            component_registry: Optional component registry implementation.
+                               If None, uses default ComponentRegistry.
+        """
         # Use weak references to prevent memory leaks
         self._entities: weakref.WeakValueDictionary[str, Entity] = (
             weakref.WeakValueDictionary()
         )
-        # Component storage: component_type -> entity_id -> component_instance
-        self._components: dict[type[Component], dict[str, Component]] = (
-            defaultdict(dict)
-        )
-        # Entity component mapping: entity_id -> set of component types
-        self._entity_components: dict[str, set[type[Component]]] = defaultdict(
-            set
-        )
         # Active entities set for efficient filtering
         self._active_entities: set[str] = set()
+        
+        # Dependency injection for component registry
+        self._component_registry: IComponentRegistry = (
+            component_registry if component_registry is not None 
+            else ComponentRegistry()
+        )
 
     def create_entity(self) -> Entity:
         """
@@ -73,13 +80,10 @@ class EntityManager:
             for line in traceback.format_stack():
                 logging.error(f"     {line.strip()}")
 
-        # Remove all components associated with this entity
-        component_types = self._entity_components[entity.entity_id].copy()
-        for component_type in component_types:
-            self.remove_component(entity, component_type)
+        # Remove all components through the registry
+        self._component_registry.remove_entity_components(entity)
 
         # Clean up entity references
-        self._entity_components.pop(entity.entity_id, None)
         self._active_entities.discard(entity.entity_id)
 
         # Mark entity as destroyed

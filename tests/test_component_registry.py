@@ -23,6 +23,7 @@ class HealthComponent(Component):
     current_health: int
 
     def validate(self) -> bool:
+        """Validate the health component data."""
         return (
             self.current_health <= self.max_health and self.current_health >= 0
         )
@@ -51,6 +52,7 @@ class InvalidComponent(Component):
     value: int
 
     def validate(self) -> bool:
+        """Fail validation for testing purposes."""
         return False
 
 
@@ -103,26 +105,33 @@ class TestComponentRegistry:
         )
         assert entity in registry, '엔티티가 레지스트리에 등록되어야 함'
 
-    def test_중복_컴포넌트_추가_실패_시나리오(
+    def test_다중_컴포넌트_추가_성공_시나리오(
         self,
         registry: ComponentRegistry,
         entity: Entity,
         health_component: HealthComponent,
     ) -> None:
-        """2. 중복 컴포넌트 추가 실패 시나리오
+        """2. 다중 컴포넌트 추가 성공 시나리오
 
-        목적: 같은 타입의 컴포넌트 중복 추가 시 예외 발생 검증
-        테스트할 범위: add_component 메서드의 중복 방지 로직
-        커버하는 함수 및 데이터: ComponentRegistry.add_component() 예외 처리
-        기대되는 안정성: ValueError 예외가 발생해야 함
+        목적: 같은 타입의 컴포넌트 여러 개 추가 기능 검증
+        테스트할 범위: add_component 메서드의 다중 컴포넌트 지원
+        커버하는 함수 및 데이터: ComponentRegistry.add_component() 다중 지원
+        기대되는 안정성: 같은 타입 컴포넌트 여러 개 저장 가능해야 함
         """
-        # Given - 컴포넌트가 이미 추가된 상태
+        # Given - 첫 번째 컴포넌트 추가
         registry.add_component(entity, health_component)
 
-        # When & Then - 같은 타입 컴포넌트 재추가 시 예외 발생
-        duplicate_health = HealthComponent(max_health=50, current_health=30)
-        with pytest.raises(ValueError, match='already has component'):
-            registry.add_component(entity, duplicate_health)
+        # When - 같은 타입의 다른 컴포넌트 추가
+        second_health = HealthComponent(max_health=50, current_health=30)
+        registry.add_component(entity, second_health)
+
+        # Then - 두 컴포넌트 모두 저장됨
+        components = registry.get_components(entity, HealthComponent)
+        assert len(components) == 2, '두 개의 컴포넌트가 저장되어야 함'
+        assert health_component in components, (
+            '첫 번째 컴포넌트가 포함되어야 함'
+        )
+        assert second_health in components, '두 번째 컴포넌트가 포함되어야 함'
 
     def test_비활성_엔티티_컴포넌트_추가_실패_시나리오(
         self,
@@ -177,13 +186,11 @@ class TestComponentRegistry:
         # Given - 컴포넌트가 추가된 상태
         registry.add_component(entity, health_component)
 
-        # When - 컴포넌트 제거
-        removed = registry.remove_component(entity, HealthComponent)
+        # When - 특정 컴포넌트 인스턴스 제거
+        removed = registry.remove_component(entity, health_component)
 
         # Then - 컴포넌트가 올바르게 제거됨
-        assert removed is health_component, (
-            '제거된 컴포넌트 인스턴스가 반환되어야 함'
-        )
+        assert removed is True, '컴포넌트 제거 성공 시 True가 반환되어야 함'
         assert not registry.has_component(entity, HealthComponent), (
             '컴포넌트가 더 이상 존재하지 않아야 함'
         )
@@ -196,17 +203,22 @@ class TestComponentRegistry:
     ) -> None:
         """6. 존재하지 않는 컴포넌트 제거 시나리오
 
-        목적: 존재하지 않는 컴포넌트 제거 시 None 반환 검증
-        테스트할 범위: remove_component 메서드의 None 반환 로직
+        목적: 존재하지 않는 컴포넌트 제거 시 False 반환 검증
+        테스트할 범위: remove_component 메서드의 False 반환 로직
         커버하는 함수 및 데이터: ComponentRegistry.remove_component() 예외 처리
-        기대되는 안정성: 존재하지 않는 컴포넌트 제거 시 None 반환되어야 함
+        기대되는 안정성: 존재하지 않는 컴포넌트 제거 시 False 반환되어야 함
         """
-        # When - 존재하지 않는 컴포넌트 제거 시도
-        removed = registry.remove_component(entity, HealthComponent)
+        # Given - 존재하지 않는 컴포넌트 인스턴스
+        non_existent_component = HealthComponent(
+            max_health=100, current_health=80
+        )
 
-        # Then - None 반환
-        assert removed is None, (
-            '존재하지 않는 컴포넌트 제거 시 None 반환되어야 함'
+        # When - 존재하지 않는 컴포넌트 제거 시도
+        removed = registry.remove_component(entity, non_existent_component)
+
+        # Then - False 반환
+        assert removed is False, (
+            '존재하지 않는 컴포넌트 제거 시 False 반환되어야 함'
         )
 
     def test_컴포넌트_조회_기능_검증(
@@ -269,9 +281,17 @@ class TestComponentRegistry:
         components = registry.get_components_for_entity(entity)
 
         # Then - 모든 컴포넌트가 올바르게 반환됨
-        assert len(components) == 2, '두 개의 컴포넌트가 반환되어야 함'
-        assert components[HealthComponent] is health_component
-        assert components[PositionComponent] is position_component
+        assert len(components) == 2, '두 개의 컴포넌트 타입이 반환되어야 함'
+        assert HealthComponent in components, 'HealthComponent가 포함되어야 함'
+        assert PositionComponent in components, (
+            'PositionComponent가 포함되어야 함'
+        )
+        assert components[HealthComponent][0] is health_component, (
+            '올바른 health_component가 반환되어야 함'
+        )
+        assert components[PositionComponent][0] is position_component, (
+            '올바른 position_component가 반환되어야 함'
+        )
 
     def test_타입별_엔티티_조회_기능(
         self, registry: ComponentRegistry
@@ -286,7 +306,6 @@ class TestComponentRegistry:
         # Given - 여러 엔티티와 컴포넌트 설정
         entity1 = Entity.create()
         entity2 = Entity.create()
-        entity3 = Entity.create()
 
         health1 = HealthComponent(max_health=100, current_health=80)
         health2 = HealthComponent(max_health=150, current_health=150)
@@ -306,10 +325,12 @@ class TestComponentRegistry:
             '헬스 컴포넌트를 가진 엔티티는 2개여야 함'
         )
         entities = [entity for entity, _ in health_entities]
-        components = [comp for _, comp in health_entities]
+        all_components = []
+        for _, component_sequence in health_entities:
+            all_components.extend(component_sequence)
 
         assert entity1 in entities and entity2 in entities
-        assert health1 in components and health2 in components
+        assert health1 in all_components and health2 in all_components
 
         # 위치 컴포넌트 조회
         position_entities = list(
@@ -371,13 +392,23 @@ class TestComponentRegistry:
         assert entity1 in returned_entities and entity2 in returned_entities
         assert entity3 not in returned_entities
 
-        # 각 엔티티의 컴포넌트 튜플 검증
-        for entity, components in entities_with_both:
-            assert len(components) == 2, (
-                '반환된 컴포넌트 튜플은 2개 요소를 가져야 함'
+        # 각 엔티티의 컴포넌트 딕셔너리 검증
+        for _entity, component_dict in entities_with_both:
+            assert len(component_dict) == 2, (
+                '반환된 컴포넌트 딕셔너리는 2개 타입을 가져야 함'
             )
-            assert isinstance(components[0], HealthComponent)
-            assert isinstance(components[1], PositionComponent)
+            assert HealthComponent in component_dict, (
+                'HealthComponent가 포함되어야 함'
+            )
+            assert PositionComponent in component_dict, (
+                'PositionComponent가 포함되어야 함'
+            )
+            assert len(component_dict[HealthComponent]) > 0, (
+                'HealthComponent 시퀀스가 비어있지 않아야 함'
+            )
+            assert len(component_dict[PositionComponent]) > 0, (
+                'PositionComponent 시퀀스가 비어있지 않아야 함'
+            )
 
     def test_엔티티_모든_컴포넌트_제거_기능(
         self, registry: ComponentRegistry, entity: Entity
@@ -400,9 +431,21 @@ class TestComponentRegistry:
         removed_components = registry.remove_entity_components(entity)
 
         # Then - 모든 컴포넌트가 제거되고 반환됨
-        assert len(removed_components) == 2, '제거된 컴포넌트는 2개여야 함'
-        assert removed_components[HealthComponent] is health
-        assert removed_components[PositionComponent] is position
+        assert len(removed_components) == 2, (
+            '제거된 컴포넌트는 2개 타입이어야 함'
+        )
+        assert HealthComponent in removed_components, (
+            'HealthComponent가 포함되어야 함'
+        )
+        assert PositionComponent in removed_components, (
+            'PositionComponent가 포함되어야 함'
+        )
+        assert health in removed_components[HealthComponent], (
+            'health 컴포넌트가 포함되어야 함'
+        )
+        assert position in removed_components[PositionComponent], (
+            'position 컴포넌트가 포함되어야 함'
+        )
 
         assert not registry.has_component(entity, HealthComponent)
         assert not registry.has_component(entity, PositionComponent)
@@ -481,8 +524,8 @@ class TestComponentRegistry:
             '컴포넌트 추가 후 일관성이 유지되어야 함'
         )
 
-        # 컴포넌트 제거 후 검증
-        registry.remove_component(entity, HealthComponent)
+        # 컴포넌트 제거 후 검증 - 인스턴스별 제거 사용
+        registry.remove_component(entity, health)
         assert registry.validate_registry(), (
             '컴포넌트 제거 후 일관성이 유지되어야 함'
         )
