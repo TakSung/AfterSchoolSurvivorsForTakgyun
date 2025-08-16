@@ -139,7 +139,7 @@ class ProjectileSystem(System):
         
         # Entity ID를 실제 Entity 객체로 변환
         for entity_id in projectile_entity_ids:
-            entity = entity_manager.get_entity_by_id(entity_id)
+            entity = entity_manager.get_entity(entity_id)
             if entity:
                 projectile_entities.append(entity)
                 logging.info(f"Found entity for ID {entity_id}")
