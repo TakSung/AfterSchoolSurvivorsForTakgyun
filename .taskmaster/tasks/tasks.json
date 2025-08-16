@@ -1945,7 +1945,7 @@
         "testStrategy": "기존 테스트 케이스를 수정하여 새로운 인터페이스에 맞춰 동작하는지 확인. demo-*.py 파일들이 정상 실행되는지 검증",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1953,7 +1953,7 @@
             "description": "프로젝트 전체에서 Entity 클래스의 65개 참조를 분석하여 현재 사용 패턴을 파악하고, 표준화된 인터페이스를 설계합니다.",
             "dependencies": [],
             "details": "src/ 디렉토리 전체에서 Entity 클래스 사용법을 분석합니다. add_component, remove_component, get_component, has_component 등의 메서드 호출 패턴을 조사하고, 각 사용처에서 요구하는 기능을 정리합니다. 분석 결과를 바탕으로 통일된 메서드 시그니처와 반환 타입을 정의하며, 기존 코드와의 호환성을 최대한 유지할 수 있는 인터페이스를 설계합니다. 타입 힌트를 100% 적용한 새로운 메서드 시그니처를 문서화합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1964,7 +1964,7 @@
               "34.1"
             ],
             "details": "src/core/entity.py 파일을 수정하여 표준화된 인터페이스를 구현합니다. add_component, remove_component, get_component, has_component 메서드의 시그니처를 통일하고, Generic 타입을 활용한 타입 안전성을 보장합니다. Optional 반환값과 예외 처리를 명확하게 정의하며, 불필요한 메서드는 제거하거나 deprecated 처리합니다. Python 3.13+ 문법을 활용한 완전한 타입 힌트를 모든 메서드에 적용하고, 클래스 문서화를 업데이트합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1975,7 +1975,7 @@
               "34.2"
             ],
             "details": "변경된 Entity 클래스와 기존 65개 참조 지점의 호환성을 검증합니다. tests/ 디렉토리의 모든 Entity 관련 테스트 케이스를 새로운 인터페이스에 맞춰 수정하고, demo_*.py 파일들이 정상 실행되는지 확인합니다. 타입 체크 도구(mypy)를 실행하여 타입 안전성을 검증하며, 성능 regression이 없는지 기존 벤치마크와 비교합니다. ruff를 사용한 코드 품질 검증을 수행하고, 모든 테스트가 통과할 때까지 필요한 수정을 진행합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -2456,7 +2456,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-16T21:20:18.030Z",
+      "updated": "2025-08-16T21:23:25.085Z",
       "description": "Tasks for master context"
     }
   }
