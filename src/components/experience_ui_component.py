@@ -155,3 +155,56 @@ class ExperienceUIComponent(Component):
             self.border_color = border
         if text is not None:
             self.text_color = text
+
+    def validate(self) -> bool:
+        """
+        Validate experience UI component data.
+
+        Returns:
+            True if all UI data is valid, False otherwise.
+        """
+
+        def is_valid_color(color: tuple[int, int, int]) -> bool:
+            return (
+                isinstance(color, tuple)
+                and len(color) == 3
+                and all(isinstance(c, int) and 0 <= c <= 255 for c in color)
+            )
+
+        def is_valid_position(pos: tuple[int, int]) -> bool:
+            return (
+                isinstance(pos, tuple)
+                and len(pos) == 2
+                and all(isinstance(p, int) for p in pos)
+            )
+
+        return (
+            isinstance(self.show_level, bool)
+            and isinstance(self.show_experience_bar, bool)
+            and isinstance(self.show_experience_text, bool)
+            and isinstance(self.show_progress_percentage, bool)
+            and is_valid_position(self.ui_position)
+            and isinstance(self.bar_width, int)
+            and isinstance(self.bar_height, int)
+            and self.bar_width > 0
+            and self.bar_height > 0
+            and is_valid_position(self.level_text_offset)
+            and is_valid_position(self.exp_text_offset)
+            and is_valid_color(self.background_color)
+            and is_valid_color(self.fill_color)
+            and is_valid_color(self.border_color)
+            and is_valid_color(self.text_color)
+            and is_valid_color(self.level_text_color)
+            and isinstance(self.level_font_size, int)
+            and isinstance(self.exp_text_font_size, int)
+            and self.level_font_size > 0
+            and self.exp_text_font_size > 0
+            and isinstance(self.animate_level_up, bool)
+            and isinstance(self.level_up_flash_duration, int | float)
+            and self.level_up_flash_duration >= 0
+            and is_valid_color(self.level_up_flash_color)
+            and isinstance(self.level_up_flash_timer, int | float)
+            and isinstance(self.is_flashing, bool)
+            and isinstance(self.previous_level, int)
+            and self.previous_level >= 0
+        )

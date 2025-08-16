@@ -148,6 +148,23 @@ class VelocityComponent(Component):
                 self.vx *= scale
                 self.vy *= scale
 
+    def validate(self) -> bool:
+        """
+        Validate velocity component data.
+
+        Returns:
+            True if all velocity data is valid, False otherwise.
+        """
+        return (
+            isinstance(self.vx, int | float)
+            and isinstance(self.vy, int | float)
+            and isinstance(self.max_speed, int | float)
+            and isinstance(self.friction, int | float)
+            and self.max_speed > 0
+            and 0.0 <= self.friction <= 1.0
+            and isinstance(self.apply_gravity, bool)
+        )
+
     def __str__(self) -> str:
         """String representation of the velocity component."""
         speed = self.get_speed()
@@ -159,5 +176,6 @@ class VelocityComponent(Component):
 
         return (
             f'VelocityComponent(({self.vx:.2f}, {self.vy:.2f}), '
-            f'speed={speed:.2f}/{self.max_speed}, {moving}{friction_text}{gravity_text})'
+            f'speed={speed:.2f}/{self.max_speed}, {moving}'
+            f'{friction_text}{gravity_text})'
         )

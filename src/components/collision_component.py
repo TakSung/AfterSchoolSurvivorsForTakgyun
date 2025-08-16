@@ -70,7 +70,8 @@ class CollisionComponent(Component):
 
         if self.width <= 0 or self.height <= 0:
             raise ValueError(
-                f'Collision dimensions must be positive: {self.width}x{self.height}'
+                f'Collision dimensions must be positive: '
+                f'{self.width}x{self.height}'
             )
 
         # 기본 충돌 마스크 설정 (모든 레이어와 충돌 가능)
@@ -139,6 +140,28 @@ class CollisionComponent(Component):
             center_y + half_height,  # bottom
         )
 
+    def validate(self) -> bool:
+        """
+        Validate collision component data.
+
+        Returns:
+            True if all collision data is valid, False otherwise.
+        """
+        return (
+            isinstance(self.width, int | float)
+            and isinstance(self.height, int | float)
+            and self.width > 0
+            and self.height > 0
+            and isinstance(self.layer, CollisionLayer)
+            and isinstance(self.collision_mask, set)
+            and all(
+                isinstance(layer, CollisionLayer)
+                for layer in self.collision_mask
+            )
+            and isinstance(self.is_trigger, bool)
+            and isinstance(self.is_solid, bool)
+        )
+
     def __str__(self) -> str:
         """String representation of the collision component."""
         trigger_text = ' (trigger)' if self.is_trigger else ''
@@ -146,5 +169,6 @@ class CollisionComponent(Component):
         return (
             f'CollisionComponent({self.width}x{self.height}, '
             f'layer={self.layer.display_name}, '
-            f'mask={len(self.collision_mask)} layers{trigger_text}{solid_text})'
+            f'mask={len(self.collision_mask)} layers'
+            f'{trigger_text}{solid_text})'
         )
