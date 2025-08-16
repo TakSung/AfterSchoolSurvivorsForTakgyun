@@ -1945,7 +1945,7 @@
         "testStrategy": "기존 테스트 케이스를 수정하여 새로운 인터페이스에 맞춰 동작하는지 확인. demo-*.py 파일들이 정상 실행되는지 검증",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -2456,7 +2456,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-16T21:12:51.399Z",
+      "updated": "2025-08-16T21:20:18.030Z",
       "description": "Tasks for master context"
     }
   }
