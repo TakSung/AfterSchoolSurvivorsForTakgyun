@@ -14,6 +14,7 @@ from ..components.projectile_component import ProjectileComponent
 from ..components.render_component import RenderComponent, RenderLayer
 from ..components.weapon_component import ProjectileType, WeaponComponent
 from ..core.system import System
+from ..core.weapon_manager import WeaponManager
 
 if TYPE_CHECKING:
     from ..core.entity import Entity
@@ -136,14 +137,24 @@ class WeaponSystem(System):
     - Update target selection periodically
     """
 
-    def __init__(self, priority: int = 10) -> None:
+    def __init__(
+        self, priority: int = 10, weapon_manager: WeaponManager | None = None
+    ) -> None:
         """
         Initialize the WeaponSystem.
 
         Args:
             priority: System execution priority (10 = after movement)
+            weapon_manager: Optional WeaponManager for centralized weapon access
         """
         super().__init__(priority=priority)
+
+        # AI-NOTE : 2025-08-16 WeaponManager 통합 - 중앙집중식 무기 관리
+        # - 이유: 무기 컴포넌트 접근과 스탯 관리를 통일하여 일관성 확보
+        # - 요구사항: WeaponManager를 통한 무기 스탯 조회로 레벨업 보너스 반영
+        # - 히스토리: 기존 직접 컴포넌트 접근에서 매니저 기반 접근으로 변경
+
+        self._weapon_manager = weapon_manager
 
         # AI-NOTE : 2025-08-11 투사체 핸들러 등록 - State 패턴
         # - 이유: 투사체 타입별로 다른 생성 로직 지원
@@ -159,6 +170,15 @@ class WeaponSystem(System):
     def initialize(self) -> None:
         """Initialize the weapon system."""
         super().initialize()
+
+    def set_weapon_manager(self, weapon_manager: WeaponManager) -> None:
+        """
+        Set the weapon manager for this system.
+
+        Args:
+            weapon_manager: WeaponManager instance for centralized weapon access.
+        """
+        self._weapon_manager = weapon_manager
 
     def get_required_components(self) -> list[type]:
         """
@@ -214,9 +234,8 @@ class WeaponSystem(System):
         enemy_entities: list[Entity] = []  # TODO: 적 엔티티 필터링 로직
 
         for weapon_entity in weapon_entities:
-            weapon = entity_manager.get_component(
-                weapon_entity, WeaponComponent
-            )
+            # WeaponManager를 통한 무기 컴포넌트 조회 (통일성 확보)
+            weapon = self._get_weapon_component(weapon_entity, entity_manager)
             weapon_pos = entity_manager.get_component(
                 weapon_entity, PositionComponent
             )
@@ -285,7 +304,8 @@ class WeaponSystem(System):
             entity_manager: Entity manager to access components
             current_time: Current game time in seconds
         """
-        weapon = entity_manager.get_component(weapon_entity, WeaponComponent)
+        # WeaponManager를 통한 무기 컴포넌트 조회 (통일성 확보)
+        weapon = self._get_weapon_component(weapon_entity, entity_manager)
         weapon_pos = entity_manager.get_component(
             weapon_entity, PositionComponent
         )
@@ -337,3 +357,29 @@ class WeaponSystem(System):
                 # - 요구사항: 투사체 생성 성공 시 로그 출력
                 # - 히스토리: 개발 단계에서만 사용, 배포 시 제거 예정
                 pass  # TODO: 로깅 시스템 구현 후 활용
+
+    def _get_weapon_component(
+        self, entity: 'Entity', entity_manager: 'EntityManager'
+    ) -> WeaponComponent | None:
+        """
+        Get weapon component through WeaponManager if available, otherwise direct access.
+
+        Args:
+            entity: Entity to get weapon component for.
+            entity_manager: Entity manager for fallback access.
+
+        Returns:
+            WeaponComponent if exists, None otherwise.
+        """
+        # AI-NOTE : 2025-08-16 WeaponManager 우선 조회 - 통일성과 확장성
+        # - 이유: WeaponManager를 통해 레벨업 보너스가 적용된 스탯 조회
+        # - 요구사항: 가능하면 WeaponManager 사용, 없으면 직접 접근
+        # - 히스토리: 기존 코드 호환성 유지하면서 점진적 WeaponManager 도입
+
+        if self._weapon_manager:
+            # WeaponManager가 설정되어 있으면 매니저를 통해 조회
+            self._weapon_manager.set_entity_manager(entity_manager)
+            return self._weapon_manager.get_weapon_component(entity)
+        else:
+            # WeaponManager가 없으면 기존 방식으로 직접 조회
+            return entity_manager.get_component(entity, WeaponComponent)

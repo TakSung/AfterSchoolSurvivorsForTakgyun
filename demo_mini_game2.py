@@ -42,6 +42,7 @@ from src.core.events.enemy_death_event import EnemyDeathEvent
 from src.core.events.event_bus import EventBus
 from src.core.projectile_manager import ProjectileManager
 from src.core.system_orchestrator import SystemOrchestrator
+from src.core.weapon_manager import WeaponManager
 from src.systems.auto_attack_system import AutoAttackSystem
 from src.systems.camera_system import CameraSystem
 from src.systems.collision_system import CollisionSystem
@@ -120,10 +121,15 @@ class MiniGameDemo2:
         self.entity_manager = EntityManager()
         self.event_bus = EventBus()
         self.system_orchestrator = SystemOrchestrator(event_bus=self.event_bus)
-        
+
         # ProjectileManager 초기화 및 이벤트 구독
         self.projectile_manager = ProjectileManager()
         self.event_bus.subscribe(self.projectile_manager)
+
+        # WeaponManager 초기화 및 이벤트 구독 (레벨업 이벤트 처리)
+        self.weapon_manager = WeaponManager()
+        self.weapon_manager.set_entity_manager(self.entity_manager)
+        self.event_bus.subscribe(self.weapon_manager)
 
         # 좌표 변환 시스템 설정
         self.coordinate_manager = CoordinateManager.get_instance()
@@ -181,7 +187,9 @@ class MiniGameDemo2:
         self.system_orchestrator.register_system(camera_system, 'camera')
 
         # 자동 공격 시스템
-        auto_attack_system = AutoAttackSystem(priority=15, event_bus=self.event_bus)
+        auto_attack_system = AutoAttackSystem(
+            priority=15, event_bus=self.event_bus
+        )
         auto_attack_system.set_projectile_manager(self.projectile_manager)
         self.system_orchestrator.register_system(
             auto_attack_system, 'auto_attack'
@@ -189,9 +197,9 @@ class MiniGameDemo2:
 
         # 투사체 시스템
         projectile_system = ProjectileSystem(
-            priority=18, 
-            projectile_manager=self.projectile_manager, 
-            event_bus=self.event_bus
+            priority=18,
+            projectile_manager=self.projectile_manager,
+            event_bus=self.event_bus,
         )
         self.system_orchestrator.register_system(
             projectile_system, 'projectile'
@@ -214,10 +222,14 @@ class MiniGameDemo2:
         # 충돌 시스템
         collision_system = CollisionSystem(priority=100)
         self.system_orchestrator.register_system(collision_system, 'collision')
-        
+
         # 엔티티 렌더링 시스템
-        entity_render_system = EntityRenderSystem(surface=self.screen, priority=50)
-        self.system_orchestrator.register_system(entity_render_system, 'entity_render')
+        entity_render_system = EntityRenderSystem(
+            surface=self.screen, priority=50
+        )
+        self.system_orchestrator.register_system(
+            entity_render_system, 'entity_render'
+        )
 
     def _create_player(self) -> None:
         """플레이어 엔티티 생성"""
@@ -705,11 +717,22 @@ class MiniGameDemo2:
         self.screen.blit(health_text, (22, y_offset + 2))
         y_offset += 25
 
-        # 무기 정보
+        # 무기 정보 (WeaponManager를 통한 효과적인 스탯 조회)
         if weapon_comp:
+            # WeaponManager를 통해 레벨업 보너스가 적용된 공격 속도 조회
+            effective_attack_speed = (
+                self.weapon_manager.get_effective_attack_speed(
+                    self.player_entity
+                )
+            )
+            effective_damage = self.weapon_manager.get_effective_damage(
+                self.player_entity
+            )
+
             weapon_text = self.font_small.render(
                 f'무기: {weapon_comp.weapon_type.display_name} '
-                f'(데미지: {weapon_comp.damage}, 속도: {weapon_comp.attack_speed:.1f}/s)',
+                f'(데미지: {effective_damage}, '
+                f'속도: {effective_attack_speed:.1f}/s)',
                 True,
                 COLORS['ui_text'],
             )
