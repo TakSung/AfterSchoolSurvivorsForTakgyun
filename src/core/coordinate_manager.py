@@ -7,6 +7,7 @@ from .camera_based_transformer import CameraBasedTransformer
 from .coordinate_transformer import ICoordinateTransformer
 from .events.event_types import EventType
 from .events.interfaces import IEventSubscriber
+from .interfaces.coordinate_manager_interface import ICoordinateManagerForSystems
 
 if TYPE_CHECKING:
     from .events.base_event import BaseEvent
@@ -27,7 +28,7 @@ class ICoordinateObserver(ABC):
         pass
 
 
-class CoordinateManager(IEventSubscriber):
+class CoordinateManager(IEventSubscriber, ICoordinateManagerForSystems):
     """좌표 변환 시스템을 전역적으로 관리하는 싱글톤 매니저
 
     # AI-NOTE : 2025-01-10 전역 좌표 변환 관리 시스템 도입

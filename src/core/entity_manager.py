@@ -13,6 +13,7 @@ from .component import Component
 from .component_registry import ComponentRegistry
 from .entity import Entity
 from .interfaces.i_component_registry import IComponentRegistry
+from .interfaces.entity_manager_interface import IEntityManagerForSystems
 
 if TYPE_CHECKING:
     from ..dto.spawn_result import SpawnResult
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 T = TypeVar('T', bound=Component)
 
 
-class EntityManager:
+class EntityManager(IEntityManagerForSystems):
     """
     Manages entities and their components in the ECS architecture.
 

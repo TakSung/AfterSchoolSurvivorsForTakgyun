@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .entity import Entity
     from .entity_manager import EntityManager
+    from .interfaces.entity_manager_interface import IEntityManagerForSystems
+    from .interfaces.coordinate_manager_interface import ICoordinateManagerForSystems
 
 
 class ISystem(ABC):
@@ -22,14 +24,11 @@ class ISystem(ABC):
     """
 
     @abstractmethod
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Update the system logic.
 
         Args:
-            entity_manager: The entity manager to access entities and components.
             delta_time: Time elapsed since the last update in seconds.
         """
         pass
@@ -79,6 +78,10 @@ class System(ISystem):
         self._priority = priority
         self._enabled = enabled
         self._initialized = False
+        
+        # Manager dependencies (injected via dependency injection)
+        self._entity_manager: 'IEntityManagerForSystems | None' = None
+        self._coordinate_manager: 'ICoordinateManagerForSystems | None' = None
 
     @property
     def priority(self) -> int:
@@ -108,14 +111,11 @@ class System(ISystem):
         self._priority = priority
 
     @abstractmethod
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Update the system logic.
 
         Args:
-            entity_manager: The entity manager to access entities and components.
             delta_time: Time elapsed since the last update in seconds.
         """
         pass
@@ -140,25 +140,57 @@ class System(ISystem):
         """
         return []
 
+    def set_entity_manager(self, entity_manager: 'IEntityManagerForSystems') -> None:
+        """
+        Set the entity manager for this system.
+        
+        Args:
+            entity_manager: Entity manager interface implementation
+        """
+        self._entity_manager = entity_manager
+
+    def set_coordinate_manager(self, coordinate_manager: 'ICoordinateManagerForSystems') -> None:
+        """
+        Set the coordinate manager for this system.
+        
+        Args:
+            coordinate_manager: Coordinate manager interface implementation
+        """
+        self._coordinate_manager = coordinate_manager
+
     def filter_entities(
-        self, entity_manager: 'EntityManager'
+        self, entity_manager: 'EntityManager | None' = None
     ) -> list['Entity']:
         """
         Filter entities based on required components.
 
         Args:
-            entity_manager: The entity manager to query entities from.
+            entity_manager: The entity manager to query entities from (deprecated, use injected manager).
 
         Returns:
             List of entities that have all required components.
         """
+        # Use injected manager if available, fall back to parameter for backward compatibility
+        manager = self._entity_manager or entity_manager
+        if manager is None:
+            raise ValueError("No EntityManager available. Use set_entity_manager() to inject dependency.")
+        
         required_components = self.get_required_components()
         if not required_components:
-            return entity_manager.get_all_entities()
+            return manager.get_all_entities()
 
-        return entity_manager.get_entities_with_components(
+        return manager.get_entities_with_components(
             *required_components
         )
+
+    def filter_required_entities(self) -> list['Entity']:
+        """
+        Filter entities based on required components using injected EntityManager.
+        
+        Returns:
+            List of entities that have all required components.
+        """
+        return self.filter_entities()
 
     def __str__(self) -> str:
         """String representation of the system."""
