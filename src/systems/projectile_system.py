@@ -142,10 +142,18 @@ class ProjectileSystem(System):
             entity = entity_manager.get_entity(entity_id)
             if entity:
                 projectile_entities.append(entity)
-                logging.info(f"Found entity for ID {entity_id}")
+                logging.info(f"✅ Found entity for ID {entity_id}, active: {entity.active}")
             else:
+                # 더 자세한 디버깅: EntityManager 내부 상태 확인
+                all_entities = entity_manager.get_all_entities()
+                entity_ids_in_manager = [e.entity_id for e in all_entities]
+                logging.error(f"❌ Entity {entity_id} not found in entity manager")
+                logging.error(f"   Total entities in manager: {len(all_entities)}")
+                logging.error(f"   EntityManager contains IDs: {entity_ids_in_manager[:5]}...")  # 처음 5개만 표시
+                logging.error(f"   Looking for ID: {entity_id}")
+                
                 # Entity가 더 이상 존재하지 않으면 ProjectileManager에서 제거
-                logging.warning(f"Entity {entity_id} not found in entity manager, removing from ProjectileManager")
+                logging.warning(f"Removing projectile {entity_id} from ProjectileManager")
                 self._projectile_manager.unregister_projectile(entity_id)
         
         self._expired_projectiles.clear()

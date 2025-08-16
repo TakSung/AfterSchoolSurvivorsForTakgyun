@@ -44,6 +44,12 @@ class ProjectileManager(IEventSubscriber):
         self._projectile_owners: Dict[str, str] = {}
         self._projectile_creation_times: Dict[str, float] = {}
         
+        # AI-DEV : WeakValueDictionary 문제 해결을 위한 강한 참조 저장
+        # - 문제: EntityManager가 WeakValueDictionary 사용으로 엔티티가 GC됨
+        # - 해결책: ProjectileManager에서 투사체 엔티티에 대한 강한 참조 유지
+        # - 주의사항: 메모리 누수 방지를 위해 명시적 정리 필요
+        self._projectile_entities: Dict[str, 'Entity'] = {}
+        
         # 스레드 안전성을 위한 락
         self._lock = threading.RLock()
         
@@ -104,6 +110,17 @@ class ProjectileManager(IEventSubscriber):
                 f"from owner {event.owner_entity_id}"
             )
     
+    def register_projectile_entity(self, entity: 'Entity') -> None:
+        """
+        Register a projectile entity with strong reference to prevent GC.
+        
+        Args:
+            entity: The projectile entity to register
+        """
+        with self._lock:
+            self._projectile_entities[entity.entity_id] = entity
+            logger.info(f"Stored strong reference for projectile entity {entity.entity_id}")
+
     def unregister_projectile(self, projectile_entity_id: str) -> bool:
         """
         Unregister a projectile (when destroyed or expired).
@@ -122,6 +139,9 @@ class ProjectileManager(IEventSubscriber):
             self._active_projectiles.remove(projectile_entity_id)
             self._projectile_owners.pop(projectile_entity_id, None)
             self._projectile_creation_times.pop(projectile_entity_id, None)
+            
+            # 강한 참조도 제거
+            self._projectile_entities.pop(projectile_entity_id, None)
             
             self._total_removed += 1
             
@@ -236,6 +256,7 @@ class ProjectileManager(IEventSubscriber):
             self._active_projectiles.clear()
             self._projectile_owners.clear()
             self._projectile_creation_times.clear()
+            self._projectile_entities.clear()  # 강한 참조도 정리
             
             logger.info(f"Cleared all {count} registered projectiles")
             return count

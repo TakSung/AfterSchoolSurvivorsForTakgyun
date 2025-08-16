@@ -45,6 +45,7 @@ from src.core.system_orchestrator import SystemOrchestrator
 from src.systems.auto_attack_system import AutoAttackSystem
 from src.systems.camera_system import CameraSystem
 from src.systems.collision_system import CollisionSystem
+from src.systems.entity_render_system import EntityRenderSystem
 from src.systems.experience_system import ExperienceSystem
 from src.systems.player_movement_system import PlayerMovementSystem
 from src.systems.player_stats_system import PlayerStatsSystem
@@ -209,6 +210,10 @@ class MiniGameDemo2:
         # 충돌 시스템
         collision_system = CollisionSystem(priority=100)
         self.system_orchestrator.register_system(collision_system, 'collision')
+        
+        # 엔티티 렌더링 시스템
+        entity_render_system = EntityRenderSystem(surface=self.screen, priority=50)
+        self.system_orchestrator.register_system(entity_render_system, 'entity_render')
 
     def _create_player(self) -> None:
         """플레이어 엔티티 생성"""

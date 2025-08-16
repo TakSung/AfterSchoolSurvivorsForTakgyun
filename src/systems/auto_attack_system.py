@@ -360,6 +360,14 @@ class AutoAttackSystem(System):
             logger.info(f"  - RenderComponent: {entity_manager.has_component(projectile_entity, RenderComponent)}")
             logger.info(f"  - CollisionComponent: {entity_manager.has_component(projectile_entity, CollisionComponent)}")
 
+            # EntityManager에 정상적으로 추가되었는지 검증
+            verify_entity = entity_manager.get_entity(projectile_entity.entity_id)
+            if verify_entity:
+                logger.info(f"✅ Projectile entity {projectile_entity.entity_id} successfully stored in EntityManager")
+            else:
+                logger.error(f"❌ Projectile entity {projectile_entity.entity_id} NOT found in EntityManager after creation!")
+                return  # 엔티티가 없으면 더 이상 진행하지 않음
+
             # AI-NOTE : 2025-08-15 투사체 즉시 등록 및 이벤트 발행
             # - 이유: ProjectileSystem 실행 전에 투사체가 등록되어야 렌더링 가능
             # - 요구사항: 동기식 즉시 등록 + 이벤트 기반 알림
@@ -367,6 +375,9 @@ class AutoAttackSystem(System):
             
             # 1. ProjectileManager에 즉시 등록 (동기식)
             if self._projectile_manager:
+                # 강한 참조 저장으로 WeakValueDictionary 문제 해결
+                self._projectile_manager.register_projectile_entity(projectile_entity)
+                
                 creation_event = ProjectileCreatedEvent.create_from_ids(
                     projectile_entity_id=projectile_entity.entity_id,
                     owner_entity_id=weapon_entity.entity_id

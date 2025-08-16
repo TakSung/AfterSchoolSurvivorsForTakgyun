@@ -63,6 +63,16 @@ class EntityManager:
         if entity.entity_id not in self._entities:
             return
 
+        # 투사체 엔티티 삭제 디버깅
+        from ..components.projectile_component import ProjectileComponent
+        if self.has_component(entity, ProjectileComponent):
+            import logging
+            import traceback
+            logging.error(f"🚨 DESTROYING PROJECTILE ENTITY: {entity.entity_id}")
+            logging.error(f"   Stack trace:")
+            for line in traceback.format_stack():
+                logging.error(f"     {line.strip()}")
+
         # Remove all components associated with this entity
         component_types = self._entity_components[entity.entity_id].copy()
         for component_type in component_types:
