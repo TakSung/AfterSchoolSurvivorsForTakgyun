@@ -57,6 +57,7 @@ graph TB
         MovementSystem[MovementSystem<br/>위치와 속도 기반 이동]
         InputSystem[InputSystem<br/>마우스 키보드 입력 처리]
         WeaponSystem[WeaponSystem<br/>무기 공격 로직]
+        AutoAttackSystem[AutoAttackSystem<br/>전략 패턴 기반 자동 공격]
         ProjectileSystem[ProjectileSystem<br/>투사체 물리 처리 및 이벤트 발행]
         AISystem[AISystem<br/>AI 계산 월드좌표 기반]
         PhysicsSystem[PhysicsSystem<br/>물리 시뮬레이션]
@@ -98,6 +99,7 @@ graph TB
     RenderSystem --> System
     InputSystem --> System
     WeaponSystem --> System
+    AutoAttackSystem --> System
     ProjectileSystem --> System
     AISystem --> System
     PhysicsSystem --> System
@@ -497,10 +499,15 @@ class Vector2:
    - 충돌 해결 및 이벤트 발생
 
 5. **WeaponSystem** (우선순위: 4)
-   - 자동 공격 로직
-   - 발사체 생성 및 관리
+   - 무기 관련 기본 로직
+   - 무기 상태 관리
 
-6. **ProjectileSystem** (우선순위: 5) - **리팩토링 완료**
+6. **AutoAttackSystem** (우선순위: 5) - **전략 패턴 리팩토링 완료**
+   - 자동 공격 로직
+   - Strategy Pattern 기반 다형성 구현
+   - ProjectileFactory 위임을 통한 투사체 생성
+
+7. **ProjectileSystem** (우선순위: 6) - **리팩토링 완료**
    - 투사체 물리 처리 및 적 사망 판정
    - 사망 이벤트 발행 (기존 직접 처리에서 이벤트 방식으로 변경)
 
