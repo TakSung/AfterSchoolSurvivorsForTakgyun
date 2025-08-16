@@ -83,6 +83,14 @@ graph TB
         SpatialOptimizedTransformer[SpatialOptimizedTransformer<br/>공간 분할 기반 최적화]
     end
     
+    subgraph "Attack Strategy System"
+        IAttackStrategy[IAttackStrategy<br/>ABC 공격 전략 인터페이스]
+        DirectionAttackStrategy[DirectionAttackStrategy<br/>방향 기반 공격]
+        WorldTargetAttackStrategy[WorldTargetAttackStrategy<br/>월드 타겟 공격]
+        NearestEnemyAttackStrategy[NearestEnemyAttackStrategy<br/>가장 가까운 적 공격]
+        ProjectileFactory[ProjectileFactory<br/>투사체 생성 팩토리]
+    end
+    
     EntityManager --> Entity
     ComponentRegistry --> Component
     SystemOrchestrator --> System
@@ -120,6 +128,12 @@ graph TB
     OptimizedTransformer --> ICoordinateTransformer
     SpatialOptimizedTransformer --> ICoordinateTransformer
     
+    DirectionAttackStrategy --> IAttackStrategy
+    WorldTargetAttackStrategy --> IAttackStrategy
+    NearestEnemyAttackStrategy --> IAttackStrategy
+    AutoAttackSystem -.-> IAttackStrategy
+    AutoAttackSystem -.-> ProjectileFactory
+    
     CameraSystem -.-> CoordinateManager
     RenderSystem -.-> CoordinateManager
     MovementSystem -.-> PositionComponent
@@ -128,6 +142,7 @@ graph TB
     RenderSystem -.-> PositionComponent
     RenderSystem -.-> RenderComponent
     WeaponSystem -.-> WeaponComponent
+    AutoAttackSystem -.-> WeaponComponent
 ```
 
 ## 클래스별 상세 설계
@@ -511,31 +526,31 @@ class Vector2:
    - 투사체 물리 처리 및 적 사망 판정
    - 사망 이벤트 발행 (기존 직접 처리에서 이벤트 방식으로 변경)
 
-7. **AISystem** (우선순위: 6) - **새로 추가**
+8. **AISystem** (우선순위: 7) - **새로 추가**
    - AI 계산 (월드 좌표 기반)
    - 적 행동 패턴 처리
 
-8. **PhysicsSystem** (우선순위: 7) - **새로 추가**
+9. **PhysicsSystem** (우선순위: 8) - **새로 추가**
    - 물리 시뮬레이션
    - 객체 간 상호작용
 
-9. **ExperienceSystem** (우선순위: 8) - **새로운 옵저버 시스템**
-   - EnemyDeathEvent 구독하여 경험치 처리 전담
-   - 기존 ProjectileSystem에서 분리된 책임
+10. **ExperienceSystem** (우선순위: 9) - **새로운 옵저버 시스템**
+    - EnemyDeathEvent 구독하여 경험치 처리 전담
+    - 기존 ProjectileSystem에서 분리된 책임
 
-10. **ItemDropSystem** (우선순위: 9) - **새로운 옵저버 시스템**
+11. **ItemDropSystem** (우선순위: 10) - **새로운 옵저버 시스템**
     - EnemyDeathEvent 구독하여 아이템 드롭 처리
     - 독립적인 아이템 생성 로직
 
-11. **EntityCleanupSystem** (우선순위: 10) - **새로운 옵저버 시스템**
+12. **EntityCleanupSystem** (우선순위: 11) - **새로운 옵저버 시스템**
     - EnemyDeathEvent 구독하여 엔티티 제거 처리
     - 메모리 관리 및 성능 최적화 담당
 
-12. **MapSystem** (우선순위: 11) - **새로 추가**
+13. **MapSystem** (우선순위: 12) - **새로 추가**
     - 무한 스크롤 맵 렌더링
     - 타일 기반 배경 관리
 
-13. **RenderSystem** (우선순위: 12) - **좌표변환 적용**
+14. **RenderSystem** (우선순위: 13) - **좌표변환 적용**
     - CoordinateManager를 통한 좌표 변환
     - 레이어 순서에 따른 스프라이트 그리기
 
@@ -734,5 +749,181 @@ class ProjectileSystem(System):
 3. **높은 확장성**: 새로운 사망 관련 로직 추가 시 새 옵저버만 추가
 4. **테스트 용이성**: 각 시스템을 독립적으로 테스트 가능
 5. **예외 안전성**: 한 시스템 오류가 다른 시스템에 영향 없음
+
+## AutoAttackSystem 전략 패턴 아키텍처 (신규 추가)
+
+### 리팩토링 배경 및 목표
+
+AutoAttackSystem은 Strategy Pattern과 Factory Pattern을 적용하여 다형성 기반의 확장 가능한 공격 시스템으로 리팩토링되었습니다.
+
+**리팩토링 목표:**
+- 다형성을 활용한 공격 방식 확장성 제공
+- 객체 생성을 ProjectileFactory에 위임
+- 객체 관리를 ProjectileManager에 위임
+- 단일 책임 원칙 적용
+- 테스트 용이성 및 유지보수성 향상
+
+### 전략 패턴 구현
+
+```python
+from abc import ABC, abstractmethod
+
+class IAttackStrategy(ABC):
+    """공격 전략 인터페이스"""
+    
+    @abstractmethod
+    def calculate_direction(
+        self,
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        weapon_entity: Entity,
+        **kwargs
+    ) -> Vector2 | None:
+        """공격 방향 계산"""
+        pass
+    
+    @abstractmethod
+    def get_strategy_name(self) -> str:
+        """전략 이름 반환"""
+        pass
+```
+
+**구현된 공격 전략들:**
+
+1. **DirectionAttackStrategy** - 방향 기반 공격
+   - 플레이어가 바라보는 방향으로 발사
+   - 회전 컴포넌트의 각도 활용
+   
+2. **WorldTargetAttackStrategy** - 월드 좌표 타겟 공격
+   - 특정 적을 직접 조준하여 발사
+   - 벡터 계산을 통한 정확한 방향 산출
+   
+3. **NearestEnemyAttackStrategy** - 가장 가까운 적 공격
+   - 자동으로 사거리 내 가장 가까운 적 탐색
+   - WorldTargetAttackStrategy를 내부적으로 재사용
+
+### 팩토리 패턴 구현
+
+```python
+class ProjectileFactory:
+    """투사체 생성 전담 팩토리"""
+    
+    @staticmethod
+    def create_projectile(
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        direction: Vector2,
+        entity_manager: EntityManager,
+        owner_entity: Optional[Entity] = None
+    ) -> Optional[Entity]:
+        """투사체 엔티티 생성"""
+        # 1. 투사체 엔티티 생성
+        # 2. ProjectileComponent 추가
+        # 3. PositionComponent 추가
+        # 4. RenderComponent 추가
+        # 5. CollisionComponent 추가
+        # 6. 컴포넌트 검증 및 오류 처리
+```
+
+**팩토리 패턴의 장점:**
+- AutoAttackSystem에서 투사체 생성 로직 분리
+- 일관된 투사체 생성 로직 보장
+- 재사용 가능한 투사체 생성 인터페이스
+- 컴포넌트 검증 및 예외 처리 중앙화
+
+### 시스템 아키텍처 변경사항
+
+```python
+class AutoAttackSystem(System):
+    """전략 패턴 기반 자동 공격 시스템"""
+    
+    def __init__(self, priority: int = 15, event_bus: Optional[EventBus] = None):
+        self._attack_strategies: dict[str, IAttackStrategy] = {
+            'direction': DirectionAttackStrategy(),
+            'world_target': WorldTargetAttackStrategy(),
+            'nearest_enemy': NearestEnemyAttackStrategy(),
+        }
+        self._default_strategy = 'direction'
+    
+    def execute_attack(
+        self,
+        strategy_name: str,
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        entity_manager: EntityManager,
+        weapon_entity: Entity,
+        **strategy_params
+    ) -> bool:
+        """전략 기반 공격 실행"""
+        # 1. 전략 선택
+        # 2. 방향 계산 (전략에 위임)
+        # 3. 투사체 생성 (팩토리에 위임)
+        # 4. 투사체 등록 (매니저에 위임)
+```
+
+### 의존성 주입 및 위임 패턴
+
+**ProjectileManager 위임:**
+- 투사체 등록 및 생명주기 관리
+- 이벤트 기반 알림 시스템 연동
+- 즉시 등록 + 이벤트 발행 하이브리드 방식
+
+**EventBus 통합:**
+- ProjectileCreatedEvent 발행
+- 느슨한 결합을 통한 시스템 간 통신
+- 예외 안전성 보장
+
+### 하위 호환성 보장
+
+```python
+def _execute_direction_attack(self, ...):
+    """기존 방향 공격 (하위 호환성)"""
+    return self.execute_attack('direction', ...)
+
+def _execute_world_attack(self, ...):
+    """기존 월드 공격 (테스트 호환성)"""
+    # 기존 테스트와 호환되도록 특별 처리
+```
+
+**호환성 전략:**
+- 기존 메서드 시그니처 유지
+- 내부적으로 새로운 전략 시스템 활용
+- 테스트 케이스 100% 통과 보장
+
+### 성능 최적화
+
+**시간 기반 쿨다운 시스템:**
+- FPS 독립적인 delta_time 기반 쿨다운
+- 정확한 공격 주기 보장
+- 초과 시간 보존을 통한 일정한 리듬 유지
+
+**캐싱 및 재사용:**
+- 전략 객체 재사용 (stateless 설계)
+- CoordinateManager 싱글톤 활용
+- 컴포넌트 검증 로직 최적화
+
+### 확장성 및 유지보수성
+
+**새로운 공격 전략 추가:**
+```python
+class HomingAttackStrategy(IAttackStrategy):
+    """유도 미사일 공격 전략"""
+    def calculate_direction(self, ...):
+        # 유도 로직 구현
+        pass
+```
+
+**테스트 용이성:**
+- 각 전략을 독립적으로 테스트 가능
+- Mock 객체를 통한 단위 테스트 지원
+- 전략별 예외 상황 테스트 가능
+
+### 아키텍처 개선 효과
+
+1. **단일 책임 원칙**: 각 전략이 하나의 공격 방식만 담당
+2. **개방-폐쇄 원칙**: 새로운 전략 추가 시 기존 코드 수정 없음
+3. **의존성 역전**: 구체적 구현이 아닌 인터페이스에 의존
+4. **낮은 결합도**: 시스템 간 직접 의존성 제거
+5. **높은 응집성**: 관련 기능들이 논리적으로 그룹화
 
 이 설계 문서는 "방과 후 생존" 게임의 ECS 프레임워크 구현을 위한 청사진을 제공하며, 모든 개발자가 일관된 아키텍처를 따를 수 있도록 가이드라인을 제시합니다.
