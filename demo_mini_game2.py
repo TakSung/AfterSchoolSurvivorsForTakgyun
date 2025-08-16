@@ -188,7 +188,11 @@ class MiniGameDemo2:
         )
 
         # 투사체 시스템
-        projectile_system = ProjectileSystem(priority=18, projectile_manager=self.projectile_manager)
+        projectile_system = ProjectileSystem(
+            priority=18, 
+            projectile_manager=self.projectile_manager, 
+            event_bus=self.event_bus
+        )
         self.system_orchestrator.register_system(
             projectile_system, 'projectile'
         )

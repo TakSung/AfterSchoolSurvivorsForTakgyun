@@ -7,7 +7,7 @@ collision detection, and cleanup of expired projectiles.
 
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import pygame
 
@@ -17,6 +17,7 @@ from ..components.health_component import HealthComponent
 from ..components.position_component import PositionComponent
 from ..components.projectile_component import ProjectileComponent
 from ..core.coordinate_manager import CoordinateManager
+from ..core.events.enemy_death_event import EnemyDeathEvent
 from ..core.projectile_manager import ProjectileManager
 from ..core.system import System
 from ..systems.collision_system import BruteForceCollisionDetector
@@ -25,6 +26,7 @@ from ..utils.vector2 import Vector2
 if TYPE_CHECKING:
     from ..core.entity import Entity
     from ..core.entity_manager import EntityManager
+    from ..core.events.event_bus import EventBus
 
 
 class ProjectileSystem(System):
@@ -39,13 +41,14 @@ class ProjectileSystem(System):
     - Detect collisions with enemies and apply damage
     """
 
-    def __init__(self, priority: int = 15, projectile_manager: ProjectileManager | None = None) -> None:
+    def __init__(self, priority: int = 15, projectile_manager: Optional[ProjectileManager] = None, event_bus: Optional['EventBus'] = None) -> None:
         """
         Initialize the ProjectileSystem.
 
         Args:
             priority: System execution priority (15 = after weapons)
             projectile_manager: ProjectileManager for event-based projectile tracking
+            event_bus: EventBus for publishing enemy death events
         """
         super().__init__(priority=priority)
 
@@ -54,6 +57,9 @@ class ProjectileSystem(System):
         # - 요구사항: 이벤트 기반 투사체 등록 및 추적으로 안정적인 관리
         # - 히스토리: 사용자 제안으로 기존 컴포넌트 필터링 방식에서 변경
         self._projectile_manager = projectile_manager or ProjectileManager()
+        
+        # 경험치 시스템 연동을 위한 EventBus
+        self._event_bus = event_bus
 
         # AI-NOTE : 2025-08-12 투사체 시스템 초기화 - 화면 경계 관리
         # - 이유: 화면 밖으로 나간 투사체 자동 정리로 메모리 누수 방지
@@ -468,20 +474,23 @@ class ProjectileSystem(System):
             entity_manager: Entity manager to access components
             enemy_entity: The enemy entity that died
         """
-        # AI-NOTE : 2025-08-12 적 사망 처리 - 경험치 및 보상 시스템
-        # - 이유: 적 처치 시 플레이어 경험치 증가 및 아이템 드롭
-        # - 요구사항: 경험치 계산, 아이템 드롭 확률, 사망 효과
-        # - 히스토리: 향후 게임 진행 시스템과 연동 예정
+        # AI-NOTE : 2025-08-16 투사체로 적 처치 시 경험치 시스템 연동
+        # - 이유: 투사체로 적을 죽였을 때 플레이어가 경험치를 얻도록 함
+        # - 요구사항: EnemyDeathEvent 발생으로 ExperienceSystem 알림
+        # - 히스토리: 기존 TODO에서 실제 경험치 시스템 연동으로 개선
 
-        enemy = entity_manager.get_component(enemy_entity, EnemyComponent)
-        if enemy:
-            # 경험치 보상 계산 (현재는 로깅만, 향후 플레이어 시스템과 연동)
-            # experience_reward = enemy.get_experience_reward()
-            # TODO: 플레이어 시스템에 경험치 전달
-            pass
+        # EnemyDeathEvent 발생으로 경험치 시스템에 알림
+        if self._event_bus:
+            death_event = EnemyDeathEvent.create_from_id(
+                enemy_entity_id=enemy_entity.entity_id,
+                timestamp=time.time()
+            )
+            self._event_bus.publish(death_event)
+            logging.info(f"Published EnemyDeathEvent for enemy {enemy_entity.entity_id}")
 
         # 적 엔티티 제거
         entity_manager.destroy_entity(enemy_entity)
+        logging.info(f"Enemy {enemy_entity.entity_id} killed by projectile")
 
     def get_collision_count(self) -> int:
         """
