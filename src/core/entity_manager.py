@@ -23,14 +23,16 @@ class EntityManager:
 
     The EntityManager handles entity lifecycle, component assignment,
     and provides efficient querying capabilities for systems.
-    
+
     Uses dependency injection for component registry to support
     interface abstraction and testing.
     """
 
-    def __init__(self, component_registry: IComponentRegistry | None = None) -> None:
+    def __init__(
+        self, component_registry: IComponentRegistry | None = None
+    ) -> None:
         """Initialize the EntityManager with optional component registry injection.
-        
+
         Args:
             component_registry: Optional component registry implementation.
                                If None, uses default ComponentRegistry.
@@ -41,10 +43,11 @@ class EntityManager:
         )
         # Active entities set for efficient filtering
         self._active_entities: set[str] = set()
-        
+
         # Dependency injection for component registry
         self._component_registry: IComponentRegistry = (
-            component_registry if component_registry is not None 
+            component_registry
+            if component_registry is not None
             else ComponentRegistry()
         )
 
@@ -72,13 +75,17 @@ class EntityManager:
 
         # 투사체 엔티티 삭제 디버깅
         from ..components.projectile_component import ProjectileComponent
+
         if self.has_component(entity, ProjectileComponent):
             import logging
             import traceback
-            logging.error(f"🚨 DESTROYING PROJECTILE ENTITY: {entity.entity_id}")
-            logging.error(f"   Stack trace:")
+
+            logging.error(
+                f'🚨 DESTROYING PROJECTILE ENTITY: {entity.entity_id}'
+            )
+            logging.error('   Stack trace:')
             for line in traceback.format_stack():
-                logging.error(f"     {line.strip()}")
+                logging.error(f'     {line.strip()}')
 
         # Remove all components through the registry
         self._component_registry.remove_entity_components(entity)
@@ -141,9 +148,7 @@ class EntityManager:
         if entity.entity_id not in self._entities:
             raise ValueError(f'Entity {entity.entity_id} does not exist')
 
-        component_type = type(component)
-        self._components[component_type][entity.entity_id] = component
-        self._entity_components[entity.entity_id].add(component_type)
+        self._component_registry.add_component(entity, component)
 
     def remove_component(
         self, entity: Entity, component_type: type[Component]
@@ -158,12 +163,10 @@ class EntityManager:
         if entity.entity_id not in self._entities:
             return
 
-        # Remove component from storage
-        if component_type in self._components:
-            self._components[component_type].pop(entity.entity_id, None)
-
-        # Update entity component mapping
-        self._entity_components[entity.entity_id].discard(component_type)
+        # Remove first component of the specified type
+        self._component_registry.remove_component_by_type(
+            entity, component_type
+        )
 
     def get_component(
         self, entity: Entity, component_type: type[T]
@@ -178,10 +181,7 @@ class EntityManager:
         Returns:
             The component if found, None otherwise.
         """
-        if component_type not in self._components:
-            return None
-        component = self._components[component_type].get(entity.entity_id)
-        return cast(T, component) if component else None
+        return self._component_registry.get_component(entity, component_type)
 
     def has_component(
         self, entity: Entity, component_type: type[Component]
@@ -196,7 +196,7 @@ class EntityManager:
         Returns:
             True if the entity has the component, False otherwise.
         """
-        return component_type in self._entity_components[entity.entity_id]
+        return self._component_registry.has_component(entity, component_type)
 
     def get_entities_with_component(
         self, component_type: type[T]
@@ -210,14 +210,16 @@ class EntityManager:
         Returns:
             List of (Entity, Component) tuples for active entities that have the component.
         """
-        if component_type not in self._components:
-            return []
-
         entities_with_component = []
-        for entity_id, component in self._components[component_type].items():
-            entity = self._entities.get(entity_id)
-            if entity is not None and entity.active:
-                entities_with_component.append((entity, cast(T, component)))
+        for (
+            entity,
+            components,
+        ) in self._component_registry.get_entities_with_component(
+            component_type
+        ):
+            # Take first component for backward compatibility
+            if components and entity.active:
+                entities_with_component.append((entity, components[0]))
 
         return entities_with_component
 
@@ -236,20 +238,11 @@ class EntityManager:
         if not component_types:
             return self.get_active_entities()
 
-        # Start with entities that have the first component type
-        entity_ids = set(self._components.get(component_types[0], {}).keys())
-
-        # Intersect with entities that have each additional component type
-        for component_type in component_types[1:]:
-            if component_type not in self._components:
-                return []
-            entity_ids &= set(self._components[component_type].keys())
-
-        # Convert entity IDs back to active entities
         active_entities = []
-        for entity_id in entity_ids:
-            entity = self._entities.get(entity_id)
-            if entity is not None and entity.active:
+        for entity, _ in self._component_registry.get_entities_with_components(
+            *component_types
+        ):
+            if entity.active:
                 active_entities.append(entity)
 
         return active_entities
@@ -266,15 +259,17 @@ class EntityManager:
         Returns:
             Dictionary mapping component types to component instances.
         """
-        components = {}
-        component_types = self._entity_components.get(entity.entity_id, set())
+        multi_components = self._component_registry.get_components_for_entity(
+            entity
+        )
 
-        for component_type in component_types:
-            component = self._components[component_type].get(entity.entity_id)
-            if component is not None:
-                components[component_type] = component
+        # Convert to single component format for backward compatibility
+        single_components = {}
+        for component_type, component_sequence in multi_components.items():
+            if component_sequence:
+                single_components[component_type] = component_sequence[0]
 
-        return components
+        return single_components
 
     def clear_all(self) -> None:
         """Clear all entities and components."""
@@ -285,8 +280,7 @@ class EntityManager:
 
         # Clear all storage
         self._entities.clear()
-        self._components.clear()
-        self._entity_components.clear()
+        self._component_registry.clear()
         self._active_entities.clear()
 
     def get_entity_count(self) -> int:
@@ -317,7 +311,12 @@ class EntityManager:
         Returns:
             Number of entities with the specified component.
         """
-        return len(self._components.get(component_type, {}))
+        return self._component_registry.get_component_count(component_type)
+
+    @property
+    def component_registry(self) -> IComponentRegistry:
+        """Get the component registry instance for advanced operations."""
+        return self._component_registry
 
     def __len__(self) -> int:
         """Return the total number of entities."""
@@ -332,7 +331,7 @@ class EntityManager:
         return entity.entity_id in self._entities
 
     def __str__(self) -> str:
-        """String representation of the EntityManager."""
+        """Return string representation of the EntityManager."""
         active_count = self.get_active_entity_count()
         total_count = self.get_entity_count()
         return f'EntityManager({active_count}/{total_count} active entities)'
@@ -342,5 +341,5 @@ class EntityManager:
         return (
             f'EntityManager(entities={len(self._entities)}, '
             f'active={self.get_active_entity_count()}, '
-            f'component_types={len(self._components)})'
+            f'component_types={len(self._component_registry.get_all_component_types())})'
         )
