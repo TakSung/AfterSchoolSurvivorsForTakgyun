@@ -1,22 +1,26 @@
 """
-AutoAttackSystem for handling automatic attacks based on world coordinates.
+AutoAttackSystem for handling automatic attacks using strategy pattern.
 
 This system processes weapon-equipped entities for automatic targeting,
-cooldown management, and projectile creation using world coordinate system.
+cooldown management, and projectile creation using different attack strategies.
+Projectile creation is delegated to ProjectileFactory and management to ProjectileManager.
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
-import pygame
-
-from ..components.enemy_component import EnemyComponent
 from ..components.position_component import PositionComponent
 from ..components.weapon_component import WeaponComponent
 from ..core.coordinate_manager import CoordinateManager
 from ..core.events.projectile_created_event import ProjectileCreatedEvent
+from ..core.projectile_factory import ProjectileFactory
 from ..core.system import System
-from ..utils.vector2 import Vector2
+from .attack_strategies import (
+    DirectionAttackStrategy,
+    IAttackStrategy,
+    NearestEnemyAttackStrategy,
+    WorldTargetAttackStrategy,
+)
 
 if TYPE_CHECKING:
     from ..core.entity import Entity
@@ -29,12 +33,13 @@ logger = logging.getLogger(__name__)
 
 class AutoAttackSystem(System):
     """
-    System that manages automatic attacks using world coordinates.
+    System that manages automatic attacks using strategy pattern.
 
     The AutoAttackSystem processes entities with WeaponComponent to:
     - Manage time-based attack cooldowns (FPS independent)
-    - Find closest enemy within weapon range using world coordinates
-    - Create projectiles with world coordinate based targeting
+    - Use different attack strategies (direction, target, nearest enemy)
+    - Delegate projectile creation to ProjectileFactory
+    - Delegate projectile management to ProjectileManager
     """
 
     def __init__(self, priority: int = 15, event_bus: Optional['EventBus'] = None) -> None:
@@ -47,14 +52,24 @@ class AutoAttackSystem(System):
         """
         super().__init__(priority=priority)
 
-        # AI-NOTE : 2025-08-13 월드 좌표 기반 자동 공격 시스템
-        # - 이유: 화면 기준이 아닌 월드 좌표 기준으로 정확한 타겟팅 구현
-        # - 요구사항: FPS 독립적 쿨다운, 월드 좌표 거리 계산, 좌표계 변환
-        # - 히스토리: 기존 WeaponSystem과 분리하여 더 명확한 책임 분할
+        # AI-NOTE : 2025-08-16 전략 패턴 기반 자동 공격 시스템 리팩터링
+        # - 이유: 다형성을 활용한 공격 방식 확장성 제공
+        # - 요구사항: Strategy Pattern, Factory Pattern, Manager 위임
+        # - 히스토리: 기존 단일 공격 방식에서 다중 전략 지원으로 확장
 
         self._coordinate_manager: CoordinateManager | None = None
         self._event_bus: Optional['EventBus'] = event_bus
         self._projectile_manager: Optional['ProjectileManager'] = None
+        
+        # 공격 전략들 등록
+        self._attack_strategies: Dict[str, IAttackStrategy] = {
+            'direction': DirectionAttackStrategy(),
+            'world_target': WorldTargetAttackStrategy(),
+            'nearest_enemy': NearestEnemyAttackStrategy(),
+        }
+        
+        # 기본 전략 설정 (플레이어 방향 기반)
+        self._default_strategy = 'direction'
 
     def initialize(self) -> None:
         """Initialize the auto attack system."""
@@ -107,7 +122,7 @@ class AutoAttackSystem(System):
             return
 
         weapon_entities = self.filter_entities(entity_manager)
-        logger.info(f"AutoAttackSystem: Found {len(weapon_entities)} weapon entities.")
+        logger.debug(f"AutoAttackSystem: Found {len(weapon_entities)} weapon entities.")
 
         for entity in weapon_entities:
             self._process_auto_attack(entity, entity_manager, delta_time)
@@ -137,7 +152,7 @@ class AutoAttackSystem(System):
             )
             return
 
-        logger.info(f"Processing auto attack for entity {weapon_entity.entity_id}")
+        logger.debug(f"Processing auto attack for entity {weapon_entity.entity_id}")
 
         # AI-NOTE : 2025-08-13 시간 기반 공격 쿨다운 시스템 구현
         # - 이유: FPS와 독립적인 안정적인 공격 주기 제공
@@ -149,7 +164,8 @@ class AutoAttackSystem(System):
 
         # 쿨다운이 완료되었으면 공격 시도
         if self._can_attack(weapon):
-            logger.info("Attack cooldown completed, attempting attack")
+            logger.debug("Attack cooldown completed, attempting attack")
+            
             # 플레이어의 회전 방향 가져오기
             from ..components.rotation_component import RotationComponent
 
@@ -158,17 +174,142 @@ class AutoAttackSystem(System):
             )
 
             if rotation_comp:
-                logger.info(f"Player rotation angle: {rotation_comp.angle}")
-                # 플레이어가 바라보는 방향으로 발사
-                self._execute_direction_attack(
-                    weapon, weapon_pos, rotation_comp.angle, entity_manager, weapon_entity
+                logger.debug(f"Player rotation angle: {rotation_comp.angle}")
+                # 플레이어가 바라보는 방향으로 발사 (기본 전략)
+                success = self.execute_attack(
+                    self._default_strategy,
+                    weapon,
+                    weapon_pos,
+                    entity_manager,
+                    weapon_entity,
+                    direction_angle=rotation_comp.angle
                 )
-                self._reset_attack_cooldown(weapon)
-                logger.info("Projectile created successfully")
+                if success:
+                    self._reset_attack_cooldown(weapon)
+                    logger.debug("Projectile created successfully")
             else:
                 logger.warning('No rotation component found on weapon entity')
         else:
-            logger.info(f"Attack on cooldown. Time: {weapon.last_attack_time:.2f}, Required: {weapon.get_cooldown_duration():.2f}")
+            logger.debug(f"Attack on cooldown. Time: {weapon.last_attack_time:.2f}, Required: {weapon.get_cooldown_duration():.2f}")
+
+    def execute_attack(
+        self,
+        strategy_name: str,
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        entity_manager: 'EntityManager',
+        weapon_entity: 'Entity',
+        **strategy_params
+    ) -> bool:
+        """
+        전략 기반 공격 실행
+        
+        Args:
+            strategy_name: 사용할 공격 전략 이름
+            weapon: 무기 컴포넌트
+            start_pos: 시작 위치
+            entity_manager: 엔티티 매니저
+            weapon_entity: 무기 소유 엔티티
+            **strategy_params: 전략별 추가 파라미터
+        
+        Returns:
+            공격 성공 여부
+        """
+        strategy = self._attack_strategies.get(strategy_name)
+        if not strategy:
+            logger.error(f"Unknown attack strategy: {strategy_name}")
+            return False
+
+        # 방향 계산
+        direction = strategy.calculate_direction(
+            weapon, start_pos, weapon_entity, **strategy_params
+        )
+        if not direction:
+            logger.debug(f"Failed to calculate direction for strategy: {strategy_name}")
+            return False
+
+        # 투사체 생성 (팩토리에 위임)
+        projectile_entity = ProjectileFactory.create_projectile(
+            weapon, start_pos, direction, entity_manager, weapon_entity
+        )
+        if not projectile_entity:
+            logger.warning("Failed to create projectile entity")
+            return False
+
+        # ProjectileManager에 등록 위임
+        self._register_projectile_to_manager(projectile_entity, weapon_entity)
+
+        logger.info(f"Attack executed with strategy: {strategy_name}")
+        return True
+
+    def _register_projectile_to_manager(
+        self, 
+        projectile_entity: 'Entity', 
+        weapon_entity: 'Entity'
+    ) -> None:
+        """투사체를 ProjectileManager에 등록"""
+        # AI-NOTE : 2025-08-15 투사체 즉시 등록 및 이벤트 발행
+        # - 이유: ProjectileSystem 실행 전에 투사체가 등록되어야 렌더링 가능
+        # - 요구사항: 동기식 즉시 등록 + 이벤트 기반 알림
+        # - 히스토리: 이벤트 처리 타이밍 문제로 즉시 등록 방식 추가
+        
+        if self._projectile_manager:
+            # 즉시 등록 (동기식)
+            self._projectile_manager.register_projectile_entity(projectile_entity)
+            
+            # 이벤트 발행
+            creation_event = ProjectileCreatedEvent.create_from_ids(
+                projectile_entity_id=projectile_entity.entity_id,
+                owner_entity_id=weapon_entity.entity_id
+            )
+            self._projectile_manager.handle_event(creation_event)
+            logger.debug(f"Immediately registered projectile {projectile_entity.entity_id} in ProjectileManager")
+        
+        # 이벤트 버스로도 알림
+        if self._event_bus:
+            creation_event = ProjectileCreatedEvent.create_from_ids(
+                projectile_entity_id=projectile_entity.entity_id,
+                owner_entity_id=weapon_entity.entity_id
+            )
+            self._event_bus.publish(creation_event)
+            logger.debug(f"Published ProjectileCreatedEvent for projectile {projectile_entity.entity_id}")
+        else:
+            logger.warning("No event bus available to publish ProjectileCreatedEvent")
+
+    # === 기존 메서드들 (하위 호환성) ===
+
+    def _execute_direction_attack(
+        self,
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        direction_angle: float,
+        entity_manager: 'EntityManager',
+        weapon_entity: 'Entity',
+    ) -> None:
+        """방향 기반 공격 (하위 호환성)"""
+        self.execute_attack(
+            'direction', weapon, start_pos, entity_manager, weapon_entity,
+            direction_angle=direction_angle
+        )
+
+    def _execute_world_attack(
+        self,
+        weapon: WeaponComponent,
+        start_pos: PositionComponent,
+        target_pos: PositionComponent,
+        entity_manager: 'EntityManager',
+    ) -> None:
+        """월드 좌표 기반 공격 (테스트 호환성)"""
+        # weapon_entity가 없는 경우 임시 처리
+        temp_entity = entity_manager.create_entity()
+        try:
+            self.execute_attack(
+                'world_target', weapon, start_pos, entity_manager, temp_entity,
+                target_pos=target_pos
+            )
+        finally:
+            # 임시 엔티티 정리
+            entity_manager.destroy_entity(temp_entity)
 
     def _update_attack_cooldown(
         self, weapon: WeaponComponent, delta_time: float
@@ -224,6 +365,7 @@ class AutoAttackSystem(System):
     ) -> Optional['Entity']:
         """
         Find the closest enemy within weapon range using world coordinates.
+        (하위 호환성을 위해 유지)
 
         Args:
             weapon_pos: Position of the weapon entity in world coordinates
@@ -233,177 +375,9 @@ class AutoAttackSystem(System):
         Returns:
             Closest enemy entity within range, or None if no valid target.
         """
-        # AI-NOTE : 2025-08-13 월드 좌표 기반 타겟 탐색 시스템
-        # - 이유: 좌표계 확장으로 인한 정확한 거리 계산 필요
-        # - 요구사항: Vector2.length()로 거리 계산, EnemyComponent 식별
-        # - 히스토리: 화면 좌표에서 월드 좌표 기반으로 변경
-
-        # 적 엔티티 필터링 (EnemyComponent를 가진 엔티티)
-        enemy_entities = entity_manager.get_entities_with_components(
-            EnemyComponent, PositionComponent
-        )
-        # logger.info(f"Found {len(enemy_entities)} enemies to check.")
-
-        closest_enemy = None
-        closest_distance = weapon_range
-
-        weapon_world_pos = Vector2(weapon_pos.x, weapon_pos.y)
-
-        for enemy in enemy_entities:
-            enemy_pos = entity_manager.get_component(enemy, PositionComponent)
-            if not enemy_pos:
-                continue
-
-            # 월드 좌표에서 직접 거리 계산
-            enemy_world_pos = Vector2(enemy_pos.x, enemy_pos.y)
-            distance = (weapon_world_pos - enemy_world_pos).magnitude
-
-            if distance < closest_distance:
-                closest_distance = distance
-                closest_enemy = enemy
-
-        return closest_enemy
-
-    def _execute_direction_attack(
-        self,
-        weapon: WeaponComponent,
-        start_pos: PositionComponent,
-        direction_angle: float,
-        entity_manager: 'EntityManager',
-        weapon_entity: 'Entity',
-    ) -> None:
-        """
-        Execute an attack by creating a projectile in a specific direction.
-
-        Args:
-            weapon: Weapon component with attack properties
-            start_pos: Starting position for the projectile (world coordinates)
-            direction_angle: Angle in radians for the projectile direction
-            entity_manager: Entity manager for creating projectiles
-            weapon_entity: Entity that owns the weapon (for event ownership)
-        """
-        # logger.info(f"Executing direction attack from {start_pos} at angle {direction_angle}")
-        # AI-NOTE : 2025-08-13 월드 좌표 기반 투사체 생성 구현
-        # - 이유: 월드 좌표에서 스크린 좌표 독립적인 투사체 생성
-        # - 요구사항: 월드 좌표 방향 계산, Vector2 정규화 활용
-        # - 히스토리: ProjectileComponent.create_towards_target 활용
-
-        # Import modules needed for projectile creation
-        from ..components.collision_component import (
-            CollisionComponent,
-            CollisionLayer,
-        )
-        from ..components.projectile_component import ProjectileComponent
-        from ..components.render_component import RenderComponent, RenderLayer
-
-        try:
-            # logger.info(f"Creating projectile from position ({start_pos.x:.1f}, {start_pos.y:.1f}) at angle {direction_angle:.2f}")
-
-            # 1. 투사체 엔티티 생성
-            projectile_entity = entity_manager.create_entity()
-            # logger.info(f"Created projectile entity: {projectile_entity.entity_id}")
-
-            # 2. 방향 기반 ProjectileComponent 생성
-            import math
-            from ..utils.vector2 import Vector2
-
-            # 방향 벡터 계산
-            direction = Vector2(
-                math.cos(direction_angle), math.sin(direction_angle)
-            )
-
-            projectile_comp = ProjectileComponent(
-                direction=direction,
-                velocity=400.0,  # 기본 투사체 속도
-                damage=weapon.get_effective_damage(),
-                lifetime=2.5,  # 기본 수명 2.5초
-                owner_id=None,  # TODO: 향후 owner 엔티티 ID 추가
-            )
-            entity_manager.add_component(projectile_entity, projectile_comp)
-            # logger.info(f"Added ProjectileComponent with direction: {direction}, velocity: 400.0")
-
-            # 3. PositionComponent 추가 (월드 좌표 시작 위치)
-            position_comp = PositionComponent(x=start_pos.x, y=start_pos.y)
-            entity_manager.add_component(projectile_entity, position_comp)
-
-            # 4. RenderComponent 추가 (투사체 시각화)
-            # 투사체 스프라이트 생성
-            projectile_surface = pygame.Surface((6, 6), pygame.SRCALPHA)
-            projectile_surface.fill((255, 255, 0))  # 노란색 투사체
-            pygame.draw.circle(
-                projectile_surface, (255, 255, 255), (3, 3), 2, 1
-            )  # 흰색 테두리
-
-            render_comp = RenderComponent(
-                sprite=projectile_surface,
-                size=(6, 6),  # 6x6 픽셀 크기
-                layer=RenderLayer.PROJECTILES,
-                visible=True,
-            )
-            entity_manager.add_component(projectile_entity, render_comp)
-
-            # 5. CollisionComponent 추가 (충돌 감지용)
-            collision_comp = CollisionComponent(
-                width=6.0,
-                height=6.0,
-                layer=CollisionLayer.PROJECTILE,
-                collision_mask={CollisionLayer.ENEMY},  # 적과만 충돌
-                is_trigger=True,  # 트리거 충돌 (관통 가능)
-                is_solid=False,  # 비고체 (다른 객체를 밀어내지 않음)
-            )
-            entity_manager.add_component(projectile_entity, collision_comp)
-
-            # 투사체 생성 완료 확인
-            logger.info(f"Projectile entity {projectile_entity.entity_id} created with components:")
-            logger.info(f"  - ProjectileComponent: {entity_manager.has_component(projectile_entity, ProjectileComponent)}")
-            logger.info(f"  - PositionComponent: {entity_manager.has_component(projectile_entity, PositionComponent)}")
-            logger.info(f"  - RenderComponent: {entity_manager.has_component(projectile_entity, RenderComponent)}")
-            logger.info(f"  - CollisionComponent: {entity_manager.has_component(projectile_entity, CollisionComponent)}")
-
-            # EntityManager에 정상적으로 추가되었는지 검증
-            verify_entity = entity_manager.get_entity(projectile_entity.entity_id)
-            if verify_entity:
-                logger.info(f"✅ Projectile entity {projectile_entity.entity_id} successfully stored in EntityManager")
-            else:
-                logger.error(f"❌ Projectile entity {projectile_entity.entity_id} NOT found in EntityManager after creation!")
-                return  # 엔티티가 없으면 더 이상 진행하지 않음
-
-            # AI-NOTE : 2025-08-15 투사체 즉시 등록 및 이벤트 발행
-            # - 이유: ProjectileSystem 실행 전에 투사체가 등록되어야 렌더링 가능
-            # - 요구사항: 동기식 즉시 등록 + 이벤트 기반 알림
-            # - 히스토리: 이벤트 처리 타이밍 문제로 즉시 등록 방식 추가
-            
-            # 1. ProjectileManager에 즉시 등록 (동기식)
-            if self._projectile_manager:
-                # 강한 참조 저장으로 WeakValueDictionary 문제 해결
-                self._projectile_manager.register_projectile_entity(projectile_entity)
-                
-                creation_event = ProjectileCreatedEvent.create_from_ids(
-                    projectile_entity_id=projectile_entity.entity_id,
-                    owner_entity_id=weapon_entity.entity_id
-                )
-                self._projectile_manager.handle_event(creation_event)
-                logger.info(f"Immediately registered projectile {projectile_entity.entity_id} in ProjectileManager")
-            
-            # 2. 이벤트 버스를 통해 다른 시스템들에 알림 (비동기식)
-            if self._event_bus:
-                creation_event = ProjectileCreatedEvent.create_from_ids(
-                    projectile_entity_id=projectile_entity.entity_id,
-                    owner_entity_id=weapon_entity.entity_id
-                )
-                self._event_bus.publish(creation_event)
-                logger.info(f"Published ProjectileCreatedEvent for projectile {projectile_entity.entity_id}")
-            else:
-                logger.warning("No event bus available to publish ProjectileCreatedEvent")
-
-            # AI-DEV : 투사체 생성 성공 시 안전한 처리
-            # - 문제: 투사체 생성 실패 시에도 시스템이 계속 동작해야 함
-            # - 해결책: 예외 처리로 개별 투사체 생성 실패 격리
-            # - 주의사항: 실패 시에도 게임플레이에 영향을 주지 않도록 함
-
-        except Exception as e:
-            # 투사체 생성 실패 시 안전한 처리 (게임 계속 진행)
-            logger.error(f'Failed to create projectile: {e}')
-            import traceback
-
-            logger.error(f'Traceback: {traceback.format_exc()}')
+        # NearestEnemyAttackStrategy로 위임
+        strategy = self._attack_strategies['nearest_enemy']
+        # 이 메서드는 direction만 반환하므로 실제 적 찾기는 전략 내부 메서드 사용
+        if hasattr(strategy, '_find_nearest_enemy_in_world'):
+            return strategy._find_nearest_enemy_in_world(weapon_pos, weapon_range, entity_manager)
+        return None
