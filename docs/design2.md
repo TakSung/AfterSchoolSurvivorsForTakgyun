@@ -18,10 +18,12 @@
 - Manager의 인터페이스 추상화
 - DTO 기반 타입 안전성
 
-### 3. Producer-Consumer 이벤트 처리
-- EventBus 대신 타입 안전한 터널 방식
-- System 간 느슨한 결합
-- 성능 최적화된 큐 기반 처리
+### 3. SharedEventQueue 기반 Producer-Consumer 이벤트 처리
+- EventBus 대신 타입 안전한 직접 연결 방식
+- Producer와 Consumer가 SharedEventQueue를 공유
+- 중간 등록/전송 단계 제거로 단순성 확보
+- System 간 느슨한 결합 유지
+- System이 EventConsumer를 HAS-A로 직접 접근
 
 ## 전체 아키텍처 다이어그램
 
@@ -62,17 +64,20 @@ graph TB
         ProjectileSystem[ProjectileSystem<br/>- projectile_manager: IProjectileManager<br/>- movement_strategy: IMovementStrategy<br/>- update: delta_time]
     end
     
-    subgraph "Producer-Consumer Event System"
-        EventTunnelManager[EventTunnelManager<br/>- manage_tunnels<br/>- create_producer_consumer_pair]
+    subgraph "Producer-Consumer Event System (SharedEventQueue 기반)"
+        EventTunnelManager[EventTunnelManager<br/>- SharedEventQueue 관리<br/>- get_producer/get_consumer<br/>- 등록 단계 없음]
         
-        Producer1[EnemyDeathProducer<br/>- produce: EnemyDeathEvent]
-        Consumer1[ExperienceConsumer<br/>- consume: EnemyDeathEvent<br/>- grant_experience]
+        SharedQueue1[SharedEventQueue~EnemyDeathEvent~<br/>- 공유 큐 저장소<br/>- enqueue/dequeue]
+        
+        Producer1[EnemyDeathProducer<br/>- produce → SharedQueue.enqueue]
+        Consumer1[EventConsumer~EnemyDeathEvent~<br/>- consume_next → SharedQueue.dequeue]
+        
+        ExperienceSystem[ExperienceSystem<br/>- HAS-A: EventConsumer<br/>- 비즈니스 로직 처리]
         
         Producer2[LevelUpProducer<br/>- produce: LevelUpEvent]
-        Consumer2[WeaponUpgradeConsumer<br/>- consume: LevelUpEvent<br/>- upgrade_weapons]
+        Consumer2[EventConsumer~LevelUpEvent~<br/>- consume: LevelUpEvent]
         
-        Producer3[ProjectileHitProducer<br/>- produce: ProjectileHitEvent]
-        Consumer3[DamageConsumer<br/>- consume: ProjectileHitEvent<br/>- apply_damage]
+        WeaponUpgradeSystem[WeaponUpgradeSystem<br/>- HAS-A: EventConsumer<br/>- 무기 업그레이드 로직]
     end
     
     subgraph "Strategy Implementations"
@@ -119,20 +124,19 @@ graph TB
     WeaponSystem --> WeaponCreateDTO
     ProjectileSystem --> ProjectileCreateDTO
     
-    %% Producer-Consumer 관계
-    EventTunnelManager --> Producer1
-    EventTunnelManager --> Consumer1
-    EventTunnelManager --> Producer2
-    EventTunnelManager --> Consumer2
+    %% SharedEventQueue 기반 Producer-Consumer 관계
+    EventTunnelManager --> SharedQueue1
+    SharedQueue1 --> Producer1
+    SharedQueue1 --> Consumer1
     
-    Producer1 -.-> Consumer1
-    Producer2 -.-> Consumer2
-    Producer3 -.-> Consumer3
+    %% System이 EventConsumer를 HAS-A로 포함
+    ExperienceSystem --> Consumer1
+    WeaponUpgradeSystem --> Consumer2
     
-    %% System이 Producer 사용
+    %% System이 Producer 사용 (이벤트 발행)
     ProjectileSystem --> Producer1
     EnemySystem --> Producer2
-    WeaponSystem --> Producer3
+    WeaponSystem --> Producer2
 ```
 
 ## 상세 설계
@@ -144,34 +148,44 @@ sequenceDiagram
     participant PS as ProjectileSystem
     participant P as EnemyDeathProducer
     participant ETM as EventTunnelManager
-    participant C as ExperienceConsumer
+    participant SQ as SharedEventQueue
+    participant C as EventConsumer
     participant ES as ExperienceSystem
 
-    Note over PS,ES: Enemy Death Event Flow
+    Note over PS,ES: SharedEventQueue 기반 Event Flow
     
     PS->>PS: Detect enemy death
     PS->>ETM: get_producer(EnemyDeathEvent)
-    ETM->>P: return producer
+    ETM->>P: return producer (shared queue 포함)
     PS->>P: produce(EnemyDeathEvent)
+    P->>SQ: enqueue(event)
     
-    Note over ETM: Event Processing Cycle
-    ETM->>ETM: process_all_tunnels()
-    ETM->>P: has_events()
-    P->>ETM: return true
-    ETM->>P: consume_next()
-    P->>ETM: return EnemyDeathEvent
-    ETM->>C: consume(EnemyDeathEvent)
-    C->>ES: handle_enemy_death(event)
-    ES->>ES: grant_experience()
+    Note over ES: System Update Cycle (직접 접근)
+    ES->>ES: update(delta_time)
+    ES->>C: consume_next() (내장된 Consumer)
+    C->>SQ: dequeue() (동일한 shared queue)
+    SQ->>C: return EnemyDeathEvent
+    C->>ES: return event
+    ES->>ES: grant_experience(event)
 ```
 
-**EventTunnelManager 핵심 기능:**
+**EventTunnelManager 핵심 기능 (SharedEventQueue 기반):**
 ```python
 class EventTunnelManager:
     def create_tunnel[T](self, event_type: type[T]) -> tuple[EventProducer[T], EventConsumer[T]]
-    def get_producer[T](self, event_type: type[T]) -> EventProducer[T]
-    def get_consumer[T](self, event_type: type[T]) -> EventConsumer[T]
-    def process_all_tunnels(self) -> dict[type, int]  # 처리된 이벤트 수 반환
+    def get_producer[T](self, event_type: type[T]) -> EventProducer[T]  # 이벤트 발행 시스템용
+    def get_consumer[T](self, event_type: type[T]) -> EventConsumer[T]  # 이벤트 처리 시스템용
+    def get_shared_queue[T](self, event_type: type[T]) -> SharedEventQueue[T]  # 디버깅용
+    # register_event_system() 메서드 제거 - 불필요한 복잡성
+```
+
+**SharedEventQueue 핵심 기능:**
+```python
+class SharedEventQueue(Generic[T]):
+    def enqueue(self, event: T) -> bool        # Producer가 호출
+    def dequeue(self) -> T | None              # Consumer가 호출
+    def is_empty(self) -> bool                 # 큐 상태 확인
+    def size(self) -> int                      # 현재 큐 크기
 ```
 
 ### 2. System 전략 패턴 적용
@@ -392,11 +406,13 @@ sequenceDiagram
     participant EM as EnemyManager
     participant EntityMgr as EntityManager
     participant PS as ProjectileSystem
+    participant ETM as EventTunnelManager
     participant Producer as EnemyDeathProducer
-    participant Consumer as ExperienceConsumer
+    participant SQ as SharedEventQueue
+    participant Consumer as EventConsumer
     participant ExpSys as ExperienceSystem
 
-    Note over ES,ExpSys: System Update Flow (No EntityManager!)
+    Note over ES,ExpSys: System Update Flow (SharedEventQueue 기반)
     
     ES->>ES: update(delta_time)
     ES->>EM: get_spawn_candidates()
@@ -406,23 +422,30 @@ sequenceDiagram
     ES->>EM: create_enemy(EnemyCreateDTO)
     EM->>EntityMgr: create_entity() + add_components()
     
-    Note over PS,ExpSys: Manager Abstraction
+    Note over PS,ExpSys: SharedEventQueue 기반 Event Processing
     PS->>PS: update(delta_time)
     PS->>PS: projectile_manager.update_projectiles()
+    PS->>ETM: get_producer(EnemyDeathEvent)
+    ETM->>Producer: return producer (shared queue 포함)
     PS->>Producer: produce(EnemyDeathEvent)
+    Producer->>SQ: enqueue(event)
     
-    Note over Producer,ExpSys: Event Processing
-    Producer->>Consumer: consume(EnemyDeathEvent)
-    Consumer->>ExpSys: handle_enemy_death(event)
-    ExpSys->>ExpSys: experience_manager.grant_experience()
+    Note over ExpSys: System이 직접 Consumer 사용 (등록 단계 없음)
+    ExpSys->>ExpSys: update(delta_time) - 내장된 Consumer 사용
+    ExpSys->>Consumer: consume_next() (HAS-A)
+    Consumer->>SQ: dequeue() (동일한 shared queue)
+    SQ->>Consumer: return EnemyDeathEvent
+    Consumer->>ExpSys: return event
+    ExpSys->>ExpSys: experience_manager.grant_experience(event)
 ```
 
 ## 마이그레이션 계획
 
-### Phase 1: Producer-Consumer 이벤트 시스템
-1. `EventTunnelManager` 구현
-2. `EventProducer<T>`, `EventConsumer<T>` 제네릭 클래스
-3. 기존 `EventBus` 점진적 대체
+### Phase 1: SharedEventQueue 기반 Producer-Consumer 시스템
+1. `SharedEventQueue<T>` 구현 (Producer와 Consumer가 공유)
+2. `EventTunnelManager` 구현 (SharedEventQueue 관리)
+3. `EventProducer<T>`, `EventConsumer<T>` 제네릭 클래스 (SharedEventQueue 기반)
+4. 기존 `EventBus` 점진적 대체
 
 ### Phase 2: System 전략 패턴 적용
 1. `IAttackStrategy`, `ISpawnStrategy` 인터페이스 정의
@@ -452,8 +475,9 @@ sequenceDiagram
 - DTO 기반 타입 안전성 보장
 
 ### 3. 성능 최적화
-- Producer-Consumer로 이벤트 처리 최적화
+- SharedEventQueue 기반 Producer-Consumer로 직접 이벤트 전달
 - 타입별 전용 큐로 캐시 친화적 처리
+- 중간 등록/전송 단계 제거로 오버헤드 감소
 - 불필요한 이벤트 브로드캐스팅 제거
 
 ### 4. 테스트 용이성
