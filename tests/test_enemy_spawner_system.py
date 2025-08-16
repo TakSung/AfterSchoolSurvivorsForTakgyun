@@ -81,13 +81,15 @@ class TestEnemySpawnerSystem:
         # Given - 최대 적 수를 5로 설정
         self.spawner_system.set_max_enemies(5)
 
-        # Given - 4개의 적 엔티티 생성
+        # Given - 4개의 적 엔티티 생성 (참조 유지를 위해 리스트에 저장)
+        enemies = []
         for i in range(4):
             enemy = self.entity_manager.create_entity()
             self.entity_manager.add_component(enemy, EnemyComponent())
             self.entity_manager.add_component(
                 enemy, PositionComponent(x=i * 10, y=0)
             )
+            enemies.append(enemy)  # 강한 참조 유지
 
         # When - 적 개수 제한 확인 (4마리)
         is_within_limit_before = (
@@ -101,6 +103,7 @@ class TestEnemySpawnerSystem:
         enemy_5 = self.entity_manager.create_entity()
         self.entity_manager.add_component(enemy_5, EnemyComponent())
         self.entity_manager.add_component(enemy_5, PositionComponent(x=40, y=0))
+        enemies.append(enemy_5)  # 강한 참조 유지
 
         # --- DEBUG PRINT STATEMENTS ---
         print("\n--- Debugging test_최대_적_수_제한_동작_검증_성공_시나리오 ---")
@@ -134,16 +137,21 @@ class TestEnemySpawnerSystem:
         self.spawner_system._current_spawn_timer = 1.0
         assert self.spawner_system._should_spawn_enemy(self.entity_manager) is False
 
+        # 강한 참조 유지를 위해 리스트에 저장
+        enemies = []
         for i in range(3):
             enemy = self.entity_manager.create_entity()
             self.entity_manager.add_component(enemy, EnemyComponent())
             self.entity_manager.add_component(
                 enemy, PositionComponent(x=i * 10, y=0)
             )
+            enemies.append(enemy)
+        
         self.spawner_system._current_spawn_timer = 3.0
         assert self.spawner_system._should_spawn_enemy(self.entity_manager) is False
 
-        self.entity_manager.destroy_entity(enemy)
+        # 마지막 적을 제거
+        self.entity_manager.destroy_entity(enemies[-1])
         assert self.spawner_system._should_spawn_enemy(self.entity_manager) is True
 
     def test_난이도_기반_스폰_간격_조정_검증_성공_시나리오(self) -> None:

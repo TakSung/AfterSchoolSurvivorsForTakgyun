@@ -35,6 +35,11 @@ class Entity:
         return cls(entity_id=str(uuid.uuid4()))
 
     @property
+    def id(self) -> str:
+        """Get entity ID (alias for entity_id for backward compatibility)."""
+        return self.entity_id
+
+    @property
     def active(self) -> bool:
         """Check if the entity is active."""
         return self._active
