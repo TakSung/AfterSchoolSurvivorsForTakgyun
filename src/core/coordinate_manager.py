@@ -279,3 +279,37 @@ class CoordinateManager(IEventSubscriber, ICoordinateManagerForSystems):
             String identifying this subscriber for debugging purposes.
         """
         return 'CoordinateManager'
+
+    # Implementation of ICoordinateManagerForSystems interface
+    def set_world_offset(self, offset: Vector2) -> None:
+        """
+        Set the world offset for coordinate transformation.
+        
+        Args:
+            offset: New world offset
+        """
+        transformer = self.get_transformer()
+        if hasattr(transformer, 'set_camera_offset'):
+            transformer.set_camera_offset(offset)
+
+    def get_world_offset(self) -> Vector2:
+        """
+        Get the current world offset.
+        
+        Returns:
+            Current world offset
+        """
+        transformer = self.get_transformer()
+        if hasattr(transformer, 'get_camera_offset'):
+            return transformer.get_camera_offset()
+        return Vector2.zero()
+
+    def invalidate_cache(self) -> None:
+        """
+        Invalidate the coordinate transformation cache.
+        
+        Forces recalculation of cached transformations.
+        """
+        transformer = self.get_transformer()
+        if hasattr(transformer, 'invalidate_cache'):
+            transformer.invalidate_cache()
