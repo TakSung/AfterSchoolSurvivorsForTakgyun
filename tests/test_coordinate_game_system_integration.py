@@ -34,7 +34,7 @@ class TestCoordinateGameSystemIntegration:
         # Core 시스템 초기화
         entity_manager = EntityManager()
         component_registry = ComponentRegistry()
-        system_orchestrator = SystemOrchestrator()
+        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
         coordinate_manager = CoordinateManager.get_instance()
         time_manager = TimeManager()
 
@@ -149,8 +149,10 @@ class TestCoordinateGameSystemIntegration:
                     mock_surface.return_value.get_size.return_value = (1024, 768)
 
                     # 시스템 업데이트
-                    env['systems']['player_movement'].update(entity_manager, delta_time)
-                    env['systems']['camera'].update(entity_manager, delta_time)
+                    env['systems']['player_movement'].set_entity_manager(entity_manager)
+                    env['systems']['player_movement'].update(delta_time)
+                    env['systems']['camera'].set_entity_manager(entity_manager)
+                    env['systems']['camera'].update(delta_time)
 
             # 좌표 일관성 기록
             current_world_pos = Vector2(*player_pos.get_position())
@@ -240,7 +242,8 @@ class TestCoordinateGameSystemIntegration:
                 coordinate_manager.get_transformer().set_camera_offset(new_pos)
 
             # 적 AI 업데이트
-            env['systems']['enemy_ai'].update(entity_manager, delta_time)
+            env['systems']['enemy_ai'].set_entity_manager(entity_manager)
+            env['systems']['enemy_ai'].update(delta_time)
 
             # 현재 상태 기록
             enemy_world_pos = Vector2(*enemy_pos.get_position())
@@ -367,7 +370,8 @@ class TestCoordinateGameSystemIntegration:
 
         for frame in range(frames):
             # 투사체 시스템 업데이트
-            env['systems']['projectile'].update(entity_manager, delta_time)
+            env['systems']['projectile'].set_entity_manager(entity_manager)
+            env['systems']['projectile'].update(delta_time)
 
             # 현재 투사체 위치 기록
             current_world_pos = Vector2(*projectile_pos.get_position())
@@ -498,7 +502,7 @@ class TestCoordinateGameSystemIntegration:
                         _all_entities = [entities['player'], entities['camera']] + entities['enemies']
 
                         # 시스템 오케스트레이터 업데이트
-                        system_orchestrator.update_systems(entity_manager, delta_time)
+                        system_orchestrator.update_systems(delta_time)
 
                         # 좌표 일관성 데이터 수집
                         player_world_pos = Vector2(*component_registry.get_component(entities['player'], PositionComponent).get_position())
@@ -639,7 +643,8 @@ class TestCoordinateGameSystemIntegration:
                     })
 
             # 시스템 업데이트 (적 AI만)
-            env['systems']['enemy_ai'].update(entity_manager, delta_time)
+            env['systems']['enemy_ai'].set_entity_manager(entity_manager)
+            env['systems']['enemy_ai'].update(delta_time)
 
             # 투사체 생성 시뮬레이션 (매 15프레임마다)
             if frame % 15 == 0 and len(entities['enemies']) > 0:
@@ -669,7 +674,8 @@ class TestCoordinateGameSystemIntegration:
 
             # 투사체 업데이트
             if entities['projectiles']:
-                env['systems']['projectile'].update(entity_manager, delta_time)
+                env['systems']['projectile'].set_entity_manager(entity_manager)
+            env['systems']['projectile'].update(delta_time)
 
                 # 만료된 투사체 제거 (수명 확인)
                 active_projectiles = []

@@ -117,7 +117,8 @@ class TestPlayerMovementSystem:
         entity_manager = EntityManager()
 
         # When - 업데이트 호출
-        movement_system.update(entity_manager, 0.016)
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.016)
 
         # Then - 마우스 위치가 None으로 유지되는지 확인 (업데이트 안됨)
         assert movement_system.get_mouse_position() is None, (
@@ -145,7 +146,8 @@ class TestPlayerMovementSystem:
         entity_manager = EntityManager()
 
         # When - 업데이트 실행 (마우스 위치 업데이트 포함)
-        movement_system.update(entity_manager, 0.016)
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.016)
 
         # Then - 마우스 위치 캐싱 확인
         assert movement_system.get_mouse_position() == (250, 180), (
@@ -245,7 +247,8 @@ class TestPlayerMovementSystem:
         initial_position = movement_component.world_position
 
         # When - 업데이트 실행
-        movement_system.update(entity_manager, 0.016)
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.016)
 
         # Then - 이동 없음 확인
         assert movement_component.direction == initial_direction, (
@@ -287,7 +290,8 @@ class TestPlayerMovementSystem:
         initial_position = movement_component.world_position
 
         # When - 업데이트 실행 (충분한 delta_time)
-        movement_system.update(entity_manager, 0.1)
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.1)
 
         # Then - 이동 확인
         assert movement_component.world_position != initial_position, (
@@ -331,7 +335,8 @@ class TestPlayerMovementSystem:
         initial_angle = movement_component.rotation_angle
 
         # When - 짧은 시간으로 업데이트 (각속도 제한이 적용되어야 함)
-        movement_system.update(entity_manager, 0.1)  # 0.1초
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.1)  # 0.1초
 
         # Then - 각속도 제한 확인
         angle_change = abs(movement_component.rotation_angle - initial_angle)
@@ -402,7 +407,8 @@ class TestPlayerMovementSystem:
         entity_manager = EntityManager()
 
         # When - 업데이트 실행 (pygame 오류 발생)
-        movement_system.update(entity_manager, 0.016)
+        movement_system.set_entity_manager(entity_manager)
+        movement_system.update(0.016)
 
         # Then - 기본값으로 안전하게 처리되는지 확인
         mouse_pos = movement_system.get_mouse_position()

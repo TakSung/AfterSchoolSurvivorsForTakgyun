@@ -115,7 +115,8 @@ class TestEntityRenderSystem:
         expected_screen_pos = self.mock_transformer.world_to_screen(world_pos)
 
         # When - 렌더링 시스템 업데이트
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
 
         # Then - 좌표 변환이 올바르게 적용되었는지 확인
         stats = self.render_system.get_render_stats()
@@ -145,7 +146,8 @@ class TestEntityRenderSystem:
         self.entity_manager.add_component(entity, render_comp)
 
         # When - 렌더링 시스템 업데이트
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
 
         # Then - 컬링 통계 확인
         stats = self.render_system.get_render_stats()
@@ -176,7 +178,8 @@ class TestEntityRenderSystem:
         self.entity_manager.add_component(player_entity, render_comp)
 
         # When - 렌더링 시스템 업데이트
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
 
         # Then - 플레이어 렌더링 통계 확인
         stats = self.render_system.get_render_stats()
@@ -271,11 +274,13 @@ class TestEntityRenderSystem:
         self.entity_manager.add_component(entity, rotation_comp)
 
         # When - 첫 번째 렌더링 (캐시 생성)
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
         first_stats = self.render_system.get_render_stats()
 
         # 두 번째 렌더링 (캐시 사용)
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
         second_stats = self.render_system.get_render_stats()
 
         # Then - 회전 처리 및 캐싱 확인
@@ -319,7 +324,8 @@ class TestEntityRenderSystem:
         self.entity_manager.add_component(culled_entity, RenderComponent())
 
         # When - 렌더링 시스템 업데이트
-        self.render_system.update(self.entity_manager, 0.016)
+        self.render_system.set_entity_manager(self.entity_manager)
+        self.render_system.update(0.016)
 
         # Then - 통계 정확성 검증
         stats = self.render_system.get_render_stats()

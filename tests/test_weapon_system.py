@@ -125,8 +125,9 @@ class TestWeaponSystem:
         enemy_entities = [enemy1, enemy2, enemy3]
 
         # When - 가장 가까운 적 찾기
+        weapon_system.set_entity_manager(entity_manager)
         closest_enemy = weapon_system._find_closest_enemy(
-            weapon_pos, weapon_range, enemy_entities, entity_manager
+            weapon_pos, weapon_range, enemy_entities
         )
 
         # Then - 가장 가까운 적 확인
@@ -162,8 +163,9 @@ class TestWeaponSystem:
         enemy_entities = [enemy1, enemy2]
 
         # When - 가장 가까운 적 찾기
+        weapon_system.set_entity_manager(entity_manager)
         closest_enemy = weapon_system._find_closest_enemy(
-            weapon_pos, weapon_range, enemy_entities, entity_manager
+            weapon_pos, weapon_range, enemy_entities
         )
 
         # Then - 타겟이 없어야 함
@@ -207,8 +209,9 @@ class TestWeaponSystem:
         enemy_entities = [enemy_in_range1, enemy_in_range2, enemy_out_range]
 
         # When - 가장 가까운 적 찾기
+        weapon_system.set_entity_manager(entity_manager)
         closest_enemy = weapon_system._find_closest_enemy(
-            weapon_pos, weapon_range, enemy_entities, entity_manager
+            weapon_pos, weapon_range, enemy_entities
         )
 
         # Then - 사거리 내 가장 가까운 적 확인
@@ -260,9 +263,8 @@ class TestWeaponSystem:
         weapon_system._projectile_handlers[ProjectileType.BASIC] = mock_handler
 
         # When - 공격 처리
-        weapon_system._process_weapon_attack(
-            weapon_entity, entity_manager, current_time
-        )
+        weapon_system.set_entity_manager(entity_manager)
+        weapon_system._process_weapon_attack(weapon_entity, current_time)
 
         # Then - 공격 실행 확인
         mock_handler.create_projectile.assert_called_once()
@@ -308,9 +310,8 @@ class TestWeaponSystem:
         initial_attack_time = weapon_comp.last_attack_time
 
         # When - 공격 처리
-        weapon_system._process_weapon_attack(
-            weapon_entity, entity_manager, current_time
-        )
+        weapon_system.set_entity_manager(entity_manager)
+        weapon_system._process_weapon_attack(weapon_entity, current_time)
 
         # Then - 공격하지 않았는지 확인
         mock_handler.create_projectile.assert_not_called()
@@ -348,9 +349,8 @@ class TestWeaponSystem:
         weapon_system._projectile_handlers[ProjectileType.BASIC] = mock_handler
 
         # When - 공격 처리
-        weapon_system._process_weapon_attack(
-            weapon_entity, entity_manager, current_time
-        )
+        weapon_system.set_entity_manager(entity_manager)
+        weapon_system._process_weapon_attack(weapon_entity, current_time)
 
         # Then - 공격하지 않았는지 확인
         mock_handler.create_projectile.assert_not_called()

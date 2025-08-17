@@ -45,7 +45,7 @@ class TestPlayerCameraIntegration:
 
         # 시스템 및 엔티티 매니저 설정
         entity_manager = EntityManager()
-        system_orchestrator = SystemOrchestrator()
+        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
 
         player_movement_system = PlayerMovementSystem(priority=5)
         camera_system = CameraSystem(priority=10)
@@ -81,7 +81,7 @@ class TestPlayerCameraIntegration:
 
         # When - 시스템 업데이트 (0.1초)
         delta_time = 0.1
-        system_orchestrator.update_systems(entity_manager, delta_time)
+        system_orchestrator.update_systems(delta_time)
 
         # Then - 플레이어 월드 위치 변화 확인
         updated_world_pos = movement_comp.world_position
@@ -126,7 +126,7 @@ class TestPlayerCameraIntegration:
 
         # 시스템 설정
         entity_manager = EntityManager()
-        system_orchestrator = SystemOrchestrator()
+        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
 
         player_movement_system = PlayerMovementSystem(priority=5)
         camera_system = CameraSystem(priority=10)
@@ -165,7 +165,7 @@ class TestPlayerCameraIntegration:
         # - 해결책: 여러 번 업데이트하여 회전이 완료될 시간 제공
         # - 주의사항: 각속도 2π rad/s, π/2 회전에 약 0.25초 필요
         for _ in range(5):  # 0.5초 시뮬레이션 (0.1초 × 5회)
-            system_orchestrator.update_systems(entity_manager, 0.1)
+            system_orchestrator.update_systems(0.1)
 
         # Then - 플레이어 방향이 하단을 향하는지 확인
         direction = movement_comp.direction
@@ -219,7 +219,7 @@ class TestPlayerCameraIntegration:
 
         # 시스템 설정
         entity_manager = EntityManager()
-        system_orchestrator = SystemOrchestrator()
+        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
 
         player_movement_system = PlayerMovementSystem(priority=5)
         camera_system = CameraSystem(priority=10)
@@ -268,7 +268,7 @@ class TestPlayerCameraIntegration:
 
         # When - 시스템 업데이트
         delta_time = 0.1
-        system_orchestrator.update_systems(entity_manager, delta_time)
+        system_orchestrator.update_systems(delta_time)
 
         # Then - 플레이어 위치가 변경되지 않았는지 확인
         final_world_pos = movement_comp.world_position
@@ -311,7 +311,7 @@ class TestPlayerCameraIntegration:
 
         # 시스템 설정
         entity_manager = EntityManager()
-        system_orchestrator = SystemOrchestrator()
+        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
 
         player_movement_system = PlayerMovementSystem(priority=5)
         camera_system = CameraSystem(priority=10)
@@ -347,7 +347,7 @@ class TestPlayerCameraIntegration:
         # When - 여러 프레임 업데이트 (총 0.5초)
         delta_time = 0.1
         for _ in range(5):
-            system_orchestrator.update_systems(entity_manager, delta_time)
+            system_orchestrator.update_systems(delta_time)
 
         # Then - 플레이어가 누적적으로 이동했는지 확인
         final_world_pos = movement_comp.world_position

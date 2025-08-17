@@ -121,7 +121,8 @@ class TestCameraSystem:
         entity_manager = EntityManager()
 
         # When - 업데이트 호출
-        camera_system.update(entity_manager, 0.016)
+        camera_system.set_entity_manager(entity_manager)
+        camera_system.update(0.016)
 
         # Then - 좌표 변환기가 호출되지 않았는지 확인
         mock_coord_manager.assert_called_once()  # 초기화 시 한 번만
@@ -180,14 +181,16 @@ class TestCameraSystem:
         entity_manager.add_component(camera_entity, camera_component)
 
         # When - 오프셋 조회
-        offset = camera_system.get_camera_offset(entity_manager)
+        camera_system.set_entity_manager(entity_manager)
+        offset = camera_system.get_camera_offset()
 
         # Then - 올바른 오프셋 반환 확인
         assert offset == test_offset, '현재 카메라 오프셋이 반환되어야 함'
 
         # 카메라 엔티티가 없는 경우 None 반환 확인
         entity_manager.destroy_entity(camera_entity)
-        offset_none = camera_system.get_camera_offset(entity_manager)
+        camera_system.set_entity_manager(entity_manager)
+        offset_none = camera_system.get_camera_offset()
         assert offset_none is None, '카메라 엔티티가 없으면 None을 반환해야 함'
 
     @patch('src.systems.camera_system.CoordinateManager.get_instance')
@@ -267,7 +270,8 @@ class TestCameraSystem:
         initial_offset = camera_component.world_offset
 
         # When - 업데이트 실행
-        camera_system.update(entity_manager, 0.016)
+        camera_system.set_entity_manager(entity_manager)
+        camera_system.update(0.016)
 
         # Then - 오프셋 변화 없음 확인
         assert camera_component.world_offset == initial_offset, (
@@ -311,7 +315,8 @@ class TestCameraSystem:
         initial_offset = camera_component.world_offset
 
         # When - 업데이트 실행 (충분한 delta_time으로)
-        camera_system.update(entity_manager, 0.1)
+        camera_system.set_entity_manager(entity_manager)
+        camera_system.update(0.1)
 
         # Then - 오프셋 변화 확인
         assert camera_component.world_offset != initial_offset, (
@@ -345,9 +350,8 @@ class TestCameraSystem:
         entity_without_position = entity_manager.create_entity()
 
         # When & Then - 위치 컴포넌트가 있는 경우
-        position = camera_system._get_entity_position(
-            entity_manager, entity_with_position
-        )
+        camera_system.set_entity_manager(entity_manager)
+        position = camera_system._get_entity_position(entity_with_position)
         assert position == (100.0, 200.0), (
             '위치 컴포넌트가 있으면 해당 좌표를 반환해야 함'
         )
@@ -355,9 +359,7 @@ class TestCameraSystem:
         assert isinstance(position[1], float), 'Y 좌표는 float 타입이어야 함'
 
         # When & Then - 위치 컴포넌트가 없는 경우
-        position_none = camera_system._get_entity_position(
-            entity_manager, entity_without_position
-        )
+        position_none = camera_system._get_entity_position(entity_without_position)
         assert position_none is None, (
             '위치 컴포넌트가 없으면 None을 반환해야 함'
         )
@@ -420,7 +422,8 @@ class TestCameraSystem:
         initial_offset = camera_component.world_offset
 
         # When - 업데이트 실행
-        camera_system.update(entity_manager, 0.016)
+        camera_system.set_entity_manager(entity_manager)
+        camera_system.update(0.016)
 
         # Then - 안전한 동작 확인 (오류 없이 완료되고 오프셋 유지)
         assert camera_component.world_offset == initial_offset, (

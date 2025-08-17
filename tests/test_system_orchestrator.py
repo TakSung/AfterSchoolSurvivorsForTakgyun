@@ -28,9 +28,7 @@ class MockMovementSystem(System):
         super().__init__(priority=priority)
         self.update_count = 0
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update movement system."""
         self.update_count += 1
 
@@ -42,9 +40,7 @@ class MockRenderSystem(System):
         super().__init__(priority=priority)
         self.update_count = 0
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update render system."""
         self.update_count += 1
 
@@ -56,9 +52,7 @@ class MockPhysicsSystem(System):
         super().__init__(priority=priority)
         self.update_count = 0
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update physics system."""
         self.update_count += 1
 
@@ -73,9 +67,7 @@ class FailingInitSystem(System):
         """Initialize system with failure."""
         raise RuntimeError('Initialization failed')
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update system (never called)."""
         pass
 
@@ -87,9 +79,7 @@ class FailingUpdateSystem(System):
         super().__init__()
         self.update_count = 0
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update system with failure."""
         self.update_count += 1
         raise RuntimeError('Update failed')
@@ -102,9 +92,7 @@ class CustomCleanupSystem(System):
         super().__init__()
         self.cleaned_up = False
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """Update system."""
         pass
 
@@ -117,9 +105,9 @@ class TestSystemOrchestrator:
     """Test suite for SystemOrchestrator."""
 
     @pytest.fixture
-    def orchestrator(self) -> SystemOrchestrator:
+    def orchestrator(self, entity_manager: EntityManager) -> SystemOrchestrator:
         """Create a fresh system orchestrator for each test."""
-        return SystemOrchestrator()
+        return SystemOrchestrator(entity_manager=entity_manager)
 
     @pytest.fixture
     def entity_manager(self) -> EntityManager:
@@ -274,7 +262,7 @@ class TestSystemOrchestrator:
         orchestrator.register_system(physics_system, 'PhysicsSystem')
 
         # When - 시스템 업데이트 실행
-        orchestrator.update_systems(entity_manager, 0.016)
+        orchestrator.update_systems(0.016)
 
         # Then - 모든 시스템이 실행됨
         assert movement_system.update_count == 1, (
@@ -311,7 +299,7 @@ class TestSystemOrchestrator:
         movement_system.disable()
 
         # When - 시스템 업데이트 실행
-        orchestrator.update_systems(entity_manager, 0.016)
+        orchestrator.update_systems(0.016)
 
         # Then - 비활성 시스템이 실행되지 않음
         assert movement_system.update_count == 0, (
@@ -341,7 +329,7 @@ class TestSystemOrchestrator:
         orchestrator.register_system(movement_system, 'MovementSystem')
 
         # When - 시스템 업데이트 실행 (예외가 발생하지 않아야 함)
-        orchestrator.update_systems(entity_manager, 0.016)
+        orchestrator.update_systems(0.016)
 
         # Then - 정상 시스템은 실행되고, 실패 시스템도 시도됨
         assert movement_system.update_count == 1, '정상 시스템은 실행되어야 함'
@@ -473,7 +461,7 @@ class TestSystemOrchestrator:
 
         # When - 여러 번 시스템 업데이트 실행
         for _ in range(3):
-            orchestrator.update_systems(entity_manager, 0.016)
+            orchestrator.update_systems(0.016)
 
         # Then - 실행 통계가 올바르게 수집됨
         stats = orchestrator.get_execution_stats()
