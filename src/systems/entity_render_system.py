@@ -101,13 +101,12 @@ class EntityRenderSystem(System):
         return [PositionComponent, RenderComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update and render all visible entities.
 
         Args:
-            entity_manager: Entity manager for accessing entities and components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
@@ -123,7 +122,7 @@ class EntityRenderSystem(System):
         }
 
         # 렌더링 가능한 엔티티들 필터링
-        renderable_entities = self.filter_entities(entity_manager)
+        renderable_entities = self.filter_required_entities()
         self._render_stats['total_entities'] = len(renderable_entities)
 
         if not renderable_entities:
@@ -162,7 +161,7 @@ class EntityRenderSystem(System):
 
         def get_render_priority(entity: 'Entity') -> tuple[int, float]:
             # 렌더 레이어가 우선순위
-            render_comp = entity_manager.get_component(entity, RenderComponent)
+            render_comp = self._entity_manager.get_component(entity, RenderComponent)
             layer_priority = (
                 render_comp.layer.value
                 if render_comp
@@ -170,7 +169,7 @@ class EntityRenderSystem(System):
             )
 
             # Y 좌표가 보조 정렬 기준
-            pos_comp = entity_manager.get_component(entity, PositionComponent)
+            pos_comp = self._entity_manager.get_component(entity, PositionComponent)
             y_position = pos_comp.y if pos_comp else 0.0
 
             return (layer_priority, y_position)
@@ -191,7 +190,7 @@ class EntityRenderSystem(System):
             True if entity has PlayerComponent, False otherwise.
         """
         return (
-            entity_manager.get_component(entity, PlayerComponent) is not None
+            self._entity_manager.get_component(entity, PlayerComponent) is not None
         )
 
     def _render_player(
@@ -247,8 +246,8 @@ class EntityRenderSystem(System):
             entity_manager: Entity manager for component access
             entity: Entity to render
         """
-        pos_comp = entity_manager.get_component(entity, PositionComponent)
-        render_comp = entity_manager.get_component(entity, RenderComponent)
+        pos_comp = self._entity_manager.get_component(entity, PositionComponent)
+        render_comp = self._entity_manager.get_component(entity, RenderComponent)
 
         if not pos_comp or not render_comp or not render_comp.visible:
             return
@@ -273,7 +272,7 @@ class EntityRenderSystem(System):
             return
 
         # 회전 처리
-        rotation_comp = entity_manager.get_component(entity, RotationComponent)
+        rotation_comp = self._entity_manager.get_component(entity, RotationComponent)
         surface_to_render = self._get_rotated_surface(
             render_comp, rotation_comp
         )

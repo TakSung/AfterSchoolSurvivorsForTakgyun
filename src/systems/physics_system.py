@@ -54,26 +54,24 @@ class PhysicsSystem(System):
         return [PositionComponent, VelocityComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update physics calculations for all entities.
 
         Args:
-            entity_manager: Manager to access entities and components.
             delta_time: Time elapsed since last update in seconds.
         """
         if not self.enabled:
             return
 
-        entities = self.filter_entities(entity_manager)
+        entities = self.filter_required_entities()
 
         for entity in entities:
-            self._update_entity_physics(entity_manager, entity, delta_time)
+            self._update_entity_physics(entity, delta_time)
 
     def _update_entity_physics(
         self,
-        entity_manager: 'EntityManager',
         entity: 'Entity',
         delta_time: float,
     ) -> None:
@@ -81,12 +79,11 @@ class PhysicsSystem(System):
         Update physics for a single entity.
 
         Args:
-            entity_manager: Manager to access entity components.
             entity: Entity to update physics for.
             delta_time: Time elapsed since last update in seconds.
         """
-        position = entity_manager.get_component(entity, PositionComponent)
-        velocity = entity_manager.get_component(entity, VelocityComponent)
+        position = self._entity_manager.get_component(entity, PositionComponent)
+        velocity = self._entity_manager.get_component(entity, VelocityComponent)
 
         if not position or not velocity:
             return

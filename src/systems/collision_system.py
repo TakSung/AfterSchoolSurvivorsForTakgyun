@@ -303,19 +303,18 @@ class CollisionSystem(System):
         return [PositionComponent, CollisionComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update collision detection for all entities.
 
         Args:
-            entity_manager: Manager to access entities and components.
             delta_time: Time elapsed since last update in seconds.
         """
         if not self.enabled:
             return
 
-        entities = self.filter_entities(entity_manager)
+        entities = self.filter_required_entities()
         self._collision_count = 0
 
         # AI-DEV : Strategy 패턴으로 충돌 감지 알고리즘 교체 가능
@@ -323,11 +322,11 @@ class CollisionSystem(System):
         # - 해결책: ICollisionDetector 인터페이스로 알고리즘 추상화
         # - 주의사항: 런타임에 detector 교체 시 상태 관리 필요
         collision_pairs = self._detector.detect_collisions(
-            entity_manager, entities
+            self._entity_manager, entities
         )
 
         for entity1, entity2 in collision_pairs:
-            self._handle_collision(entity_manager, entity1, entity2)
+            self._handle_collision(entity1, entity2)
             self._collision_count += 1
 
     def set_collision_detector(self, detector: ICollisionDetector) -> None:
@@ -376,7 +375,6 @@ class CollisionSystem(System):
 
     def _handle_collision(
         self,
-        entity_manager: 'EntityManager',
         entity1: 'Entity',
         entity2: 'Entity',
     ) -> None:
@@ -384,14 +382,13 @@ class CollisionSystem(System):
         Handle collision response between two entities.
 
         Args:
-            entity_manager: Manager to access entity components.
             entity1: First colliding entity.
             entity2: Second colliding entity.
         """
         from ..components.collision_component import CollisionComponent
 
-        col1 = entity_manager.get_component(entity1, CollisionComponent)
-        col2 = entity_manager.get_component(entity2, CollisionComponent)
+        col1 = self._entity_manager.get_component(entity1, CollisionComponent)
+        col2 = self._entity_manager.get_component(entity2, CollisionComponent)
 
         if not col1 or not col2:
             return
@@ -486,7 +483,7 @@ class CollisionSystem(System):
             enemy_entity = entity1
 
         # 플레이어 체력 컴포넌트 가져오기
-        player_health = entity_manager.get_component(
+        player_health = self._entity_manager.get_component(
             player_entity, HealthComponent
         )
 
@@ -531,10 +528,10 @@ class CollisionSystem(System):
             projectile_entity = entity2
             enemy_entity = entity1
 
-        projectile = entity_manager.get_component(
+        projectile = self._entity_manager.get_component(
             projectile_entity, ProjectileComponent
         )
-        enemy_health = entity_manager.get_component(
+        enemy_health = self._entity_manager.get_component(
             enemy_entity, HealthComponent
         )
 
@@ -544,7 +541,7 @@ class CollisionSystem(System):
             enemy_health.take_damage(damage_dealt, time.time())
 
             # 투사체 제거
-            entity_manager.destroy_entity(projectile_entity)
+            self._entity_manager.destroy_entity(projectile_entity)
 
             logger.info(
                 f'Projectile-Enemy collision: {damage_dealt} damage applied to enemy {enemy_entity.entity_id}, enemy health: {enemy_health.current_health}/{enemy_health.max_health}'
