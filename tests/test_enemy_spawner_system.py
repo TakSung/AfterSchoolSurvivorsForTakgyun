@@ -28,17 +28,25 @@ class TestEnemySpawnerSystem:
     def setup_method(self) -> None:
         """각 테스트 메서드 전에 실행되는 설정"""
         self.component_registry = ComponentRegistry()
-        self.entity_manager = EntityManager(self.component_registry)
-        self.spawner_system = EnemySpawnerSystem(priority=5)
-
+        
         self.mock_coordinate_manager = MagicMock(spec=CoordinateManager)
         self.mock_difficulty_manager = MagicMock(spec=DifficultyManager)
         self.mock_difficulty_manager.get_spawn_interval_multiplier.return_value = 1.0
         self.mock_difficulty_manager.get_speed_multiplier.return_value = 1.0
+        self.mock_difficulty_manager.get_health_multiplier.return_value = 1.0
 
         self.mock_coordinate_manager.screen_to_world.return_value = Vector2(
             100, 100
         )
+
+        # Create EntityManager with injected dependencies to fix enemy creation
+        self.entity_manager = EntityManager(
+            component_registry=self.component_registry,
+            coordinate_manager=self.mock_coordinate_manager,
+            difficulty_manager=self.mock_difficulty_manager
+        )
+        
+        self.spawner_system = EnemySpawnerSystem(priority=5)
 
         patch_coord = patch(
             'src.systems.enemy_spawner_system.CoordinateManager.get_instance',
@@ -48,21 +56,9 @@ class TestEnemySpawnerSystem:
             'src.systems.enemy_spawner_system.DifficultyManager.get_instance',
             return_value=self.mock_difficulty_manager,
         )
-        
-        # Also patch EntityManager module singleton access
-        patch_coord_em = patch(
-            'src.core.coordinate_manager.CoordinateManager.get_instance',
-            return_value=self.mock_coordinate_manager,
-        )
-        patch_diff_em = patch(
-            'src.core.difficulty_manager.DifficultyManager.get_instance',
-            return_value=self.mock_difficulty_manager,
-        )
 
         self.patcher_coord = patch_coord.start()
         self.patcher_diff = patch_diff.start()
-        self.patcher_coord_em = patch_coord_em.start()
-        self.patcher_diff_em = patch_diff_em.start()
 
         self.spawner_system.set_entity_manager(self.entity_manager)
         self.spawner_system.initialize()
@@ -191,6 +187,18 @@ class TestEnemySpawnerSystem:
     ) -> None:
         """6. 적 엔티티 생성 및 컴포넌트 구성 검증 (성공 시나리오)"""
         self.spawner_system.set_entity_manager(self.entity_manager)
+        
+        # Keep strong references to prevent garbage collection in test environment
+        created_entities = []
+        original_create = self.entity_manager.create_enemy_entity
+        
+        def tracking_create_enemy(spawn_result):
+            entity = original_create(spawn_result)
+            created_entities.append(entity)  # Maintain strong reference
+            return entity
+        
+        self.entity_manager.create_enemy_entity = tracking_create_enemy
+        
         self.spawner_system.update(3.0)
 
         enemies = self.entity_manager.get_entities_with_components(EnemyComponent)
@@ -205,6 +213,18 @@ class TestEnemySpawnerSystem:
     def test_시스템_업데이트_전체_플로우_검증_성공_시나리오(self) -> None:
         """7. 시스템 업데이트 전체 플로우 검증 (성공 시나리오)"""
         self.spawner_system.set_entity_manager(self.entity_manager)
+        
+        # Keep strong references to prevent garbage collection in test environment
+        created_entities = []
+        original_create = self.entity_manager.create_enemy_entity
+        
+        def tracking_create_enemy(spawn_result):
+            entity = original_create(spawn_result)
+            created_entities.append(entity)  # Maintain strong reference
+            return entity
+        
+        self.entity_manager.create_enemy_entity = tracking_create_enemy
+        
         self.spawner_system.update(0.5)
         assert self.spawner_system._current_spawn_timer == 0.5
         assert len(self.entity_manager.get_entities_with_components(EnemyComponent)) == 0

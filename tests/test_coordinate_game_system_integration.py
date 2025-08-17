@@ -32,11 +32,16 @@ class TestCoordinateGameSystemIntegration:
     def game_environment(self, mock_pygame_surface):
         """게임 환경 설정 픽스처"""
         # Core 시스템 초기화
-        entity_manager = EntityManager()
         component_registry = ComponentRegistry()
-        system_orchestrator = SystemOrchestrator(entity_manager=entity_manager)
+        entity_manager = EntityManager(component_registry)
         coordinate_manager = CoordinateManager.get_instance()
         time_manager = TimeManager()
+        
+        # SystemOrchestrator with dependency injection
+        system_orchestrator = SystemOrchestrator(
+            entity_manager=entity_manager,
+            coordinate_manager=coordinate_manager
+        )
 
         # 게임 시스템들 초기화
         camera_system = CameraSystem(priority=1)
@@ -46,7 +51,7 @@ class TestCoordinateGameSystemIntegration:
         projectile_system = ProjectileSystem(priority=20)
         render_system = EntityRenderSystem(surface=mock_pygame_surface, priority=100)
 
-        # 모든 시스템 등록
+        # 모든 시스템 등록 (dependency injection은 자동으로 처리됨)
         systems = [
             camera_system,
             player_movement_system,
@@ -112,10 +117,10 @@ class TestCoordinateGameSystemIntegration:
         player_comp = PlayerComponent()
         player_rotation = RotationComponent(0.0)
 
-        component_registry.add_component(player_entity, player_pos)
-        component_registry.add_component(player_entity, player_movement)
-        component_registry.add_component(player_entity, player_comp)
-        component_registry.add_component(player_entity, player_rotation)
+        entity_manager.add_component(player_entity, player_pos)
+        entity_manager.add_component(player_entity, player_movement)
+        entity_manager.add_component(player_entity, player_comp)
+        entity_manager.add_component(player_entity, player_rotation)
 
         # 카메라 컴포넌트
         camera_comp = CameraComponent(
@@ -123,7 +128,7 @@ class TestCoordinateGameSystemIntegration:
             follow_target=player_entity,
             dead_zone_radius=10.0
         )
-        component_registry.add_component(camera_entity, camera_comp)
+        entity_manager.add_component(camera_entity, camera_comp)
 
         # When - 플레이어 이동 시뮬레이션 (5초간 60fps)
         delta_time = 1.0 / 60.0  # 60 FPS
@@ -148,11 +153,8 @@ class TestCoordinateGameSystemIntegration:
                 with patch('pygame.display.get_surface') as mock_surface:
                     mock_surface.return_value.get_size.return_value = (1024, 768)
 
-                    # 시스템 업데이트
-                    env['systems']['player_movement'].set_entity_manager(entity_manager)
-                    env['systems']['player_movement'].update(delta_time)
-                    env['systems']['camera'].set_entity_manager(entity_manager)
-                    env['systems']['camera'].update(delta_time)
+                    # 시스템 업데이트 (SystemOrchestrator를 통해 실행)
+                    env['system_orchestrator'].update_systems(delta_time)
 
             # 좌표 일관성 기록
             current_world_pos = Vector2(*player_pos.get_position())

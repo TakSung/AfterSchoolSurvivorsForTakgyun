@@ -27,7 +27,7 @@ class SystemOrchestrator:
     """
 
     def __init__(
-        self, 
+        self,
         event_bus: 'EventBus | None' = None,
         entity_manager: 'EntityManager | None' = None,
         coordinate_manager: 'CoordinateManager | None' = None
@@ -58,7 +58,7 @@ class SystemOrchestrator:
         # - 요구사항: EventBus를 통한 시스템 이벤트 처리 지원
         # - 히스토리: 직접 호출 방식에서 이벤트 기반 시스템으로 확장
         self._event_bus = event_bus
-        
+
         # Manager dependencies for dependency injection
         self._entity_manager = entity_manager
         self._coordinate_manager = coordinate_manager
@@ -72,7 +72,7 @@ class SystemOrchestrator:
             subscriber: The subscriber to register.
         """
         raise NotImplementedError("subscribe 구현해주세요.")
-        
+
 
     def register_system(
         self, system: 'ISystem', name: str | None = None
@@ -168,9 +168,8 @@ class SystemOrchestrator:
         Args:
             subscriber: The subscriber to unregister.
         """
-        
         raise NotImplementedError("unsubscribe 구현해주세요.")
-    
+
     def unregister_system(self, name: str) -> 'ISystem | None':
         """
         Unregister a system from the orchestrator.
@@ -252,7 +251,6 @@ class SystemOrchestrator:
         Args:
             event: The event to publish. Must be a valid BaseEvent instance.
         """
-        
         raise NotImplementedError("unsubscribe 구현해주세요.")
 
     def update_systems(
