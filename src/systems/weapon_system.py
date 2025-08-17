@@ -190,42 +190,40 @@ class WeaponSystem(System):
         return [WeaponComponent, PositionComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update weapon system logic.
 
         Args:
-            entity_manager: Entity manager to access entities and components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
             return
 
         current_time = time.time()
-        weapon_entities = self.filter_entities(entity_manager)
+        weapon_entities = self.filter_required_entities()
 
         # 주기적으로 타겟 업데이트
         if (
             current_time - self._last_target_update
             >= self._target_update_interval
         ):
-            self._update_targets(weapon_entities, entity_manager)
+            self._update_targets(weapon_entities)
             self._last_target_update = current_time
 
         # 공격 처리
         for entity in weapon_entities:
-            self._process_weapon_attack(entity, entity_manager, current_time)
+            self._process_weapon_attack(entity, current_time)
 
     def _update_targets(
-        self, weapon_entities: list['Entity'], entity_manager: 'EntityManager'
+        self, weapon_entities: list['Entity']
     ) -> None:
         """
         Update target selection for weapon entities.
 
         Args:
             weapon_entities: List of entities with weapons
-            entity_manager: Entity manager to access entities
         """
         # AI-DEV : 타겟 엔티티 필터링을 위한 임시 구현
         # - 문제: 적 엔티티를 구별하는 컴포넌트가 아직 미정의
@@ -235,14 +233,14 @@ class WeaponSystem(System):
 
         for weapon_entity in weapon_entities:
             # WeaponManager를 통한 무기 컴포넌트 조회 (통일성 확보)
-            weapon = self._get_weapon_component(weapon_entity, entity_manager)
-            weapon_pos = entity_manager.get_component(
+            weapon = self._get_weapon_component(weapon_entity)
+            weapon_pos = self._entity_manager.get_component(
                 weapon_entity, PositionComponent
             )
 
             if weapon and weapon_pos:
                 closest_enemy = self._find_closest_enemy(
-                    weapon_pos, weapon.range, enemy_entities, entity_manager
+                    weapon_pos, weapon.range, enemy_entities
                 )
                 weapon.current_target_id = (
                     closest_enemy.entity_id if closest_enemy else None
@@ -253,7 +251,6 @@ class WeaponSystem(System):
         weapon_pos: PositionComponent,
         weapon_range: float,
         enemy_entities: list['Entity'],
-        entity_manager: 'EntityManager',
     ) -> Optional['Entity']:
         """
         Find the closest enemy within weapon range.
@@ -262,7 +259,6 @@ class WeaponSystem(System):
             weapon_pos: Position of the weapon entity
             weapon_range: Maximum range for targeting
             enemy_entities: List of potential enemy entities
-            entity_manager: Entity manager to access components
 
         Returns:
             Closest enemy entity within range, or None if no valid target.
@@ -275,7 +271,7 @@ class WeaponSystem(System):
         closest_distance_squared = weapon_range * weapon_range
 
         for enemy in enemy_entities:
-            enemy_pos = entity_manager.get_component(enemy, PositionComponent)
+            enemy_pos = self._entity_manager.get_component(enemy, PositionComponent)
             if not enemy_pos:
                 continue
 
@@ -293,7 +289,6 @@ class WeaponSystem(System):
     def _process_weapon_attack(
         self,
         weapon_entity: 'Entity',
-        entity_manager: 'EntityManager',
         current_time: float,
     ) -> None:
         """
@@ -301,12 +296,11 @@ class WeaponSystem(System):
 
         Args:
             weapon_entity: Entity with weapon component
-            entity_manager: Entity manager to access components
             current_time: Current game time in seconds
         """
         # WeaponManager를 통한 무기 컴포넌트 조회 (통일성 확보)
-        weapon = self._get_weapon_component(weapon_entity, entity_manager)
-        weapon_pos = entity_manager.get_component(
+        weapon = self._get_weapon_component(weapon_entity)
+        weapon_pos = self._entity_manager.get_component(
             weapon_entity, PositionComponent
         )
 
@@ -315,14 +309,14 @@ class WeaponSystem(System):
 
         # 타겟이 있고 쿨다운이 완료된 경우 공격
         if weapon.current_target_id and weapon.can_attack(current_time):
-            target_entity = entity_manager.get_entity(weapon.current_target_id)
+            target_entity = self._entity_manager.get_entity(weapon.current_target_id)
             if target_entity:
-                target_pos = entity_manager.get_component(
+                target_pos = self._entity_manager.get_component(
                     target_entity, PositionComponent
                 )
                 if target_pos:
                     self._execute_attack(
-                        weapon, weapon_pos, target_pos, entity_manager
+                        weapon, weapon_pos, target_pos
                     )
                     weapon.set_last_attack_time(current_time)
 
@@ -331,7 +325,6 @@ class WeaponSystem(System):
         weapon: WeaponComponent,
         start_pos: PositionComponent,
         target_pos: PositionComponent,
-        entity_manager: 'EntityManager',
     ) -> None:
         """
         Execute an attack by creating a projectile.
@@ -340,7 +333,6 @@ class WeaponSystem(System):
             weapon: Weapon component with attack properties
             start_pos: Starting position for the projectile
             target_pos: Target position for the projectile
-            entity_manager: Entity manager for creating projectiles
         """
         handler = self._projectile_handlers.get(weapon.projectile_type)
         if handler:
@@ -348,7 +340,7 @@ class WeaponSystem(System):
                 weapon,
                 start_pos.get_position(),
                 target_pos.get_position(),
-                entity_manager,
+                self._entity_manager,
             )
 
             if projectile:
@@ -359,14 +351,13 @@ class WeaponSystem(System):
                 pass  # TODO: 로깅 시스템 구현 후 활용
 
     def _get_weapon_component(
-        self, entity: 'Entity', entity_manager: 'EntityManager'
+        self, entity: 'Entity'
     ) -> WeaponComponent | None:
         """
         Get weapon component through WeaponManager if available, otherwise direct access.
 
         Args:
             entity: Entity to get weapon component for.
-            entity_manager: Entity manager for fallback access.
 
         Returns:
             WeaponComponent if exists, None otherwise.
@@ -378,8 +369,8 @@ class WeaponSystem(System):
 
         if self._weapon_manager:
             # WeaponManager가 설정되어 있으면 매니저를 통해 조회
-            self._weapon_manager.set_entity_manager(entity_manager)
+            self._weapon_manager.set_entity_manager(self._entity_manager)
             return self._weapon_manager.get_weapon_component(entity)
         else:
             # WeaponManager가 없으면 기존 방식으로 직접 조회
-            return entity_manager.get_component(entity, WeaponComponent)
+            return self._entity_manager.get_component(entity, WeaponComponent)

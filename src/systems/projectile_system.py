@@ -116,13 +116,12 @@ class ProjectileSystem(System):
         return [ProjectileComponent, PositionComponent, CollisionComponent, RenderComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update projectile system logic.
 
         Args:
-            entity_manager: Entity manager to access entities and components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
@@ -145,13 +144,13 @@ class ProjectileSystem(System):
         
         # Entity ID를 실제 Entity 객체로 변환
         for entity_id in projectile_entity_ids:
-            entity = entity_manager.get_entity(entity_id)
+            entity = self._entity_manager.get_entity(entity_id)
             if entity:
                 projectile_entities.append(entity)
                 logging.info(f"✅ Found entity for ID {entity_id}, active: {entity.active}")
             else:
                 # 더 자세한 디버깅: EntityManager 내부 상태 확인
-                all_entities = entity_manager.get_all_entities()
+                all_entities = self._entity_manager.get_all_entities()
                 entity_ids_in_manager = [e.entity_id for e in all_entities]
                 logging.error(f"❌ Entity {entity_id} not found in entity manager")
                 logging.error(f"   Total entities in manager: {len(all_entities)}")
@@ -173,7 +172,7 @@ class ProjectileSystem(System):
             if projectile_entities:
                 logging.info(f"ProjectileSystem: Processing {len(projectile_entities)} projectiles")
                 for i, entity in enumerate(projectile_entities):
-                    pos = entity_manager.get_component(entity, PositionComponent)
+                    pos = self._entity_manager.get_component(entity, PositionComponent)
                     if pos:
                         logging.info(f"  Projectile {i+1}: {entity.entity_id} at ({pos.x:.1f}, {pos.y:.1f})")
 
@@ -203,8 +202,8 @@ class ProjectileSystem(System):
             entity_manager: Entity manager to access components
             delta_time: Time elapsed since last update
         """
-        projectile = entity_manager.get_component(entity, ProjectileComponent)
-        position = entity_manager.get_component(entity, PositionComponent)
+        projectile = self._entity_manager.get_component(entity, ProjectileComponent)
+        position = self._entity_manager.get_component(entity, PositionComponent)
 
         if not projectile or not position:
             return
@@ -273,7 +272,7 @@ class ProjectileSystem(System):
         for entity in self._expired_projectiles:
             # ProjectileManager에서도 제거
             self._projectile_manager.unregister_projectile(entity.entity_id)
-            entity_manager.destroy_entity(entity)
+            self._entity_manager.destroy_entity(entity)
             logging.info(f"Removed expired projectile {entity.entity_id}")
 
     def get_projectile_count(self, entity_manager: 'EntityManager') -> int:
@@ -307,7 +306,7 @@ class ProjectileSystem(System):
 
         # Entity ID를 실제 Entity 객체로 변환
         for entity_id in projectile_entity_ids:
-            entity = entity_manager.get_entity_by_id(entity_id)
+            entity = self._entity_manager.get_entity_by_id(entity_id)
             if entity:
                 owner_projectiles.append(entity)
 
@@ -330,7 +329,7 @@ class ProjectileSystem(System):
             entity_manager, owner_id
         )
         for entity in owner_projectiles:
-            entity_manager.destroy_entity(entity)
+            self._entity_manager.destroy_entity(entity)
         return len(owner_projectiles)
 
     def update_screen_bounds(self, screen: pygame.Surface) -> None:
@@ -356,7 +355,7 @@ class ProjectileSystem(System):
             projectile_entities: List of projectile entities to check
         """
         # 적 엔티티들 가져오기
-        enemy_entities = entity_manager.get_entities_with_components(
+        enemy_entities = self._entity_manager.get_entities_with_components(
             EnemyComponent,
             PositionComponent,
             CollisionComponent,
@@ -401,10 +400,10 @@ class ProjectileSystem(System):
             Tuple of (projectile_entity, enemy_entity) or (None, None)
                 if not applicable
         """
-        proj1 = entity_manager.get_component(entity1, ProjectileComponent)
-        proj2 = entity_manager.get_component(entity2, ProjectileComponent)
-        enemy1 = entity_manager.get_component(entity1, EnemyComponent)
-        enemy2 = entity_manager.get_component(entity2, EnemyComponent)
+        proj1 = self._entity_manager.get_component(entity1, ProjectileComponent)
+        proj2 = self._entity_manager.get_component(entity2, ProjectileComponent)
+        enemy1 = self._entity_manager.get_component(entity1, EnemyComponent)
+        enemy2 = self._entity_manager.get_component(entity2, EnemyComponent)
 
         # entity1이 투사체이고 entity2가 적인 경우
         if proj1 and enemy2:
@@ -430,10 +429,10 @@ class ProjectileSystem(System):
             projectile_entity: The projectile entity
             enemy_entity: The enemy entity
         """
-        projectile = entity_manager.get_component(
+        projectile = self._entity_manager.get_component(
             projectile_entity, ProjectileComponent
         )
-        enemy_health = entity_manager.get_component(
+        enemy_health = self._entity_manager.get_component(
             enemy_entity, HealthComponent
         )
 

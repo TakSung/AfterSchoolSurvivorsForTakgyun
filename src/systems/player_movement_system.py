@@ -91,13 +91,12 @@ class PlayerMovementSystem(System):
         return (PlayerMovementComponent, PositionComponent)
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update player movement based on mouse position.
 
         Args:
-            entity_manager: Entity manager for accessing entities/components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
@@ -107,16 +106,16 @@ class PlayerMovementSystem(System):
         self._update_mouse_position()
 
         # 플레이어 엔티티들을 필터링
-        player_entities = self.filter_entities(entity_manager)
+        player_entities = self.filter_required_entities()
 
         for player_entity in player_entities:
-            movement_comp = entity_manager.get_component(
+            movement_comp = self._entity_manager.get_component(
                 player_entity, PlayerMovementComponent
             )
-            position_comp = entity_manager.get_component(
+            position_comp = self._entity_manager.get_component(
                 player_entity, PositionComponent
             )
-            rotation_comp = entity_manager.get_component(
+            rotation_comp = self._entity_manager.get_component(
                 player_entity, RotationComponent
             )
             if movement_comp is None or position_comp is None:

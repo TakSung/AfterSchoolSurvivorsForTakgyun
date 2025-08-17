@@ -83,25 +83,21 @@ class CameraSystem(System):
         """
         return [CameraComponent]
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Update camera positions and manage viewport.
 
         Args:
-            entity_manager: Entity manager for accessing entities and
-                          components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
             return
 
-        # 카메라 엔티티들을 필터링
-        camera_entities = self.filter_entities(entity_manager)
+        # 카메라 엔티티들을 필터링 (Manager 패턴 사용)
+        camera_entities = self.filter_required_entities()
 
         for camera_entity in camera_entities:
-            camera_comp = entity_manager.get_component(
+            camera_comp = self._entity_manager.get_component(
                 camera_entity, CameraComponent
             )
             if camera_comp is None:
@@ -110,10 +106,9 @@ class CameraSystem(System):
             # 추적 대상이 있는 경우 카메라 업데이트
             if camera_comp.follow_target is not None:
                 # 맵 컴포넌트가 있으면 경계 정보 동기화
-                self._sync_map_boundaries(entity_manager, camera_comp)
+                self._sync_map_boundaries(camera_comp)
 
                 self._update_camera_for_target(
-                    entity_manager,
                     camera_comp,
                     camera_comp.follow_target,
                     delta_time,
@@ -125,7 +120,6 @@ class CameraSystem(System):
 
     def _update_camera_for_target(
         self,
-        entity_manager: 'EntityManager',
         camera_comp: CameraComponent,
         target: 'Entity',
         delta_time: float,
@@ -134,14 +128,13 @@ class CameraSystem(System):
         Update camera position to follow a target entity.
 
         Args:
-            entity_manager: Entity manager for component access
             camera_comp: Camera component to update
             target: Target entity to follow
             delta_time: Time elapsed since last update
         """
         # 타겟의 위치 컴포넌트 가져오기 (위치 컴포넌트가 있다고 가정)
         # 실제 구현에서는 PositionComponent 등을 확인해야 함
-        target_position = self._get_entity_position(entity_manager, target)
+        target_position = self._get_entity_position(target)
         if target_position is None:
             return
 
@@ -235,13 +228,12 @@ class CameraSystem(System):
             self._coordinate_manager.get_transformer().invalidate_cache()
 
     def _get_entity_position(
-        self, entity_manager: 'EntityManager', entity: 'Entity'
+        self, entity: 'Entity'
     ) -> tuple[float, float] | None:
         """
         Get the position of an entity.
 
         Args:
-            entity_manager: Entity manager for component access
             entity: Entity to get position from
 
         Returns:
@@ -252,7 +244,7 @@ class CameraSystem(System):
         # - 요구사항: PositionComponent의 x, y 좌표 활용
         # - 히스토리: 더미 구현에서 실제 컴포넌트 연동으로 변경
 
-        position_comp = entity_manager.get_component(entity, PositionComponent)
+        position_comp = self._entity_manager.get_component(entity, PositionComponent)
         if position_comp is None:
             return None
         return (position_comp.x, position_comp.y)
@@ -291,25 +283,22 @@ class CameraSystem(System):
         self._mouse_position = (mouse_x, mouse_y)
 
     def get_camera_offset(
-        self, entity_manager: 'EntityManager'
+        self
     ) -> tuple[float, float] | None:
         """
         Get the current camera world offset.
 
-        Args:
-            entity_manager: Entity manager for accessing camera entities
-
         Returns:
             Current world offset as (x, y) tuple, or None if no camera found
         """
-        camera_entities = self.filter_entities(entity_manager)
+        camera_entities = self.filter_required_entities()
 
         if not camera_entities:
             return None
 
         # 첫 번째 카메라 엔티티의 오프셋 반환
         camera_entity = camera_entities[0]
-        camera_comp = entity_manager.get_component(
+        camera_comp = self._entity_manager.get_component(
             camera_entity, CameraComponent
         )
 
@@ -319,13 +308,12 @@ class CameraSystem(System):
         return camera_comp.world_offset
 
     def _sync_map_boundaries(
-        self, entity_manager: 'EntityManager', camera_comp: CameraComponent
+        self, camera_comp: CameraComponent
     ) -> None:
         """
         Synchronize camera boundaries with map component if available.
 
         Args:
-            entity_manager: Entity manager for component access
             camera_comp: Camera component to update boundaries for
         """
         # AI-NOTE : 2025-08-11 맵과 카메라 경계 동기화 시스템
@@ -335,8 +323,8 @@ class CameraSystem(System):
 
         # 맵 엔티티 찾기
         map_entities = []
-        for entity in entity_manager.get_all_entities():
-            if entity_manager.has_component(entity, MapComponent):
+        for entity in self._entity_manager.get_all_entities():
+            if self._entity_manager.has_component(entity, MapComponent):
                 map_entities.append(entity)
 
         if not map_entities:
@@ -344,7 +332,7 @@ class CameraSystem(System):
 
         # 첫 번째 맵 컴포넌트 사용
         map_entity = map_entities[0]
-        map_comp = entity_manager.get_component(map_entity, MapComponent)
+        map_comp = self._entity_manager.get_component(map_entity, MapComponent)
         if map_comp is None:
             return
 
