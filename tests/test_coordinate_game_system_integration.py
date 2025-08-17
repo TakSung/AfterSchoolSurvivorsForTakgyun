@@ -677,13 +677,13 @@ class TestCoordinateGameSystemIntegration:
                 env['systems']['projectile'].set_entity_manager(entity_manager)
             env['systems']['projectile'].update(delta_time)
 
-                # 만료된 투사체 제거 (수명 확인)
-                active_projectiles = []
-                for proj_entity in entities['projectiles']:
-                    proj_comp = component_registry.get_component(proj_entity, ProjectileComponent)
-                    if proj_comp and proj_comp.lifetime > 0:
-                        active_projectiles.append(proj_entity)
-                entities['projectiles'] = active_projectiles
+            # 만료된 투사체 제거 (수명 확인)
+            active_projectiles = []
+            for proj_entity in entities['projectiles']:
+                proj_comp = component_registry.get_component(proj_entity, ProjectileComponent)
+                if proj_comp and proj_comp.lifetime > 0:
+                    active_projectiles.append(proj_entity)
+            entities['projectiles'] = active_projectiles
 
             # 좌표 변환 정확성 데이터 수집
             coordinate_accuracy_data = []

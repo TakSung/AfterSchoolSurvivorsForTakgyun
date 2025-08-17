@@ -133,15 +133,15 @@ class EntityRenderSystem(System):
         # - 요구사항: Y값이 클수록 앞쪽에 렌더링 (화면 하단이 앞쪽)
         # - 히스토리: 무작위 렌더링에서 깊이 기반 정렬로 개선
         sorted_entities = self._sort_entities_by_depth(
-            entity_manager, renderable_entities
+            self._entity_manager, renderable_entities
         )
 
         # 플레이어와 일반 엔티티 분리 처리
         for entity in sorted_entities:
-            if self._is_player_entity(entity_manager, entity):
-                self._render_player(entity_manager, entity)
+            if self._is_player_entity(self._entity_manager, entity):
+                self._render_player(self._entity_manager, entity)
             else:
-                self._render_entity(entity_manager, entity)
+                self._render_entity(self._entity_manager, entity)
 
     def _sort_entities_by_depth(
         self,
@@ -203,7 +203,7 @@ class EntityRenderSystem(System):
             entity_manager: Entity manager for component access
             player_entity: Player entity to render
         """
-        render_comp = entity_manager.get_component(
+        render_comp = self._entity_manager.get_component(
             player_entity, RenderComponent
         )
         if not render_comp or not render_comp.visible:
@@ -220,7 +220,7 @@ class EntityRenderSystem(System):
         )
 
         # 회전 처리
-        rotation_comp = entity_manager.get_component(
+        rotation_comp = self._entity_manager.get_component(
             player_entity, RotationComponent
         )
         surface_to_render = self._get_rotated_surface(

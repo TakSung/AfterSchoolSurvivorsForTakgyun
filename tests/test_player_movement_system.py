@@ -8,8 +8,10 @@ Tests for PlayerMovementSystem class.
 import math
 from unittest.mock import Mock, patch
 
+from src.components.player_component import PlayerComponent
 from src.components.player_movement_component import PlayerMovementComponent
 from src.components.position_component import PositionComponent
+from src.components.rotation_component import RotationComponent
 from src.core.entity_manager import EntityManager
 from src.systems.player_movement_system import PlayerMovementSystem
 
@@ -138,12 +140,27 @@ class TestPlayerMovementSystem:
         기대되는 안정성: 마우스 위치 정보 정확한 저장
         """
         # Given - Mock 설정
-        mock_coord_manager.return_value.get_transformer.return_value = Mock()
+        from src.utils.vector2 import Vector2
+        mock_transformer = Mock()
+        mock_transformer.world_to_screen.return_value = Vector2(400, 300)  # 화면 중앙
+        mock_coord_manager.return_value.get_transformer.return_value = mock_transformer
         mock_mouse_pos.return_value = (250, 180)
 
         movement_system = PlayerMovementSystem()
         movement_system.initialize()
         entity_manager = EntityManager()
+
+        # 마우스 위치 테스트를 위한 최소 플레이어 엔티티 생성
+        player_entity = entity_manager.create_entity()
+        player_comp = PlayerComponent()
+        position_comp = PositionComponent(0.0, 0.0)
+        movement_comp = PlayerMovementComponent(world_position=(0.0, 0.0))
+        rotation_comp = RotationComponent()
+        
+        entity_manager.add_component(player_entity, player_comp)
+        entity_manager.add_component(player_entity, position_comp)
+        entity_manager.add_component(player_entity, movement_comp)
+        entity_manager.add_component(player_entity, rotation_comp)
 
         # When - 업데이트 실행 (마우스 위치 업데이트 포함)
         movement_system.set_entity_manager(entity_manager)
@@ -398,13 +415,28 @@ class TestPlayerMovementSystem:
         """
         # Given - Mock 설정 (pygame.error 발생)
         import pygame
+        from src.utils.vector2 import Vector2
 
-        mock_coord_manager.return_value.get_transformer.return_value = Mock()
+        mock_transformer = Mock()
+        mock_transformer.world_to_screen.return_value = Vector2(400, 300)  # 화면 중앙
+        mock_coord_manager.return_value.get_transformer.return_value = mock_transformer
         mock_mouse_pos.side_effect = pygame.error('pygame not initialized')
 
         movement_system = PlayerMovementSystem()
         movement_system.initialize()
         entity_manager = EntityManager()
+
+        # pygame 오류 테스트를 위한 최소 플레이어 엔티티 생성
+        player_entity = entity_manager.create_entity()
+        player_comp = PlayerComponent()
+        position_comp = PositionComponent(0.0, 0.0)
+        movement_comp = PlayerMovementComponent(world_position=(0.0, 0.0))
+        rotation_comp = RotationComponent()
+        
+        entity_manager.add_component(player_entity, player_comp)
+        entity_manager.add_component(player_entity, position_comp)
+        entity_manager.add_component(player_entity, movement_comp)
+        entity_manager.add_component(player_entity, rotation_comp)
 
         # When - 업데이트 실행 (pygame 오류 발생)
         movement_system.set_entity_manager(entity_manager)

@@ -136,7 +136,7 @@ class PlayerMovementSystem(System):
             # RotationComponent 업데이트 (마우스 방향으로)
             if rotation_comp is not None:
                 self._update_player_rotation(
-                    player_entity, movement_comp, rotation_comp, entity_manager
+                    player_entity, movement_comp, rotation_comp, self._entity_manager
                 )
 
     def _update_mouse_position(self) -> None:
