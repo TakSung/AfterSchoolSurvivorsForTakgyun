@@ -28,8 +28,7 @@ class TestEnemySpawnerSystem:
     def setup_method(self) -> None:
         """각 테스트 메서드 전에 실행되는 설정"""
         self.component_registry = ComponentRegistry()
-        self.entity_manager = EntityManager()
-        self.entity_manager.component_registry = self.component_registry
+        self.entity_manager = EntityManager(self.component_registry)
         self.spawner_system = EnemySpawnerSystem(priority=5)
 
         self.mock_coordinate_manager = MagicMock(spec=CoordinateManager)
@@ -38,11 +37,6 @@ class TestEnemySpawnerSystem:
         self.mock_coordinate_manager.screen_to_world.return_value = Vector2(
             100, 100
         )
-        self.mock_difficulty_manager.get_spawn_interval_multiplier.return_value = (
-            1.0
-        )
-        self.mock_difficulty_manager.get_health_multiplier.return_value = 1.0
-        self.mock_difficulty_manager.get_speed_multiplier.return_value = 1.0
 
         patch_coord = patch(
             'src.systems.enemy_spawner_system.CoordinateManager.get_instance',
@@ -56,6 +50,7 @@ class TestEnemySpawnerSystem:
         self.patcher_coord = patch_coord.start()
         self.patcher_diff = patch_diff.start()
 
+        self.spawner_system.set_entity_manager(self.entity_manager)
         self.spawner_system.initialize()
 
     def teardown_method(self) -> None:

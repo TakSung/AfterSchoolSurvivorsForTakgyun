@@ -31,6 +31,7 @@ class TestCameraCoordinateIntegration:
         self.camera_system = CameraSystem(
             priority=10, event_bus=self.event_bus
         )
+        self.camera_system.set_entity_manager(self.entity_manager)
 
         # 좌표 변환기 설정
         self.coordinate_manager = CoordinateManager.get_instance()
@@ -88,7 +89,7 @@ class TestCameraCoordinateIntegration:
         player_pos.y = 150.0  # 100픽셀 아래로 이동
 
         # 카메라 시스템 업데이트 실행
-        self.camera_system.update(self.entity_manager, 0.016)  # 60fps 기준
+        self.camera_system.update(0.016)  # 60fps 기준
 
         # Then - 좌표 변환기의 카메라 오프셋이 올바르게 업데이트되었는지 확인
         updated_offset = self.transformer._camera_offset
@@ -130,7 +131,7 @@ class TestCameraCoordinateIntegration:
         self.camera_system.initialize()
 
         # When - 카메라 시스템 업데이트로 오프셋 설정
-        self.camera_system.update(self.entity_manager, 0.016)
+        self.camera_system.update(0.016)
 
         # 월드 좌표 (0, 0)을 스크린 좌표로 변환
         world_origin = Vector2(0.0, 0.0)
@@ -163,6 +164,7 @@ class TestCameraCoordinateIntegration:
         """
         # Given - 이벤트 버스 없는 카메라 시스템 설정
         camera_system_no_events = CameraSystem(priority=10, event_bus=None)
+        camera_system_no_events.set_entity_manager(self.entity_manager)
 
         player_entity = self.entity_manager.create_entity()
         self.entity_manager.add_component(player_entity, PlayerComponent())
@@ -188,7 +190,7 @@ class TestCameraCoordinateIntegration:
         )
 
         # When - 이벤트 버스 없는 상태에서 카메라 시스템 업데이트
-        camera_system_no_events.update(self.entity_manager, 0.016)
+        camera_system_no_events.update(0.016)
 
         # Then - 직접 업데이트를 통해 좌표 변환기가 업데이트되었는지 확인
         updated_offset = self.transformer._camera_offset
@@ -234,7 +236,7 @@ class TestCameraCoordinateIntegration:
             # When - 미세한 이동 (임계값 1.0 이하)
             player_pos_comp.x = 100.5  # 0.5픽셀 이동 (임계값 이하)
             player_pos_comp.y = 100.3  # 0.3픽셀 이동 (임계값 이하)
-            self.camera_system.update(self.entity_manager, 0.016)
+            self.camera_system.update(0.016)
 
             # Then - 캐시 무효화가 호출되었는지 확인 (미세한 이동이므로 최적화에 따라 다를 수 있음)
             first_call_count = mock_invalidate.call_count
@@ -246,7 +248,7 @@ class TestCameraCoordinateIntegration:
             player_pos_comp.y = (
                 102.0  # 1.7픽셀 추가 이동 (총 2.0픽셀, 임계값 초과)
             )
-            self.camera_system.update(self.entity_manager, 0.016)
+            self.camera_system.update(0.016)
 
             # Then - 큰 이동 시에는 반드시 캐시 무효화가 호출되어야 함
             second_call_count = mock_invalidate.call_count
@@ -294,7 +296,7 @@ class TestCameraCoordinateIntegration:
             player_pos_comp.y = target_y
 
             # 카메라 시스템 업데이트
-            self.camera_system.update(self.entity_manager, 0.016)
+            self.camera_system.update(0.016)
 
             # Then - 각 단계에서 좌표 변환기가 올바르게 업데이트되었는지 확인
             current_offset = self.transformer._camera_offset
@@ -360,7 +362,7 @@ class TestCameraCoordinateIntegration:
         self.camera_system.initialize()
 
         # When - 경계를 초과하는 플레이어 위치에서 카메라 업데이트
-        self.camera_system.update(self.entity_manager, 0.016)
+        self.camera_system.update(0.016)
 
         # Then - 카메라 오프셋이 경계 내로 제한되었는지 확인
         final_offset = camera_comp.world_offset

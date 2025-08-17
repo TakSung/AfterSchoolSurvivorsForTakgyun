@@ -335,7 +335,6 @@ class PlayerMovementSystem(System):
         player_entity,
         movement_comp: PlayerMovementComponent,
         rotation_comp: RotationComponent,
-        entity_manager: 'EntityManager',
     ) -> None:
         """
         Update player rotation to face mouse direction.
@@ -344,7 +343,6 @@ class PlayerMovementSystem(System):
             player_entity: Player entity
             movement_comp: Player movement component
             rotation_comp: Player rotation component
-            entity_manager: Entity manager
         """
         if not self._cached_mouse_pos:
             return

@@ -9,6 +9,7 @@ import random
 from typing import TYPE_CHECKING
 
 from ..core.coordinate_manager import CoordinateManager
+from ..core.difficulty_manager import DifficultyManager
 from ..core.interfaces.i_spawner import ISpawner
 from ..core.system import System
 from ..dto.spawn_result import SpawnResult
@@ -86,14 +87,11 @@ class EnemySpawnerSystem(System, ISpawner):
         """
         return []
 
-    def update(
-        self, entity_manager: 'EntityManager', delta_time: float
-    ) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Update enemy spawner system logic.
 
         Args:
-            entity_manager: Entity manager to create new enemies
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
@@ -112,12 +110,12 @@ class EnemySpawnerSystem(System, ISpawner):
         # 스폰 실행 - EntityManager를 통해 위임
         if self.can_spawn():
             # 적 수 체크를 EntityManager에 위임
-            current_enemy_count = entity_manager.get_enemy_count()
+            current_enemy_count = self._entity_manager.get_enemy_count()
             if current_enemy_count < self._max_enemies:
                 spawn_result = self.spawn()
                 if spawn_result:
                     # 엔티티 생성을 EntityManager에 위임
-                    entity_manager.create_enemy_entity(spawn_result)
+                    self._entity_manager.create_enemy_entity(spawn_result)
                     self._reset_spawn_timer()
 
     # ISpawner interface implementation

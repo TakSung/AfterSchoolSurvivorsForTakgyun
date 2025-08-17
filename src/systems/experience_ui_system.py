@@ -40,26 +40,23 @@ class ExperienceUISystem(System):
         """Initialize the system."""
         super().initialize()
 
-    def update(self, entity_manager: EntityManager, delta_time: float) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Update and render experience UI for all applicable entities.
 
         Args:
-            entity_manager: The entity manager containing all entities
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
             return
 
-        self._entity_manager = entity_manager
-
         # Get all entities with both experience and UI components
-        entities_with_ui = entity_manager.get_entities_with_component(
+        entities_with_ui = self._entity_manager.get_entities_with_component(
             ExperienceUIComponent
         )
 
         for entity, ui_comp in entities_with_ui:
-            exp_comp = entity_manager.get_component(
+            exp_comp = self._entity_manager.get_component(
                 entity, ExperienceComponent
             )
             if exp_comp is None:

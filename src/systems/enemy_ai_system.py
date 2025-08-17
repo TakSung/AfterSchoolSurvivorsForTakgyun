@@ -66,24 +66,23 @@ class EnemyAISystem(System):
         return [EnemyAIComponent, EnemyComponent, PositionComponent]
 
     def update(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update enemy AI system logic.
 
         Args:
-            entity_manager: Entity manager to access entities and components
             delta_time: Time elapsed since last update in seconds
         """
         if not self.enabled:
             return
 
         # 플레이어 엔티티 찾기
-        player_entity = self._find_player(entity_manager)
+        player_entity = self._find_player()
         if not player_entity:
             return  # 플레이어가 없으면 AI 동작 없음
 
-        player_pos = entity_manager.get_component(
+        player_pos = self._entity_manager.get_component(
             player_entity, PositionComponent
         )
         if not player_pos:
@@ -92,20 +91,15 @@ class EnemyAISystem(System):
         player_world_pos = (player_pos.x, player_pos.y)
 
         # 모든 적 AI 엔티티 처리
-        enemy_entities = self.filter_entities(entity_manager)
+        enemy_entities = self.filter_required_entities()
         for enemy in enemy_entities:
             self._process_enemy_ai(
-                enemy, entity_manager, player_world_pos, delta_time
+                enemy, player_world_pos, delta_time
             )
 
-    def _find_player(
-        self, entity_manager: 'EntityManager'
-    ) -> Optional['Entity']:
+    def _find_player(self) -> Optional['Entity']:
         """
         Find the player entity in the game world.
-
-        Args:
-            entity_manager: Entity manager to search entities
 
         Returns:
             Player entity if found, None otherwise.
@@ -115,7 +109,7 @@ class EnemyAISystem(System):
         # - 해결책: PlayerComponent를 가진 엔티티 직접 필터링
         # - 주의사항: 플레이어가 여러 명일 경우 첫 번째만 반환
 
-        player_entities = entity_manager.get_entities_with_components(
+        player_entities = self._entity_manager.get_entities_with_components(
             PlayerComponent, PositionComponent
         )
         return player_entities[0] if player_entities else None
@@ -123,7 +117,6 @@ class EnemyAISystem(System):
     def _process_enemy_ai(
         self,
         enemy_entity: 'Entity',
-        entity_manager: 'EntityManager',
         player_world_pos: tuple[float, float],
         delta_time: float,
     ) -> None:
@@ -132,14 +125,13 @@ class EnemyAISystem(System):
 
         Args:
             enemy_entity: Enemy entity to process
-            entity_manager: Entity manager to access components
             player_world_pos: Player's world position (x, y)
             delta_time: Time elapsed since last update in seconds
         """
-        ai_component = entity_manager.get_component(
+        ai_component = self._entity_manager.get_component(
             enemy_entity, EnemyAIComponent
         )
-        enemy_pos = entity_manager.get_component(
+        enemy_pos = self._entity_manager.get_component(
             enemy_entity, PositionComponent
         )
 
@@ -170,11 +162,11 @@ class EnemyAISystem(System):
         # 현재 상태에 따른 동작 처리
         if ai_component.current_state == AIState.CHASE:
             self._handle_chase_behavior(
-                enemy_entity, entity_manager, player_world_pos, delta_time
+                enemy_entity, player_world_pos, delta_time
             )
         elif ai_component.current_state == AIState.ATTACK:
             self._handle_attack_behavior(
-                enemy_entity, entity_manager, player_world_pos, delta_time
+                enemy_entity, player_world_pos, delta_time
             )
         # IDLE 상태는 특별한 동작 없음 (순찰 로직은 향후 추가 가능)
 
@@ -203,7 +195,6 @@ class EnemyAISystem(System):
     def _handle_chase_behavior(
         self,
         enemy_entity: 'Entity',
-        entity_manager: 'EntityManager',
         player_world_pos: tuple[float, float],
         delta_time: float,
     ) -> None:
@@ -212,7 +203,6 @@ class EnemyAISystem(System):
 
         Args:
             enemy_entity: Enemy entity to move
-            entity_manager: Entity manager to access components
             player_world_pos: Player's world position (x, y)
             delta_time: Time elapsed since last update
         """
@@ -221,10 +211,10 @@ class EnemyAISystem(System):
         # - 요구사항: 월드 좌표 방향 벡터 계산, Vector2 정규화, FPS 독립적 이동
         # - 히스토리: TODO에서 실제 추적 로직으로 구현
 
-        ai_component = entity_manager.get_component(
+        ai_component = self._entity_manager.get_component(
             enemy_entity, EnemyAIComponent
         )
-        enemy_pos = entity_manager.get_component(
+        enemy_pos = self._entity_manager.get_component(
             enemy_entity, PositionComponent
         )
 
@@ -267,7 +257,6 @@ class EnemyAISystem(System):
     def _handle_attack_behavior(
         self,
         enemy_entity: 'Entity',
-        entity_manager: 'EntityManager',
         player_world_pos: tuple[float, float],
         delta_time: float,
     ) -> None:
@@ -276,7 +265,6 @@ class EnemyAISystem(System):
 
         Args:
             enemy_entity: Enemy entity attacking
-            entity_manager: Entity manager to access components
             player_world_pos: Player's world position (x, y)
             delta_time: Time elapsed since last update
         """

@@ -275,26 +275,20 @@ class ProjectileSystem(System):
             self._entity_manager.destroy_entity(entity)
             logging.info(f"Removed expired projectile {entity.entity_id}")
 
-    def get_projectile_count(self, entity_manager: 'EntityManager') -> int:
+    def get_projectile_count(self) -> int:
         """
         Get the current number of active projectiles.
-
-        Args:
-            entity_manager: Entity manager to query entities from
 
         Returns:
             Number of active projectile entities.
         """
         return self._projectile_manager.get_projectile_count()
 
-    def get_projectiles_by_owner(
-        self, entity_manager: 'EntityManager', owner_id: str
-    ) -> list['Entity']:
+    def get_projectiles_by_owner(self, owner_id: str) -> list['Entity']:
         """
         Get all projectiles created by a specific owner.
 
         Args:
-            entity_manager: Entity manager to query entities from
             owner_id: ID of the entity that created the projectiles
 
         Returns:

@@ -296,7 +296,8 @@ class TestEnemyAISystem:
         mock_entity_manager.get_entities_with_components.return_value = [
             player_entity
         ]
-        found_player = enemy_ai_system._find_player(mock_entity_manager)
+        enemy_ai_system.set_entity_manager(mock_entity_manager)
+        found_player = enemy_ai_system._find_player()
         assert found_player == player_entity
 
         # PlayerComponent와 PositionComponent로 필터링 확인
@@ -306,7 +307,7 @@ class TestEnemyAISystem:
 
         # When & Then - 플레이어가 없는 경우
         mock_entity_manager.get_entities_with_components.return_value = []
-        found_player = enemy_ai_system._find_player(mock_entity_manager)
+        found_player = enemy_ai_system._find_player()
         assert found_player is None
 
     def test_AI_상태_전환_로직_정확성_검증_성공_시나리오(
