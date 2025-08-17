@@ -10,6 +10,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .coordinate_manager import CoordinateManager
     from .entity_manager import EntityManager
     from .events.event_bus import EventBus
     from .events.interfaces import IEventSubscriber
@@ -25,11 +26,18 @@ class SystemOrchestrator:
     all systems in the ECS architecture.
     """
 
-    def __init__(self, event_bus: 'EventBus | None' = None) -> None:
+    def __init__(
+        self, 
+        event_bus: 'EventBus | None' = None,
+        entity_manager: 'EntityManager | None' = None,
+        coordinate_manager: 'CoordinateManager | None' = None
+    ) -> None:
         """Initialize the system orchestrator.
 
         Args:
             event_bus: Optional EventBus for system event communication
+            entity_manager: Optional EntityManager for dependency injection
+            coordinate_manager: Optional CoordinateManager for dependency injection
         """
         # OrderedDict to maintain insertion order while allowing efficient
         # lookups
@@ -50,6 +58,10 @@ class SystemOrchestrator:
         # - 요구사항: EventBus를 통한 시스템 이벤트 처리 지원
         # - 히스토리: 직접 호출 방식에서 이벤트 기반 시스템으로 확장
         self._event_bus = event_bus
+        
+        # Manager dependencies for dependency injection
+        self._entity_manager = entity_manager
+        self._coordinate_manager = coordinate_manager
         self._event_subscribers: list[IEventSubscriber] = []
 
     def subscribe(self, subscriber: 'IEventSubscriber') -> None:
@@ -90,6 +102,12 @@ class SystemOrchestrator:
         if priority not in self._priority_map:
             self._priority_map[priority] = []
         self._priority_map[priority].append(system_name)
+
+        # Inject dependencies into the system
+        if hasattr(system, 'set_entity_manager') and self._entity_manager is not None:
+            system.set_entity_manager(self._entity_manager)
+        if hasattr(system, 'set_coordinate_manager') and self._coordinate_manager is not None:
+            system.set_coordinate_manager(self._coordinate_manager)
 
         # Initialize the system
         try:
@@ -238,13 +256,12 @@ class SystemOrchestrator:
         raise NotImplementedError("unsubscribe 구현해주세요.")
 
     def update_systems(
-        self, entity_manager: 'EntityManager', delta_time: float
+        self, delta_time: float
     ) -> None:
         """
         Update all enabled systems in priority order.
 
         Args:
-            entity_manager: The entity manager to pass to systems
             delta_time: Time elapsed since last update in seconds
         """
         import time
@@ -282,7 +299,7 @@ class SystemOrchestrator:
             start_time = time.perf_counter()
 
             try:
-                system.update(entity_manager, delta_time)
+                system.update(delta_time)
             except Exception:
                 # AI-NOTE: Intentionally continue after system update failures
                 # to prevent one broken system from stopping the entire
