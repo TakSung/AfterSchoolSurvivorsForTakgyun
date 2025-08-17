@@ -64,7 +64,8 @@ class TestExperienceUIIntegration:
         self.entity_manager.add_component(player_entity, player_comp)
 
         # When - UI 시스템 업데이트 (렌더링 수행)
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
         
         # Then - 예외 없이 렌더링 완료
         assert self.ui_system._entity_manager is self.entity_manager
@@ -125,7 +126,8 @@ class TestExperienceUIIntegration:
         self.entity_manager.add_component(entity, ui_comp)
 
         # When - 첫 번째 업데이트 (레벨업 감지)
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
         
         # Then - 애니메이션 시작 확인
         assert ui_comp.is_flashing is True
@@ -139,7 +141,7 @@ class TestExperienceUIIntegration:
 
         # When - 시간 경과 시뮬레이션
         for _ in range(10):  # 여러 프레임 시뮬레이션
-            self.ui_system.update(self.entity_manager, 0.1)
+            self.ui_system.update(0.1)
             
         # Then - 애니메이션 종료 확인 (충분한 시간이 지났으므로)
         # 10 * 0.1 = 1초 경과했으므로 1초 애니메이션은 종료되어야 함
@@ -175,7 +177,8 @@ class TestExperienceUIIntegration:
             entities.append(entity)
 
         # When - 모든 엔티티 UI 렌더링
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
         
         # Then - 모든 엔티티가 처리되었는지 확인
         ui_entities = self.entity_manager.get_entities_with_component(
@@ -207,7 +210,8 @@ class TestExperienceUIIntegration:
         self.entity_manager.add_component(entity, ui_comp)
 
         # When - 첫 번째 렌더링
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
         original_position = ui_comp.get_bar_position()
         
         # When - UI 설정 동적 변경
@@ -219,7 +223,8 @@ class TestExperienceUIIntegration:
         )
         
         # When - 변경 후 렌더링
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
         
         # Then - 설정 변경 확인
         new_position = ui_comp.get_bar_position()

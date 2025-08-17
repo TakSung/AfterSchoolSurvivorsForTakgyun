@@ -170,6 +170,7 @@ class TestEventType:
             EventType.PROJECTILE_HIT,
             EventType.PLAYER_DAMAGED,
             EventType.ENEMY_SPAWNED,
+            EventType.PROJECTILE_CREATED,
         ]
         assert len(combat_events) == len(expected_combat), (
             '전투 이벤트 개수가 일치해야 함'

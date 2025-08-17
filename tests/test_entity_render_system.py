@@ -237,6 +237,7 @@ class TestEntityRenderSystem:
         entities.append(back_entity)
 
         # When - 깊이 정렬 수행
+        self.render_system.set_entity_manager(self.entity_manager)
         sorted_entities = self.render_system._sort_entities_by_depth(
             self.entity_manager, entities
         )
