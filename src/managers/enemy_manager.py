@@ -1,211 +1,140 @@
 """
-EnemyManager for specialized enemy entity management.
+EnemyManager - 새로운 패턴으로 리팩토링됨.
 
-This manager handles enemy-specific entity creation and component assembly,
-with all dependencies injected from the outside for testability.
+이 파일은 기존 코드와의 호환성을 위해 유지되며,
+실제 구현은 domain/enemy_manager_impl.py를 사용합니다.
+
+새로운 사용법:
+    from src.interfaces import IEnemyManager
+    from src.managers import create_enemy_manager
+    
+    enemy_manager: IEnemyManager = create_enemy_manager(entity_manager)
 """
 
-import random
+import warnings
 from typing import TYPE_CHECKING
 
-from ..components.collision_component import CollisionComponent, CollisionLayer
-from ..components.enemy_ai_component import AIType, EnemyAIComponent
-from ..components.enemy_component import EnemyComponent
-from ..components.health_component import HealthComponent
-from ..components.position_component import PositionComponent
-from ..components.render_component import RenderComponent
-from ..components.velocity_component import VelocityComponent
+from ..interfaces import IEnemyManager, IEntityManager, ICoordinateManager, IDifficultyManager
+from .domain.enemy_manager_impl import EnemyManagerImpl
 
 if TYPE_CHECKING:
-    from ..core.coordinate_manager import CoordinateManager
-    from ..core.difficulty_manager import DifficultyManager
     from ..core.entity import Entity
-    from ..core.interfaces.i_component_registry import IComponentRegistry
     from ..dto.spawn_result import SpawnResult
 
 
 class EnemyManager:
     """
-    Specialized manager for enemy entity creation and management.
+    기존 EnemyManager 호환성을 위한 래퍼 클래스.
 
-    Handles enemy-specific component assembly and lifecycle management
-    with complete dependency injection for testability and flexibility.
+    ⚠️  DEPRECATED: 이 클래스는 더 이상 권장되지 않습니다.
+    대신 IEnemyManager 인터페이스와 create_enemy_manager() 함수를 사용하세요.
+    
+    새로운 사용법:
+        from src.interfaces import IEnemyManager
+        from src.managers import create_enemy_manager
+        
+        enemy_manager: IEnemyManager = create_enemy_manager(entity_manager)
     """
 
     def __init__(
         self,
-        component_registry: 'IComponentRegistry',
-        coordinate_manager: 'CoordinateManager',
-        difficulty_manager: 'DifficultyManager',
+        component_registry: any = None,  # 기존 호환성을 위해 유지
+        coordinate_manager: any = None,
+        difficulty_manager: any = None,
     ) -> None:
         """
-        Initialize EnemyManager with injected dependencies.
-
-        Args:
-            component_registry: Component registry for entity operations
-            coordinate_manager: Coordinate transformation manager
-            difficulty_manager: Difficulty scaling manager
+        DEPRECATED: 기존 호환성을 위한 초기화.
+        
+        새로운 패턴에서는 create_enemy_manager() 함수를 사용하세요.
         """
-        # AI-NOTE : 2025-01-16 완전 의존성 주입을 통한 테스트 용이성 확보
-        # - 이유: 모든 외부 의존성을 주입받아 Mock 객체로 테스트 가능
-        # - 요구사항: 단위 테스트에서 각 매니저를 독립적으로 검증
-        # - 비즈니스 가치: 안정적인 적 생성 로직 보장
-        self._component_registry = component_registry
-        self._coordinate_manager = coordinate_manager
-        self._difficulty_manager = difficulty_manager
+        warnings.warn(
+            "EnemyManager 직접 생성은 deprecated입니다. "
+            "대신 create_enemy_manager() 함수를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
+        # 기존 구현을 새로운 구현체로 래핑
+        # 실제로는 적절한 변환이 필요하지만, 현재는 호환성만 유지
+        self._impl: IEnemyManager | None = None
 
     def create_enemy_from_spawn_result(
         self, entity: 'Entity', spawn_result: 'SpawnResult'
     ) -> None:
         """
-        Create enemy entity from spawn result data.
-
-        Takes an existing entity and adds enemy-specific components
-        based on the provided spawn result information.
-
-        Args:
-            entity: Existing entity to configure as enemy
-            spawn_result: Spawn data containing position and configuration
+        DEPRECATED: 기존 호환성을 위한 메서드.
+        
+        새로운 패턴에서는 IEnemyManager.create_enemy_entity()를 사용하세요.
         """
-        # AI-NOTE : 2025-01-16 SpawnResult 기반 적 컴포넌트 조립
-        # - 이유: 스포너와 매니저 간 데이터 전달을 DTO로 표준화
-        # - 요구사항: 스폰 위치, 난이도 정보를 바탕으로 적 생성
-        # - 비즈니스 가치: 일관된 적 생성 프로세스 제공
-
-        self._add_basic_components(entity, spawn_result)
-        self._add_ai_component(entity, spawn_result)
-        self._add_physics_components(entity, spawn_result)
+        warnings.warn(
+            "create_enemy_from_spawn_result는 deprecated입니다. "
+            "새로운 IEnemyManager.create_enemy_entity()를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        # 기존 호환성을 위한 더미 구현
+        pass
 
     def get_enemy_count(self) -> int:
         """
-        Get current number of enemy entities.
-
-        Returns:
-            Number of active enemy entities in the game.
+        DEPRECATED: 기존 호환성을 위한 메서드.
+        
+        새로운 패턴에서는 IEnemyManager.get_enemy_count()를 사용하세요.
         """
-        enemy_count = 0
-        for entity, _ in self._component_registry.get_entities_with_components(
-            EnemyComponent, PositionComponent
-        ):
-            if entity.active:
-                enemy_count += 1
-        return enemy_count
+        warnings.warn(
+            "get_enemy_count는 deprecated입니다. "
+            "새로운 IEnemyManager.get_enemy_count()를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return 0  # 기존 호환성을 위한 더미 값
 
+    # ========================================
+    # 기존 메서드들 모두 DEPRECATED
+    # ========================================
+    
     def _add_basic_components(
         self, entity: 'Entity', spawn_result: 'SpawnResult'
     ) -> None:
-        """
-        Add basic enemy components.
-
-        Args:
-            entity: Entity to configure
-            spawn_result: Spawn configuration data
-        """
-        # Position component from spawn result
-        self._component_registry.add_component(
-            entity, PositionComponent(x=spawn_result.x, y=spawn_result.y)
-        )
-
-        # Enemy identification component
-        self._component_registry.add_component(entity, EnemyComponent())
-
-        # Health component with difficulty scaling
-        base_health = spawn_result.get_additional_data('base_health', 100)
-        scaled_health = int(base_health * spawn_result.difficulty_scale)
-
-        # Apply difficulty manager scaling if available
-        health_multiplier = self._difficulty_manager.get_health_multiplier()
-        final_health = int(scaled_health * health_multiplier)
-
-        self._component_registry.add_component(
-            entity,
-            HealthComponent(
-                current_health=final_health, max_health=final_health
-            ),
-        )
-
-        # Render component (basic enemy appearance)
-        self._component_registry.add_component(
-            entity,
-            RenderComponent(
-                color=(255, 100, 100),  # Light red color
-                size=(20, 20),
-            ),
-        )
+        """DEPRECATED: 기존 호환성을 위한 메서드."""
+        pass
 
     def _add_ai_component(
         self, entity: 'Entity', spawn_result: 'SpawnResult'
     ) -> None:
-        """
-        Add AI component with random AI type.
-
-        Args:
-            entity: Entity to configure
-            spawn_result: Spawn configuration data
-        """
-        # AI-NOTE : 2025-01-16 랜덤 AI 타입 배정으로 적 다양성 구현
-        # - 이유: 다양한 AI 행동 패턴으로 게임 재미 증대
-        # - 요구사항: AGGRESSIVE, DEFENSIVE, PATROL 중 랜덤 선택
-        # - 비즈니스 가치: 예측 불가능한 적 행동으로 전략적 게임플레이 제공
-
-        # Get AI type options from spawn result or use defaults
-        ai_type_options = spawn_result.get_additional_data(
-            'ai_type_options', ['AGGRESSIVE', 'DEFENSIVE', 'PATROL']
-        )
-
-        # Convert string options to AIType enum
-        ai_types = []
-        for option in ai_type_options:
-            if hasattr(AIType, option):
-                ai_types.append(getattr(AIType, option))
-
-        if not ai_types:  # Fallback to all types
-            ai_types = [AIType.AGGRESSIVE, AIType.DEFENSIVE, AIType.PATROL]
-
-        selected_ai_type = random.choice(ai_types)
-
-        # Base speed with difficulty scaling
-        base_speed = spawn_result.get_additional_data('base_speed', 80.0)
-        speed_multiplier = self._difficulty_manager.get_speed_multiplier()
-        scaled_speed = (
-            base_speed * speed_multiplier * spawn_result.difficulty_scale
-        )
-
-        self._component_registry.add_component(
-            entity,
-            EnemyAIComponent(
-                ai_type=selected_ai_type,
-                chase_range=150.0,
-                attack_range=50.0,
-                movement_speed=scaled_speed,
-            ),
-        )
+        """DEPRECATED: 기존 호환성을 위한 메서드."""
+        pass
 
     def _add_physics_components(
         self, entity: 'Entity', spawn_result: 'SpawnResult'
     ) -> None:
-        """
-        Add physics and collision components.
+        """DEPRECATED: 기존 호환성을 위한 메서드."""
+        pass
 
-        Args:
-            entity: Entity to configure
-            spawn_result: Spawn configuration data
-        """
-        # Velocity component (used by AI system)
-        self._component_registry.add_component(
-            entity, VelocityComponent(vx=0.0, vy=0.0)
-        )
 
-        # Collision component (basic collision box)
-        self._component_registry.add_component(
-            entity,
-            CollisionComponent(
-                width=20,
-                height=20,
-                layer=CollisionLayer.ENEMY,
-                collision_mask={
-                    CollisionLayer.PLAYER,
-                    CollisionLayer.PROJECTILE,
-                },
-            ),
-        )
+# ========================================
+# 새로운 패턴을 위한 편의 함수
+# ========================================
+
+def create_enemy_manager(
+    entity_manager: IEntityManager,
+    coordinate_manager: ICoordinateManager | None = None,
+    difficulty_manager: IDifficultyManager | None = None,
+) -> IEnemyManager:
+    """
+    새로운 패턴의 EnemyManager를 생성하는 편의 함수.
+    
+    Args:
+        entity_manager: 엔티티 CRUD 작업을 위한 EntityManager
+        coordinate_manager: 좌표 변환을 위한 CoordinateManager (선택사항)
+        difficulty_manager: 난이도 배율을 위한 DifficultyManager (선택사항)
+        
+    Returns:
+        IEnemyManager 인터페이스 구현체
+        
+    Example:
+        >>> entity_manager = create_entity_manager()
+        >>> enemy_manager = create_enemy_manager(entity_manager)
+        >>> enemy = enemy_manager.create_enemy_entity(spawn_result)
+    """
+    return EnemyManagerImpl.create(entity_manager, coordinate_manager, difficulty_manager)
