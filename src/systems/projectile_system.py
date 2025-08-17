@@ -178,20 +178,17 @@ class ProjectileSystem(System):
 
         # 투사체 물리 업데이트
         for entity in projectile_entities:
-            self._update_projectile(entity, entity_manager, delta_time)
+            self._update_projectile(entity, delta_time)
 
-        # 투사체-적 충돌 검사
-        self._process_projectile_collisions(
-            entity_manager, projectile_entities
-        )
+        # 투사체-적 충뎼 검사
+        self._process_projectile_collisions(projectile_entities)
 
         # 만료된 투사체들 제거
-        self._cleanup_expired_projectiles(entity_manager)
+        self._cleanup_expired_projectiles()
 
     def _update_projectile(
         self,
         entity: 'Entity',
-        entity_manager: 'EntityManager',
         delta_time: float,
     ) -> None:
         """
@@ -199,7 +196,6 @@ class ProjectileSystem(System):
 
         Args:
             entity: Projectile entity to update
-            entity_manager: Entity manager to access components
             delta_time: Time elapsed since last update
         """
         projectile = self._entity_manager.get_component(entity, ProjectileComponent)
@@ -257,14 +253,9 @@ class ProjectileSystem(System):
             # 변환 실패 시 제거하지 않음 (안전한 선택)
             return False
 
-    def _cleanup_expired_projectiles(
-        self, entity_manager: 'EntityManager'
-    ) -> None:
+    def _cleanup_expired_projectiles(self) -> None:
         """
         Remove all expired projectiles from the entity manager.
-
-        Args:
-            entity_manager: Entity manager to remove entities from
         """
         if self._expired_projectiles:
             logging.info(f"Removing {len(self._expired_projectiles)} expired projectiles")
@@ -306,22 +297,17 @@ class ProjectileSystem(System):
 
         return owner_projectiles
 
-    def clear_projectiles_by_owner(
-        self, entity_manager: 'EntityManager', owner_id: str
-    ) -> int:
+    def clear_projectiles_by_owner(self, owner_id: str) -> int:
         """
         Remove all projectiles created by a specific owner.
 
         Args:
-            entity_manager: Entity manager to remove entities from
             owner_id: ID of the entity that created the projectiles
 
         Returns:
             Number of projectiles removed.
         """
-        owner_projectiles = self.get_projectiles_by_owner(
-            entity_manager, owner_id
-        )
+        owner_projectiles = self.get_projectiles_by_owner(owner_id)
         for entity in owner_projectiles:
             self._entity_manager.destroy_entity(entity)
         return len(owner_projectiles)
@@ -338,7 +324,6 @@ class ProjectileSystem(System):
 
     def _process_projectile_collisions(
         self,
-        entity_manager: 'EntityManager',
         projectile_entities: list['Entity'],
     ) -> None:
         """
@@ -361,24 +346,21 @@ class ProjectileSystem(System):
 
         # 모든 충돌 가능한 엔티티들을 함께 검사
         all_entities = projectile_entities + enemy_entities
-        collisions = self._collision_detector.detect_collisions(
-            entity_manager, all_entities
-        )
+        collisions = self._collision_detector.detect_collisions(all_entities)
 
         # 투사체-적 충돌만 필터링하여 처리
         for entity1, entity2 in collisions:
             projectile_entity, enemy_entity = self._identify_collision_pair(
-                entity_manager, entity1, entity2
+                entity1, entity2
             )
 
             if projectile_entity and enemy_entity:
                 self._handle_projectile_enemy_collision(
-                    entity_manager, projectile_entity, enemy_entity
+                    projectile_entity, enemy_entity
                 )
 
     def _identify_collision_pair(
         self,
-        entity_manager: 'EntityManager',
         entity1: 'Entity',
         entity2: 'Entity',
     ) -> tuple['Entity', 'Entity'] | tuple[None, None]:
@@ -386,7 +368,6 @@ class ProjectileSystem(System):
         Identify which entity is projectile and which is enemy.
 
         Args:
-            entity_manager: Entity manager to access components
             entity1: First collision entity
             entity2: Second collision entity
 
@@ -411,7 +392,6 @@ class ProjectileSystem(System):
 
     def _handle_projectile_enemy_collision(
         self,
-        entity_manager: 'EntityManager',
         projectile_entity: 'Entity',
         enemy_entity: 'Entity',
     ) -> None:
@@ -419,7 +399,6 @@ class ProjectileSystem(System):
         Handle collision between a projectile and an enemy.
 
         Args:
-            entity_manager: Entity manager to access components
             projectile_entity: The projectile entity
             enemy_entity: The enemy entity
         """
@@ -451,20 +430,17 @@ class ProjectileSystem(System):
 
         # 적이 죽었는지 확인
         if enemy_health.is_dead():
-            self._handle_enemy_death(entity_manager, enemy_entity)
+            self._handle_enemy_death(enemy_entity)
 
         # 관통하지 않는 투사체는 즉시 제거
         if not projectile.piercing:
             self._expired_projectiles.append(projectile_entity)
 
-    def _handle_enemy_death(
-        self, entity_manager: 'EntityManager', enemy_entity: 'Entity'
-    ) -> None:
+    def _handle_enemy_death(self, enemy_entity: 'Entity') -> None:
         """
         Handle enemy death effects.
 
         Args:
-            entity_manager: Entity manager to access components
             enemy_entity: The enemy entity that died
         """
         # AI-NOTE : 2025-08-16 투사체로 적 처치 시 경험치 시스템 연동
@@ -482,7 +458,7 @@ class ProjectileSystem(System):
             logging.info(f"Published EnemyDeathEvent for enemy {enemy_entity.entity_id}")
 
         # 적 엔티티 제거
-        entity_manager.destroy_entity(enemy_entity)
+        self._entity_manager.destroy_entity(enemy_entity)
         logging.info(f"Enemy {enemy_entity.entity_id} killed by projectile")
 
     def get_collision_count(self) -> int:

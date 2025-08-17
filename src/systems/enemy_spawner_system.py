@@ -18,6 +18,9 @@ from ..utils.vector2 import Vector2
 if TYPE_CHECKING:
     from ..core.entity_manager import EntityManager
 
+from ..components.enemy_component import EnemyComponent
+from ..components.position_component import PositionComponent
+
 
 class EnemySpawnerSystem(System, ISpawner):
     """

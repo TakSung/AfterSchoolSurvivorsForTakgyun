@@ -33,6 +33,8 @@ class TestEnemySpawnerSystem:
 
         self.mock_coordinate_manager = MagicMock(spec=CoordinateManager)
         self.mock_difficulty_manager = MagicMock(spec=DifficultyManager)
+        self.mock_difficulty_manager.get_spawn_interval_multiplier.return_value = 1.0
+        self.mock_difficulty_manager.get_speed_multiplier.return_value = 1.0
 
         self.mock_coordinate_manager.screen_to_world.return_value = Vector2(
             100, 100
@@ -46,9 +48,21 @@ class TestEnemySpawnerSystem:
             'src.systems.enemy_spawner_system.DifficultyManager.get_instance',
             return_value=self.mock_difficulty_manager,
         )
+        
+        # Also patch EntityManager module singleton access
+        patch_coord_em = patch(
+            'src.core.coordinate_manager.CoordinateManager.get_instance',
+            return_value=self.mock_coordinate_manager,
+        )
+        patch_diff_em = patch(
+            'src.core.difficulty_manager.DifficultyManager.get_instance',
+            return_value=self.mock_difficulty_manager,
+        )
 
         self.patcher_coord = patch_coord.start()
         self.patcher_diff = patch_diff.start()
+        self.patcher_coord_em = patch_coord_em.start()
+        self.patcher_diff_em = patch_diff_em.start()
 
         self.spawner_system.set_entity_manager(self.entity_manager)
         self.spawner_system.initialize()
@@ -60,9 +74,9 @@ class TestEnemySpawnerSystem:
     def test_시스템_초기화_및_기본_설정_검증_성공_시나리오(self) -> None:
         """1. 시스템 초기화 및 기본 설정 검증 (성공 시나리오)"""
         spawn_info = self.spawner_system.get_spawn_info()
-        assert spawn_info['base_spawn_interval'] == 2.0
-        assert spawn_info['max_enemies'] == 20
-        assert spawn_info['current_spawn_interval'] == 2.0
+        assert spawn_info['base_spawn_interval'] == '2.0'
+        assert spawn_info['max_enemies'] == '20'
+        assert spawn_info['current_spawn_interval'] == '2.0'
 
     def test_스폰_시간_조건_확인_정확성_검증_성공_시나리오(self) -> None:
         """2. 스폰 시간 조건 확인 정확성 검증 (성공 시나리오)"""
@@ -176,7 +190,8 @@ class TestEnemySpawnerSystem:
         self, mock_choice, mock_uniform, mock_randint
     ) -> None:
         """6. 적 엔티티 생성 및 컴포넌트 구성 검증 (성공 시나리오)"""
-        self.spawner_system.update(self.entity_manager, 3.0)
+        self.spawner_system.set_entity_manager(self.entity_manager)
+        self.spawner_system.update(3.0)
 
         enemies = self.entity_manager.get_entities_with_components(EnemyComponent)
         assert len(enemies) == 1
@@ -189,11 +204,12 @@ class TestEnemySpawnerSystem:
 
     def test_시스템_업데이트_전체_플로우_검증_성공_시나리오(self) -> None:
         """7. 시스템 업데이트 전체 플로우 검증 (성공 시나리오)"""
-        self.spawner_system.update(self.entity_manager, 0.5)
+        self.spawner_system.set_entity_manager(self.entity_manager)
+        self.spawner_system.update(0.5)
         assert self.spawner_system._current_spawn_timer == 0.5
         assert len(self.entity_manager.get_entities_with_components(EnemyComponent)) == 0
 
-        self.spawner_system.update(self.entity_manager, 1.8)
+        self.spawner_system.update(1.8)
         assert self.spawner_system._current_spawn_timer == 0.0
         assert len(self.entity_manager.get_entities_with_components(EnemyComponent)) == 1
 
@@ -202,14 +218,14 @@ class TestEnemySpawnerSystem:
         self.spawner_system.set_spawn_interval(1.5)
         self.spawner_system.set_max_enemies(15)
         spawn_info = self.spawner_system.get_spawn_info()
-        assert spawn_info['base_spawn_interval'] == 1.5
-        assert spawn_info['max_enemies'] == 15
+        assert spawn_info['base_spawn_interval'] == '1.5'
+        assert spawn_info['max_enemies'] == '15'
 
         self.spawner_system.set_spawn_interval(-1.0)
         self.spawner_system.set_max_enemies(0)
         final_spawn_info = self.spawner_system.get_spawn_info()
-        assert final_spawn_info['base_spawn_interval'] == 1.5
-        assert final_spawn_info['max_enemies'] == 15
+        assert final_spawn_info['base_spawn_interval'] == '1.5'
+        assert final_spawn_info['max_enemies'] == '15'
 
     def test_좌표_관리자_없을_때_안전_처리_검증_성공_시나리오(self) -> None:
         """9. 좌표 관리자 없을 때 안전 처리 검증 (성공 시나리오)"""

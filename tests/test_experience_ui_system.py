@@ -124,7 +124,8 @@ class TestExperienceUISystem:
         self.ui_system.initialize()
 
         # When - 시스템 업데이트 (렌더링 수행)
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
 
         # Then - 시스템이 예외 없이 실행되고 엔티티 매니저가 설정됨
         assert self.ui_system._entity_manager is self.entity_manager
@@ -145,7 +146,8 @@ class TestExperienceUISystem:
 
         # When - 시스템 업데이트 시도
         # Then - 예외 없이 안전하게 처리되어야 함
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
 
     def test_레벨업_애니메이션_트리거_및_업데이트_성공_시나리오(self) -> None:
         """6. 레벨업 애니메이션 트리거 및 업데이트 (성공 시나리오)
@@ -166,14 +168,15 @@ class TestExperienceUISystem:
         self.ui_system.initialize()
 
         # When - 시스템 업데이트 (레벨업 감지)
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
 
         # Then - 애니메이션 트리거 확인
         assert ui_comp.is_flashing is True
         assert ui_comp.previous_level == 2  # 새 레벨로 업데이트
 
         # When - 시간 경과 시뮬레이션
-        self.ui_system.update(self.entity_manager, 0.5)
+        self.ui_system.update(0.5)
 
         # Then - 애니메이션 타이머 감소 확인
         assert ui_comp.level_up_flash_timer < 1.0
@@ -236,15 +239,17 @@ class TestExperienceUISystem:
 
         # When - 시스템 비활성화 후 업데이트
         self.ui_system.disable()
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
 
-        # Then - 엔티티 매니저가 설정되지 않음 (렌더링 스킵됨)
-        assert not hasattr(self.ui_system, '_entity_manager') or \
-               self.ui_system._entity_manager is None
+        # Then - 시스템이 비활성화 상태임을 확인 (렌더링 스킵됨)
+        assert not self.ui_system.enabled
+        assert self.ui_system._entity_manager is not None  # 의존성은 주입되어 있음
 
         # When - 시스템 활성화 후 업데이트
         self.ui_system.enable()
-        self.ui_system.update(self.entity_manager, 0.016)
+        self.ui_system.set_entity_manager(self.entity_manager)
+        self.ui_system.update(0.016)
 
         # Then - 정상적으로 처리됨
         assert self.ui_system._entity_manager is self.entity_manager

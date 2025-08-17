@@ -98,8 +98,9 @@ class TestEnemyAIChaseBehavior:
         delta_time = 1.0  # 1초 (계산 편의)
 
         # When - 추적 행동 처리
+        enemy_ai_system.set_entity_manager(mock_entity_manager)
         enemy_ai_system._handle_chase_behavior(
-            enemy_entity, mock_entity_manager, player_world_pos, delta_time
+            enemy_entity, player_world_pos, delta_time
         )
 
         # Then - 예상 방향 벡터 계산
@@ -165,9 +166,9 @@ class TestEnemyAIChaseBehavior:
             initial_pos = (enemy_pos.x, enemy_pos.y)
 
             # When - 추적 행동 처리
+            enemy_ai_system.set_entity_manager(mock_entity_manager)
             enemy_ai_system._handle_chase_behavior(
                 enemy_entity,
-                mock_entity_manager,
                 (player_x, player_y),
                 delta_time,
             )
@@ -222,8 +223,9 @@ class TestEnemyAIChaseBehavior:
             initial_x = enemy_pos.x
 
             # When - 추적 행동 처리
+            enemy_ai_system.set_entity_manager(mock_entity_manager)
             enemy_ai_system._handle_chase_behavior(
-                enemy_entity, mock_entity_manager, player_world_pos, delta_time
+                enemy_entity, player_world_pos, delta_time
             )
 
             # Then - 이동 거리가 delta_time에 비례하는지 확인
@@ -267,8 +269,9 @@ class TestEnemyAIChaseBehavior:
         initial_pos = (enemy_pos.x, enemy_pos.y)
 
         # When - 추적 행동 처리
+        enemy_ai_system.set_entity_manager(mock_entity_manager)
         enemy_ai_system._handle_chase_behavior(
-            enemy_entity, mock_entity_manager, player_world_pos, delta_time
+            enemy_entity, player_world_pos, delta_time
         )
 
         # Then - 위치가 변경되지 않아야 함
@@ -283,8 +286,9 @@ class TestEnemyAIChaseBehavior:
         player_world_pos = (250.0000001, 150.0000001)  # 극미한 차이
 
         # When - 다시 추적 행동 처리
+        enemy_ai_system.set_entity_manager(mock_entity_manager)
         enemy_ai_system._handle_chase_behavior(
-            enemy_entity, mock_entity_manager, player_world_pos, delta_time
+            enemy_entity, player_world_pos, delta_time
         )
 
         # Then - 여전히 이동하지 않아야 함 (1e-6 임계값보다 작음)
@@ -351,8 +355,9 @@ class TestEnemyAIChaseBehavior:
             initial_x = enemy_pos.x
 
             # When - 추적 행동 처리
+            enemy_ai_system.set_entity_manager(mock_entity_manager)
             enemy_ai_system._handle_chase_behavior(
-                enemy_entity, mock_entity_manager, player_world_pos, delta_time
+                enemy_entity, player_world_pos, delta_time
             )
 
             # Then - 각 AI 타입의 속도에 맞는 이동 거리 확인
