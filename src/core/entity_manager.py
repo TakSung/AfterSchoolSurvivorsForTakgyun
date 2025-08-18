@@ -9,11 +9,12 @@ import weakref
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, TypeVar
 
+from ..interfaces import IEntityManager
 from .component import Component
 from .component_registry import ComponentRegistry
 from .entity import Entity
-from .interfaces.i_component_registry import IComponentRegistry
 from .interfaces.entity_manager_interface import IEntityManagerForSystems
+from .interfaces.i_component_registry import IComponentRegistry
 
 if TYPE_CHECKING:
     from ..dto.spawn_result import SpawnResult
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 T = TypeVar('T', bound=Component)
 
 
-class EntityManager(IEntityManagerForSystems):
+class EntityManager(IEntityManagerForSystems, IEntityManager):
     """
     Manages entities and their components in the ECS architecture.
 
@@ -76,6 +77,11 @@ class EntityManager(IEntityManagerForSystems):
 
         # Specialized managers (lazy initialization)
         self._enemy_manager: EnemyManager | None = None
+
+    @classmethod
+    def create(cls, component_registry: IComponentRegistry | None = None) -> 'IEntityManager':
+        """EntityManager 구현체를 생성하는 정적 팩토리 메서드"""
+        return cls(component_registry)
 
     def create_entity(self) -> Entity:
         """
@@ -209,6 +215,19 @@ class EntityManager(IEntityManagerForSystems):
         """
         return self._component_registry.get_component(entity, component_type)
 
+    def get_components(self, entity: Entity, component_type: type[T]) -> list[T]:
+        """
+        같은 타입의 컴포넌트들을 리스트로 반환 (다중 컴포넌트 지원)
+
+        Args:
+            entity: The entity to get components from
+            component_type: The type of components to retrieve
+
+        Returns:
+            List of components of the specified type
+        """
+        return self._component_registry.get_components(entity, component_type)
+
     def has_component(
         self, entity: Entity, component_type: type[Component]
     ) -> bool:
@@ -226,9 +245,34 @@ class EntityManager(IEntityManagerForSystems):
 
     def get_entities_with_component(
         self, component_type: type[T]
+    ) -> list[tuple[Entity, list[T]]]:
+        """
+        컴포넌트와 함께 엔티티들을 반환 (다중 컴포넌트 지원)
+
+        Args:
+            component_type: The type of component to search for.
+
+        Returns:
+            List of (Entity, list[Component]) tuples for active entities that have the component.
+        """
+        entities_with_component = []
+        for (
+            entity,
+            components,
+        ) in self._component_registry.get_entities_with_component(
+            component_type
+        ):
+            # Return all components (multi-component support)
+            if components and entity.active:
+                entities_with_component.append((entity, components))
+
+        return entities_with_component
+
+    def get_entities_with_component_single(
+        self, component_type: type[T]
     ) -> list[tuple[Entity, T]]:
         """
-        Get all active entities that have a specific component.
+        Get all active entities that have a specific component (backward compatibility).
 
         Args:
             component_type: The type of component to search for.

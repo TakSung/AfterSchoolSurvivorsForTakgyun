@@ -2212,7 +2212,7 @@
               "39.1"
             ],
             "details": "src/managers/dto.py에 EntityDTO, EnemyDTO, WeaponDTO 등을 @dataclass와 pydantic 검증으로 구현합니다. 각 DTO는 도메인별 핵심 데이터만 포함하고, from_entity(), to_entity() 변환 메서드를 제공합니다. 타입 힌트를 완전히 적용하여 mypy 검사를 통과하도록 구현합니다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2223,7 +2223,7 @@
               "39.2"
             ],
             "details": "src/managers/implementations.py에 EntityManagerImpl, EnemyManagerImpl, WeaponManagerImpl을 구현합니다. src/managers/factory.py에 create_entity_manager(), create_enemy_manager() 등 정적 팩토리 메서드를 제공하여 클라이언트가 구현체에 직접 의존하지 않도록 합니다. EntityManager의 20개 참조를 분석하여 순수 CRUD 기능만 남기고 도메인 로직은 특화 Manager로 이관합니다.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -2456,7 +2456,7 @@
     ],
     "metadata": {
       "created": "2025-08-07T18:01:58.038Z",
-      "updated": "2025-08-18T16:33:59.028Z",
+      "updated": "2025-08-18T16:43:31.788Z",
       "description": "Tasks for master context"
     }
   }

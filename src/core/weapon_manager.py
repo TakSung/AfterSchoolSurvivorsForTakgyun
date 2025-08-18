@@ -13,13 +13,16 @@ from ..core.events.base_event import BaseEvent
 from ..core.events.event_types import EventType
 from ..core.events.interfaces import IEventSubscriber
 from ..core.events.level_up_event import LevelUpEvent
+from ..interfaces import IWeaponManager
 
 if TYPE_CHECKING:
     from ..core.entity import Entity
     from ..core.entity_manager import EntityManager
+    from ..interfaces import IEntityManager
+    from ..managers.dto import WeaponDTO
 
 
-class WeaponManager(IEventSubscriber):
+class WeaponManager(IEventSubscriber, IWeaponManager):
     """
     Manager for centralized weapon component operations and stat modifications.
 
@@ -30,20 +33,25 @@ class WeaponManager(IEventSubscriber):
     - Event-driven weapon stat updates
     """
 
-    def __init__(self) -> None:
+    def __init__(self, entity_manager: 'IEntityManager') -> None:
         """Initialize the WeaponManager."""
         # AI-NOTE : 2025-08-16 무기 매니저 초기화 - 중앙집중식 무기 관리
         # - 이유: WeaponComponent 접근을 통일하고 레벨업 이벤트 처리
         # - 요구사항: 경험치 획득 시 공격 속도 10% 증가
         # - 히스토리: WeaponSystem에서 분리된 독립적인 관리자 구조
 
-        self._entity_manager: Optional['EntityManager'] = None
+        self._entity_manager: IEntityManager = entity_manager
 
         # 레벨업당 공격 속도 증가율 (10%)
         self._attack_speed_bonus_per_level = 0.1
 
         # 무기 스탯 캐시 (성능 최적화용)
         self._weapon_stat_cache: dict[str, dict[str, float]] = {}
+
+    @classmethod
+    def create(cls, entity_manager: 'IEntityManager') -> 'IWeaponManager':
+        """WeaponManager 구현체를 생성하는 정적 팩토리 메서드"""
+        return cls(entity_manager)
 
     def set_entity_manager(self, entity_manager: 'EntityManager') -> None:
         """
@@ -195,7 +203,7 @@ class WeaponManager(IEventSubscriber):
 
     def get_weapon_component(
         self, entity: 'Entity'
-    ) -> Optional[WeaponComponent]:
+    ) -> WeaponComponent | None:
         """
         Get weapon component for an entity.
 
@@ -209,38 +217,6 @@ class WeaponManager(IEventSubscriber):
             return None
 
         return self._entity_manager.get_component(entity, WeaponComponent)
-
-    def get_effective_attack_speed(self, entity: 'Entity') -> float:
-        """
-        Get the effective attack speed for an entity's weapon.
-
-        Args:
-            entity: Entity to get attack speed for.
-
-        Returns:
-            Effective attack speed considering all bonuses.
-        """
-        weapon_comp = self.get_weapon_component(entity)
-        if not weapon_comp:
-            return 2.0  # 기본값
-
-        return weapon_comp.attack_speed
-
-    def get_effective_damage(self, entity: 'Entity') -> int:
-        """
-        Get the effective damage for an entity's weapon.
-
-        Args:
-            entity: Entity to get damage for.
-
-        Returns:
-            Effective damage considering all bonuses.
-        """
-        weapon_comp = self.get_weapon_component(entity)
-        if not weapon_comp:
-            return 25  # 기본값
-
-        return weapon_comp.get_effective_damage()
 
     def update_weapon_stats(self, entity: 'Entity') -> None:
         """
@@ -261,3 +237,91 @@ class WeaponManager(IEventSubscriber):
         """Clean up manager resources."""
         self._weapon_stat_cache.clear()
         self._entity_manager = None
+
+    # ========================================
+    # IWeaponManager 인터페이스 구현 메서드들
+    # ========================================
+
+    def get_weapon_components(self, entity: 'Entity') -> list[WeaponComponent]:
+        """엔티티의 모든 무기 컴포넌트들을 반환 (다중 무기 지원)"""
+        if not self._entity_manager:
+            return []
+
+        return self._entity_manager.get_components(entity, WeaponComponent)
+
+    def get_primary_weapon(self, entity: 'Entity') -> WeaponComponent | None:
+        """주 무기 컴포넌트 반환"""
+        weapons = self.get_weapon_components(entity)
+        return weapons[0] if weapons else None
+
+    def get_effective_attack_speed(self, entity: 'Entity', weapon_index: int = 0) -> float:
+        """특정 무기의 유효 공격속도 반환"""
+        weapons = self.get_weapon_components(entity)
+        if weapon_index >= len(weapons):
+            return 2.0  # 기본값
+
+        return weapons[weapon_index].attack_speed
+
+    def get_effective_damage(self, entity: 'Entity', weapon_index: int = 0) -> int:
+        """특정 무기의 유효 데미지 반환"""
+        weapons = self.get_weapon_components(entity)
+        if weapon_index >= len(weapons):
+            return 25  # 기본값
+
+        return weapons[weapon_index].get_effective_damage()
+
+    def get_total_dps(self, entity: 'Entity') -> float:
+        """모든 무기의 합계 DPS 계산"""
+        weapons = self.get_weapon_components(entity)
+        total_dps = 0.0
+
+        for weapon in weapons:
+            damage = weapon.get_effective_damage()
+            attack_speed = weapon.attack_speed
+            dps = damage * attack_speed
+            total_dps += dps
+
+        return total_dps
+
+    def entity_to_weapon_dto(self, entity: 'Entity') -> 'WeaponDTO':
+        """엔티티를 WeaponDTO로 변환"""
+        from ..managers.dto import WeaponDTO
+
+        weapons = self.get_weapon_components(entity)
+        if not weapons:
+            raise ValueError(f"Entity {entity.entity_id} has no weapon components")
+
+        weapon_data = []
+        for weapon in weapons:
+            weapon_info = {
+                'weapon_type': weapon.weapon_type.name,
+                'damage': weapon.get_effective_damage(),
+                'attack_speed': weapon.attack_speed,
+                'attack_range': weapon.attack_range
+            }
+            weapon_data.append(weapon_info)
+
+        return WeaponDTO(
+            entity_id=entity.entity_id,
+            weapons=weapon_data,
+            primary_weapon_index=0,
+            total_dps=self.get_total_dps(entity)
+        )
+
+    def weapon_dto_to_entity(self, dto: 'WeaponDTO') -> 'Entity':
+        """WeaponDTO를 기반으로 무기 엔티티를 생성"""
+        from ..components.weapon_component import WeaponType
+
+        entity = self._entity_manager.create_entity()
+
+        for _i, weapon_data in enumerate(dto.weapons):
+            weapon_type = WeaponType[weapon_data['weapon_type']]
+            weapon_component = WeaponComponent(
+                weapon_type=weapon_type,
+                damage=weapon_data['damage'],
+                attack_speed=weapon_data['attack_speed'],
+                attack_range=weapon_data['attack_range']
+            )
+            self._entity_manager.add_component(entity, weapon_component)
+
+        return entity
