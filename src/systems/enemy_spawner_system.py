@@ -3,23 +3,21 @@ EnemySpawnerSystem for managing enemy spawn mechanics.
 
 This system handles time-based enemy spawning at screen edges with
 configurable spawn rates, maximum enemy limits, and difficulty scaling.
+
+리팩토링: 새로운 IEnemyManager 인터페이스를 사용하여 적 생성을 위임합니다.
 """
 
 import random
-from typing import TYPE_CHECKING
 
-from ..core.coordinate_manager import CoordinateManager
-from ..core.difficulty_manager import DifficultyManager
 from ..core.interfaces.i_spawner import ISpawner
 from ..core.system import System
 from ..dto.spawn_result import SpawnResult
+from ..interfaces import ICoordinateManager, IDifficultyManager, IEnemyManager
 from ..utils.vector2 import Vector2
 
-if TYPE_CHECKING:
-    from ..core.entity_manager import EntityManager
+# TYPE_CHECKING 블록 정리됨 - 더 이상 EntityManager import 불필요
 
-from ..components.enemy_component import EnemyComponent
-from ..components.position_component import PositionComponent
+# AI-NOTE : 컴포넌트 import 제거 - IEnemyManager가 처리
 
 
 class EnemySpawnerSystem(System, ISpawner):
@@ -36,19 +34,28 @@ class EnemySpawnerSystem(System, ISpawner):
     - Spawn condition evaluation (timing, limits)
     """
 
-    def __init__(self, priority: int = 5) -> None:
+    def __init__(
+        self,
+        priority: int = 5,
+        enemy_manager: IEnemyManager | None = None,
+        coordinate_manager: ICoordinateManager | None = None,
+        difficulty_manager: IDifficultyManager | None = None,
+    ) -> None:
         """
         Initialize the EnemySpawnerSystem.
 
         Args:
             priority: System execution priority (5 = early in frame)
+            enemy_manager: Enemy management interface (의존성 주입)
+            coordinate_manager: Coordinate transformation interface (의존성 주입)
+            difficulty_manager: Difficulty scaling interface (의존성 주입)
         """
         super().__init__(priority=priority)
 
-        # AI-NOTE : 2025-08-15 적 스포너 시스템 구현
-        # - 이유: 일정 간격으로 적을 생성하여 게임 플레이 지속성 제공
-        # - 요구사항: 화면 가장자리 스폰, 최대 적 수 제한, 시간 기반 간격
-        # - 히스토리: 기본 스포너 시스템에서 난이도 조정 기능 추가 예정
+        # AI-NOTE : 2025-08-17 의존성 주입을 통한 새로운 Manager 패턴 적용
+        # - 이유: IEnemyManager 인터페이스를 통해 적 생성 로직 분리
+        # - 요구사항: 테스트 용이성과 확장성을 위한 인터페이스 기반 설계
+        # - 히스토리: 기존 EntityManager 직접 사용에서 인터페이스 패턴으로 변경
 
         # 스폰 관련 설정
         self._base_spawn_interval: float = 2.0  # 기본 스폰 간격 (초)
@@ -64,22 +71,42 @@ class EnemySpawnerSystem(System, ISpawner):
             30.0  # 난이도 증가 간격 (30초)
         )
 
-        # 좌표 관리자
-        self._coordinate_manager: CoordinateManager | None = None
-
-        # 난이도 관리자
-        self._difficulty_manager: DifficultyManager | None = None
+        # 매니저 인터페이스들 (의존성 주입)
+        self._enemy_manager = enemy_manager
+        self._coordinate_manager = coordinate_manager
+        self._difficulty_manager = difficulty_manager
 
     def initialize(self) -> None:
         """Initialize the enemy spawner system."""
         super().initialize()
 
-        # AI-DEV : 좌표 관리자 지연 초기화
-        # - 문제: 싱글톤 초기화 순서 이슈 방지
-        # - 해결책: 시스템 초기화 시점에 좌표 관리자 설정
-        # - 주의사항: 다른 시스템들과 동일한 패턴 사용
-        self._coordinate_manager = CoordinateManager.get_instance()
-        self._difficulty_manager = DifficultyManager.get_instance()
+        # AI-DEV : 매니저 인터페이스 지연 초기화 (백워드 호환성)
+        # - 이유: 의존성 주입이 없는 경우 기본 구현체 사용
+        # - 해결책: 주입된 매니저가 없으면 기본 싱글톤 인스턴스 사용
+        # - 주의사항: 새로운 코드에서는 생성자 주입을 권장
+
+        if self._coordinate_manager is None:
+            # 기존 호환성을 위한 지연 초기화
+            from ..core.coordinate_manager import CoordinateManager
+
+            self._coordinate_manager = CoordinateManager.get_instance()
+
+        if self._difficulty_manager is None:
+            # 기존 호환성을 위한 지연 초기화
+            from ..core.difficulty_manager import DifficultyManager
+
+            self._difficulty_manager = DifficultyManager.get_instance()
+
+        if self._enemy_manager is None:
+            # 기존 호환성을 위해 기본 구현체 생성 (EntityManager 필요)
+            from ..managers import create_enemy_manager, create_entity_manager
+
+            entity_manager = create_entity_manager()
+            self._enemy_manager = create_enemy_manager(
+                entity_manager,
+                self._coordinate_manager,
+                self._difficulty_manager,
+            )
 
     def get_required_components(self) -> list[type]:
         """
@@ -110,16 +137,17 @@ class EnemySpawnerSystem(System, ISpawner):
         # 스폰 타이머 업데이트
         self._current_spawn_timer += delta_time
 
-        # 스폰 실행 - EntityManager를 통해 위임
+        # 스폰 실행 - IEnemyManager를 통해 위임
         if self.can_spawn():
-            # 적 수 체크를 EntityManager에 위임
-            current_enemy_count = self._entity_manager.get_enemy_count()
-            if current_enemy_count < self._max_enemies:
-                spawn_result = self.spawn()
-                if spawn_result:
-                    # 엔티티 생성을 EntityManager에 위임
-                    self._entity_manager.create_enemy_entity(spawn_result)
-                    self._reset_spawn_timer()
+            # 적 수 체크를 IEnemyManager에 위임
+            if self._enemy_manager:
+                current_enemy_count = self._enemy_manager.get_enemy_count()
+                if current_enemy_count < self._max_enemies:
+                    spawn_result = self.spawn()
+                    if spawn_result:
+                        # 엔티티 생성을 IEnemyManager에 위임
+                        self._enemy_manager.create_enemy_entity(spawn_result)
+                        self._reset_spawn_timer()
 
     # ISpawner interface implementation
     def can_spawn(self) -> bool:
@@ -190,32 +218,6 @@ class EnemySpawnerSystem(System, ISpawner):
             'spawner_type': 'enemy',
         }
 
-    # Legacy methods (can be removed in future versions)
-    def _should_spawn_enemy(self, entity_manager: 'EntityManager') -> bool:
-        """
-        Determine if a new enemy should be spawned.
-
-        Args:
-            entity_manager: Entity manager to check current enemy count
-
-        Returns:
-            True if enemy should be spawned, False otherwise.
-        """
-        # AI-DEV : 스폰 조건 분리를 통한 유닛 테스트 가능성 향상
-        # - 문제: 복합 조건을 하나의 메서드에서 판단하여 테스트 어려움
-        # - 해결책: 시간 조건과 개수 조건을 별도 메서드로 분리
-        # - 주의사항: 각 조건을 독립적으로 테스트 가능하도록 구성
-
-        # 1. 시간 조건 확인
-        if not self._is_spawn_time_ready():
-            return False
-
-        # 2. 최대 적 수 조건 확인
-        if not self._is_enemy_count_within_limit(entity_manager):
-            return False
-
-        return True
-
     def _is_spawn_time_ready(self) -> bool:
         """
         Check if enough time has passed for spawning.
@@ -225,36 +227,6 @@ class EnemySpawnerSystem(System, ISpawner):
         """
         current_spawn_interval = self._get_current_spawn_interval()
         return self._current_spawn_timer >= current_spawn_interval
-
-    def _is_enemy_count_within_limit(
-        self, entity_manager: 'EntityManager'
-    ) -> bool:
-        """
-        Check if current enemy count is below maximum limit.
-
-        Args:
-            entity_manager: Entity manager to count enemies
-
-        Returns:
-            True if enemy count is below limit, False otherwise.
-        """
-        current_enemy_count = self._get_current_enemy_count(entity_manager)
-        return current_enemy_count < self._max_enemies
-
-    def _get_current_enemy_count(self, entity_manager: 'EntityManager') -> int:
-        """
-        Get the current number of enemies in the game.
-
-        Args:
-            entity_manager: Entity manager to search enemies
-
-        Returns:
-            Current number of enemy entities.
-        """
-        enemy_entities = entity_manager.get_entities_with_components(
-            EnemyComponent, PositionComponent
-        )
-        return len(enemy_entities)
 
     def _get_current_spawn_interval(self) -> float:
         """
@@ -269,9 +241,7 @@ class EnemySpawnerSystem(System, ISpawner):
         # - 히스토리: 로컬 난이도 계산에서 중앙 관리 방식으로 변경
 
         if self._difficulty_manager:
-            multiplier = (
-                self._difficulty_manager.get_spawn_interval_multiplier()
-            )
+            multiplier = self._difficulty_manager.get_spawn_rate_multiplier()
             return self._base_spawn_interval * multiplier
         else:
             # 난이도 관리자가 없을 때 기본 로직 (fallback)
@@ -285,22 +255,9 @@ class EnemySpawnerSystem(System, ISpawner):
         """Reset the spawn timer to zero."""
         self._current_spawn_timer = 0.0
 
-    # Legacy method - now handled by EntityManager and EnemyManager
-    def _spawn_enemy(self, entity_manager: 'EntityManager') -> None:
-        """
-        Legacy method - use spawn() and EntityManager.create_enemy_entity() instead.
-
-        This method is deprecated and will be removed in future versions.
-        The new approach separates spawn logic (this class) from entity creation (EnemyManager).
-        """
-        # AI-NOTE : 2025-01-16 리팩토링 - 기존 메서드를 새로운 구조로 위임
-        # - 이유: 스폰 로직과 엔티티 생성 로직의 책임 분리
-        # - 요구사항: 하위 호환성 유지하면서 새로운 구조로 전환
-        # - 히스토리: 기존 _spawn_enemy를 새로운 인터페이스 기반으로 재구현
-
-        spawn_result = self.spawn()
-        if spawn_result:
-            entity_manager.create_enemy_entity(spawn_result)
+    # AI-NOTE : 2025-08-17 레거시 메서드 제거 완료
+    # - 이유: IEnemyManager 인터페이스를 통해 적 생성 로직 완전 분리
+    # - 결과: 더 깔끔하고 테스트 가능한 코드 구조
 
     def _calculate_spawn_position(self) -> tuple[float, float] | None:
         """
