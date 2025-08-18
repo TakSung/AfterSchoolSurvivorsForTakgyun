@@ -9,18 +9,18 @@ import weakref
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, TypeVar
 
-from ..interfaces import IEntityManager
-from .component import Component
-from .component_registry import ComponentRegistry
-from .entity import Entity
-from .interfaces.entity_manager_interface import IEntityManagerForSystems
-from .interfaces.i_component_registry import IComponentRegistry
+from ...core.component import Component
+from ...core.component_registry import ComponentRegistry
+from ...core.entity import Entity
+from ...core.interfaces.entity_manager_interface import IEntityManagerForSystems
+from ...core.interfaces.i_component_registry import IComponentRegistry
+from ...interfaces import IEntityManager
 
 if TYPE_CHECKING:
-    from ..dto.spawn_result import SpawnResult
-    from ..managers.enemy_manager import EnemyManager
-    from .coordinate_manager import CoordinateManager
-    from .difficulty_manager import DifficultyManager
+    from ...core.coordinate_manager import CoordinateManager
+    from ...core.difficulty_manager import DifficultyManager
+    from ...dto.spawn_result import SpawnResult
+    from ...managers.enemy_manager import EnemyManager
 
 T = TypeVar('T', bound=Component)
 
@@ -106,7 +106,7 @@ class EntityManager(IEntityManagerForSystems, IEntityManager):
             return
 
         # 투사체 엔티티 삭제 디버깅
-        from ..components.projectile_component import ProjectileComponent
+        from ...components.projectile_component import ProjectileComponent
 
         if self.has_component(entity, ProjectileComponent):
             import logging
@@ -391,17 +391,17 @@ class EntityManager(IEntityManagerForSystems, IEntityManager):
         # - 주의사항: 싱글톤 매니저들의 초기화 시점 관리
 
         if self._coordinate_manager is None:
-            from .coordinate_manager import CoordinateManager
+            from ...core.coordinate_manager import CoordinateManager
 
             self._coordinate_manager = CoordinateManager.get_instance()
 
         if self._difficulty_manager is None:
-            from .difficulty_manager import DifficultyManager
+            from ...core.difficulty_manager import DifficultyManager
 
             self._difficulty_manager = DifficultyManager.get_instance()
 
         if self._enemy_manager is None:
-            from ..managers.enemy_manager import EnemyManager
+            from ...managers.enemy_manager import EnemyManager
 
             self._enemy_manager = EnemyManager(
                 component_registry=self._component_registry,

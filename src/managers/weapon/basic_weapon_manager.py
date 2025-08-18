@@ -7,19 +7,19 @@ including stat modifications from level-ups and item synergies.
 
 from typing import TYPE_CHECKING, Optional
 
-from ..components.player_component import PlayerComponent
-from ..components.weapon_component import WeaponComponent
-from ..core.events.base_event import BaseEvent
-from ..core.events.event_types import EventType
-from ..core.events.interfaces import IEventSubscriber
-from ..core.events.level_up_event import LevelUpEvent
-from ..interfaces import IWeaponManager
+from ...components.player_component import PlayerComponent
+from ...components.weapon_component import WeaponComponent
+from ...core.events.base_event import BaseEvent
+from ...core.events.event_types import EventType
+from ...core.events.interfaces import IEventSubscriber
+from ...core.events.level_up_event import LevelUpEvent
+from ...interfaces import IWeaponManager
 
 if TYPE_CHECKING:
-    from ..core.entity import Entity
-    from ..core.entity_manager import EntityManager
-    from ..interfaces import IEntityManager
-    from ..managers.dto import WeaponDTO
+    from ...core.entity import Entity
+    from ...core.entity_manager import EntityManager
+    from ...interfaces import IEntityManager
+    from ...managers.dto import WeaponDTO
 
 
 class WeaponManager(IEventSubscriber, IWeaponManager):
@@ -285,7 +285,7 @@ class WeaponManager(IEventSubscriber, IWeaponManager):
 
     def entity_to_weapon_dto(self, entity: 'Entity') -> 'WeaponDTO':
         """엔티티를 WeaponDTO로 변환"""
-        from ..managers.dto import WeaponDTO
+        from ...managers.dto import WeaponDTO
 
         weapons = self.get_weapon_components(entity)
         if not weapons:
@@ -310,7 +310,7 @@ class WeaponManager(IEventSubscriber, IWeaponManager):
 
     def weapon_dto_to_entity(self, dto: 'WeaponDTO') -> 'Entity':
         """WeaponDTO를 기반으로 무기 엔티티를 생성"""
-        from ..components.weapon_component import WeaponType
+        from ...components.weapon_component import WeaponType
 
         entity = self._entity_manager.create_entity()
 

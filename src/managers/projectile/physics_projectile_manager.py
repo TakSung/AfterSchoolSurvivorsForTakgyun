@@ -11,16 +11,16 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from ..interfaces import IProjectileManager
-from .events.base_event import BaseEvent
-from .events.event_types import EventType
-from .events.interfaces import IEventSubscriber
-from .events.projectile_created_event import ProjectileCreatedEvent
+from ...core.events.base_event import BaseEvent
+from ...core.events.event_types import EventType
+from ...core.events.interfaces import IEventSubscriber
+from ...core.events.projectile_created_event import ProjectileCreatedEvent
+from ...interfaces import IProjectileManager
 
 if TYPE_CHECKING:
-    from ..managers.dto import ProjectileDTO
-    from .entity import Entity
-    from .entity_manager import EntityManager
+    from ...core.entity import Entity
+    from ...core.entity_manager import EntityManager
+    from ...managers.dto import ProjectileDTO
 
 logger = logging.getLogger(__name__)
 

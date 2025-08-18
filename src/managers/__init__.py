@@ -14,6 +14,12 @@ from ..interfaces import (
 
 from .enemy_manager import EnemyManager, create_enemy_manager  # 기존 호환성 + 새로운 패턴
 
+# Import implementations
+from .entity.crud_entity_manager import EntityManager as CrudEntityManager
+from .weapon.basic_weapon_manager import WeaponManager as BasicWeaponManager
+from .projectile.physics_projectile_manager import ProjectileManager as PhysicsProjectileManager
+from .enemy.basic_enemy_manager import EnemyManagerImpl as BasicEnemyManager
+
 
 # ========================================
 # Domain Manager 생성 함수들
@@ -21,17 +27,17 @@ from .enemy_manager import EnemyManager, create_enemy_manager  # 기존 호환�
 
 def create_entity_manager() -> IEntityManager:
     """EntityManager 생성 편의 함수"""
-    return IEntityManager.create()
+    return CrudEntityManager.create()
 
 
 def create_weapon_manager(entity_manager: IEntityManager) -> IWeaponManager:
     """WeaponManager 생성 편의 함수"""
-    return IWeaponManager.create(entity_manager)
+    return BasicWeaponManager.create(entity_manager)
 
 
 def create_projectile_manager() -> IProjectileManager:
     """ProjectileManager 생성 편의 함수"""
-    return IProjectileManager.create()
+    return PhysicsProjectileManager.create()
 
 
 # ========================================

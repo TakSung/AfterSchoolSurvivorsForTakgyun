@@ -17,7 +17,7 @@ from ...components.position_component import PositionComponent
 from ...components.render_component import RenderComponent
 from ...components.velocity_component import VelocityComponent
 from ...utils.vector2 import Vector2
-from ..dto import EnemyDTO
+from ...managers.dto import EnemyDTO
 
 if TYPE_CHECKING:
     from ...core.entity import Entity
