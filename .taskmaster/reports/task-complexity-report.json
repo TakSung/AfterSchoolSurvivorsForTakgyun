@@ -1,221 +1,93 @@
 {
 	"meta": {
-		"generatedAt": "2025-08-16T18:27:33.059Z",
-		"tasksAnalyzed": 26,
-		"totalTasks": 43,
-		"analysisCount": 26,
+		"generatedAt": "2025-08-25T05:38:53.269Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 10,
+		"analysisCount": 10,
 		"thresholdScore": 5,
 		"projectName": "Taskmaster",
 		"usedResearch": true
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 7,
-			"taskTitle": "기본 적 AI 및 스포너 시스템",
+			"taskId": 44,
+			"taskTitle": "ECS Foundation Layer 핵심 인터페이스 정의",
 			"complexityScore": 8,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "적 AI의 상태 기반 행동 패턴(순찰/추격/공격)과 시간별 난이도 증가 메커니즘을 포함한 스포너 시스템을 구현합니다. 거리 계산 최적화, JSON 데이터 관리, 팩토리 패턴 적용을 통해 확장 가능한 구조로 설계하세요.",
-			"reasoning": "AI 상태 머신, 스포너 시스템, 난이도 조정, JSON 데이터 관리 등 다양한 복잡한 요소들이 결합된 고난이도 작업입니다. 기존 5개 서브태스크로는 부족하며, 성능 최적화와 테스트 커버리지를 고려하면 6개가 적절합니다."
+			"expansionPrompt": "Entity 순수 식별자 클래스, Component ABC 기본 클래스(validate, serialize, deserialize, copy, shallow_copy, merge_from, diff, is_equal_to 메서드 포함), ComponentRegistry 타입 관리 시스템, SystemOrchestrator 시스템 실행 순서 제어를 각각 별도 서브태스크로 분리하여 구현. Python 3.13+ 네이티브 타입 힌트와 dataclass 기반으로 설계.",
+			"reasoning": "ECS 아키텍처의 핵심 기반이 되는 복합적인 인터페이스 설계로, 추상화 수준이 높고 다양한 메서드 구현이 필요하여 복잡도가 높음. 각 컴포넌트별로 분리하여 점진적 구현이 필요."
 		},
 		{
-			"taskId": 8,
-			"taskTitle": "경험치 및 레벨업 시스템",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Strategy 패턴을 활용한 경험치 계산 시스템과 이벤트 기반 레벨업 처리를 구현합니다. ExperienceCalculationStrategy 인터페이스와 다양한 정책 클래스들을 통해 런타임 전략 교체가 가능한 확장성 있는 구조로 설계하세요.",
-			"reasoning": "이벤트 시스템 연동, Strategy 패턴 적용, UI 렌더링 등이 포함된 중간-고난이도 작업입니다. 기존 4개 서브태스크에 성능 최적화 및 정책 패턴 구현을 추가하여 5개가 적절합니다."
-		},
-		{
-			"taskId": 9,
-			"taskTitle": "JSON 기반 아이템 시스템 및 인벤토리",
-			"complexityScore": 8,
-			"recommendedSubtasks": 6,
-			"expansionPrompt": "Pydantic 기반 타입 안전성을 보장하는 아이템 데이터 관리와 6슬롯 인벤토리, 레벨업 시 아이템 선택 UI를 구현합니다. 이벤트 기반 인벤토리 변경 알림과 효과 중첩 계산의 성능 최적화를 포함하여 구현하세요.",
-			"reasoning": "JSON 데이터 관리, UI 시스템, 이벤트 처리, 효과 계산 등 복합적인 시스템이 필요한 고난이도 작업입니다. 기존 5개 서브태스크에 성능 최적화 서브태스크를 추가하여 6개가 적절합니다."
-		},
-		{
-			"taskId": 10,
-			"taskTitle": "룰 엔진 기반 시너지 시스템",
+			"taskId": 45,
+			"taskTitle": "SharedEventQueue 3-Layer 이벤트 시스템 구현",
 			"complexityScore": 9,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "ISharedEventQueue<T> 제네릭 인터페이스 설계, IEventTunnelManager 터널 관리 시스템, IEventProducer<T>/IEventConsumer<T>/IEventSubscriber<T> 각 인터페이스 구현, SharedEventQueue 스레드 안전성 구현, 불변성 보장 메커니즘, 배치 처리 기능을 각각 서브태스크로 분리하여 구현.",
+			"reasoning": "멀티스레딩, 타입 안전성, 불변성 보장 등 고급 동시성 프로그래밍이 필요한 매우 복잡한 시스템. Producer-Consumer-Subscriber 패턴의 정확한 구현과 성능 최적화가 핵심."
+		},
+		{
+			"taskId": 46,
+			"taskTitle": "핵심 게임 컴포넌트들 ECS 기반 재구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "기존 컴포넌트들을 Component 기반 클래스로 재구현: Position/Render/Velocity 기본 컴포넌트, Player/Enemy/Weapon 게임 로직 컴포넌트, Health/Collision/Camera 상태 컴포넌트, IntEnum 다층 패턴 적용, WeaponType/EnemyType/PlayerStatus/GameState/ItemType Enum 정의를 각각 분리하여 구현.",
+			"reasoning": "10개 컴포넌트와 5개 Enum을 재구현해야 하는 중규모 리팩토링 작업. IntEnum 성능 패턴 적용과 다층 구조 설계가 필요하여 복잡도가 높음."
+		},
+		{
+			"taskId": 47,
+			"taskTitle": "Manager 계층 인터페이스 및 DTO 설계",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "도메인별 Manager 인터페이스 정의 (IEnemyManager/IWeaponManager/IProjectileManager), 인프라 Manager 인터페이스 정의 (ICoordinateManager/IDifficultyManager/IGameStateManager/IConfigurationManager), DTO 클래스들 설계 (EnemyCreateDTO/WeaponCreateDTO/ProjectileCreateDTO), DTO 유효성 검증 및 ECS Component 변환 메서드 구현을 분리하여 진행.",
+			"reasoning": "인터페이스 설계와 DTO 패턴은 비교적 표준적인 구현이지만, 타입 안전성과 ECS 컴포넌트 변환 로직이 필요하여 중간 수준의 복잡도."
+		},
+		{
+			"taskId": 48,
+			"taskTitle": "Strategy Pattern 기반 공격/타겟팅 전략 구현",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "IAttackStrategy와 ITargetingStrategy 인터페이스 정의, 공격 전략 구현 (DirectAttackStrategy/AreaAttackStrategy/HomingAttackStrategy), 타겟팅 전략 구현 (ClosestTargetingStrategy/LowestHealthTargetingStrategy/HighestThreatTargetingStrategy)을 각각 분리하여 구현.",
+			"reasoning": "Strategy 패턴은 잘 정립된 디자인 패턴으로 구현이 비교적 명확함. 순수 함수 기반 계산이 주요 작업이므로 중간 수준의 복잡도."
+		},
+		{
+			"taskId": 49,
+			"taskTitle": "Strategy Pattern 기반 스폰/이동 전략 구현",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "ISpawnStrategy와 IMovementStrategy 인터페이스 정의, 스폰 전략 구현 (RandomSpawnStrategy/WaveSpawnStrategy/CircularSpawnStrategy), 이동 전략 구현 (DirectMovementStrategy/SmoothFollowStrategy/PatrolMovementStrategy)을 각각 분리하여 구현.",
+			"reasoning": "Task 48과 유사한 Strategy 패턴 적용으로 구현 복잡도는 비슷함. 수학적 계산과 위치/벡터 연산이 주요 작업."
+		},
+		{
+			"taskId": 50,
+			"taskTitle": "Domain Manager 구현체 개발",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "EnemyManager 구현체 (엔티티 생성 및 컴포넌트 자동 추가), WeaponManager 구현체 (시너지 계산 및 쿨다운 관리), ProjectileManager 구현체 (물리 업데이트 및 충돌 처리), Manager들의 EntityManager/ComponentRegistry 연동 및 CRUD 기능 통합을 각각 분리하여 구현.",
+			"reasoning": "인터페이스 구현체 작업이지만 ECS 시스템과의 복잡한 연동과 도메인 로직이 포함되어 중간 수준의 복잡도. 각 Manager별 특화된 기능 구현이 필요."
+		},
+		{
+			"taskId": 51,
+			"taskTitle": "Strategy Pattern 적용 게임 시스템 구현",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "IEventAwareSystem 인터페이스 정의, WeaponSystem 구현 (공격 조건 확인 및 Strategy 활용), EnemySystem 구현 (스폰 조건 확인 및 Strategy 활용), ProjectileSystem 구현, 의존성 주입 및 이벤트 Producer 통합을 각각 분리하여 구현.",
+			"reasoning": "Strategy 패턴, 의존성 주입, 이벤트 시스템이 결합된 복합적인 시스템 구현. 각 시스템별 특화된 로직과 이벤트 연동이 필요하여 복잡도가 높음."
+		},
+		{
+			"taskId": 52,
+			"taskTitle": "이벤트 기반 시스템 통합 및 EventTunnelManager 구현",
+			"complexityScore": 8,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "고성능 패턴 매칭 알고리즘과 실시간 시너지 계산이 가능한 룰 엔진을 구현합니다. 60fps 유지를 위한 캐싱 메커니즘, 인덱싱 최적화, 지연 계산 등의 성능 최적화 기법을 적용하여 대량의 아이템과 복잡한 시너지 규칙을 효율적으로 처리하세요.",
-			"reasoning": "룰 엔진 설계, 패턴 매칭 알고리즘, 실시간 계산, 성능 최적화 등이 포함된 최고 난이도 작업입니다. 기존 6개 서브태스크가 적절하며, 각 단계별로 충분한 복잡도를 가지고 있습니다."
+			"expansionPrompt": "EventTunnelManager 구현 (이벤트 타입별 터널 관리), 각 이벤트 타입 정의 (EnemyDeathEvent/WeaponAttackEvent/LevelUpEvent 등), Producer/Consumer/Subscriber 할당 시스템, ExperienceSystem과 UISystem의 이벤트 기반 통신 구현, 이벤트 플로우 end-to-end 검증 시스템을 분리하여 구현.",
+			"reasoning": "전체 시스템을 이벤트 기반으로 통합하는 대규모 아키텍처 작업. 다양한 이벤트 타입과 시스템 간 복잡한 통신 패턴을 구현해야 하여 높은 복잡도."
 		},
 		{
-			"taskId": 11,
-			"taskTitle": "교장선생님 보스 시스템",
-			"complexityScore": 7,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "상태 머신 기반 보스 AI와 미션 시스템, 디버프 관리를 통합한 보스 전투 시스템을 구현합니다. 시각적 경고 시스템과 보상 시스템을 포함하여 완전한 보스 전투 경험을 제공하세요.",
-			"reasoning": "보스 AI, 미션 시스템, 디버프 관리, 보상 시스템 등이 포함된 중간-고난이도 작업입니다. 기존 5개 서브태스크가 각 영역을 잘 다루고 있어 적절합니다."
-		},
-		{
-			"taskId": 12,
-			"taskTitle": "UI 시스템 및 게임 상태 표시",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "pygame 기반 HUD 시스템과 시각적 피드백을 통합한 UI 관리 시스템을 구현합니다. 모달 UI, 애니메이션 효과, 파티클 시스템을 포함하여 사용자 경험을 향상시키는 완전한 UI 시스템을 구현하세요.",
-			"reasoning": "UI 렌더링, 애니메이션, 이벤트 처리 등이 포함된 중간 난이도 작업입니다. 기존 4개 서브태스크가 각 UI 컴포넌트를 적절히 분할하고 있습니다."
-		},
-		{
-			"taskId": 21,
-			"taskTitle": "좌표계 테스트 스위트 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "포괄적인 좌표 변환 테스트와 성능 벤치마크, 통합 시나리오 테스트를 구현합니다. @pytest.mark.parametrize를 활용한 다양한 테스트 케이스와 실제 게임 환경에서의 좌표계 안정성 검증을 포함하세요.",
-			"reasoning": "테스트 설계, 성능 벤치마킹, 통합 테스트 등이 포함된 중간-고난이도 작업입니다. 기존 4개 서브태스크가 각 테스트 영역을 잘 구분하고 있어 적절합니다."
-		},
-		{
-			"taskId": 22,
-			"taskTitle": "통합 시스템 조정 및 게임 루프 최적화",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "40+ FPS 목표 달성을 위한 시스템 실행 순서 최적화와 성능 모니터링 시스템을 구현합니다. 메모리 풀링, GC 최적화, 적응적 품질 조정을 통해 다양한 게임 상황에서 안정적인 성능을 보장하세요.",
-			"reasoning": "시스템 최적화, 성능 모니터링, 메모리 관리 등이 포함된 고난이도 작업입니다. 기존 5개 서브태스크가 성능 최적화의 각 측면을 잘 다루고 있어 적절합니다."
-		},
-		{
-			"taskId": 25,
-			"taskTitle": "게임 이벤트 타입 정의 및 구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "BaseEvent를 상속받는 게임 특화 이벤트 클래스들을 구현합니다. 데이터 검증, 성능 최적화(__slots__ 활용), 타입 안전성을 보장하는 이벤트 시스템의 구체적 구현체들을 작성하세요.",
-			"reasoning": "이벤트 클래스 정의와 검증 로직이 주요 작업인 중간 난이도입니다. 기존 3개 서브태스크가 이벤트 구현의 핵심 요소들을 적절히 다루고 있습니다."
-		},
-		{
-			"taskId": 26,
-			"taskTitle": "ProjectileSystem 책임 분리 리팩토링",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "기존 ProjectileSystem을 이벤트 발행자로 전환하고 직접 처리 로직을 제거합니다. IEventPublisher 인터페이스 구현과 깔끔한 이벤트 기반 아키텍처로의 전환을 통해 시스템 간 결합도를 낮추세요.",
-			"reasoning": "리팩토링 작업으로 인터페이스 설계, 기존 로직 제거, 이벤트 발행 구현 등이 포함된 중간 난이도입니다. 기존 4개 서브태스크가 리팩토링 단계를 적절히 분할하고 있습니다."
-		},
-		{
-			"taskId": 27,
-			"taskTitle": "ExperienceSystem 이벤트 구독 시스템 구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "EnemyDeathEvent를 구독하여 경험치를 처리하는 이벤트 기반 시스템을 구현합니다. IEventSubscriber 인터페이스 구현과 안전한 엔티티 조회, 예외 처리를 통해 견고한 경험치 시스템을 구축하세요.",
-			"reasoning": "이벤트 구독, 경험치 계산, 예외 처리 등이 포함된 중간 난이도 작업입니다. 기존 4개 서브태스크가 구독 시스템의 핵심 기능들을 잘 분할하고 있습니다."
-		},
-		{
-			"taskId": 28,
-			"taskTitle": "ItemDropSystem 및 EntityCleanupSystem 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "적 사망 시 아이템 드롭과 엔티티 정리를 담당하는 독립적인 시스템들을 구현합니다. 확률적 아이템 생성, 안전한 엔티티 제거, 시스템 간 독립성 보장을 통해 모듈화된 이벤트 처리 시스템을 구축하세요.",
-			"reasoning": "두 개의 독립적인 시스템 구현과 이들의 협력, 확률 계산, 리소스 정리 등이 포함된 중간 난이도입니다. 기존 4개 서브태스크가 적절한 분할을 제공합니다."
-		},
-		{
-			"taskId": 29,
-			"taskTitle": "GameLoop 이벤트 시스템 통합",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "메인 게임 루프에 이벤트 시스템을 완전히 통합하고 시스템 간 구독 관계를 자동화합니다. 이벤트 처리 순서 관리와 SystemOrchestrator 연동을 통해 안정적인 이벤트 기반 게임 루프를 구현하세요.",
-			"reasoning": "게임 루프 통합, 자동 구독, 실행 순서 관리 등이 포함된 중간-고난이도 작업입니다. 기존 4개 서브태스크가 통합 과정의 주요 단계들을 잘 다루고 있습니다."
-		},
-		{
-			"taskId": 30,
-			"taskTitle": "이벤트 시스템 단위 테스트 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "이벤트 시스템의 모든 컴포넌트에 대한 포괄적인 단위 테스트를 구현합니다. Mock 객체, pytest fixture, 예외 상황 처리를 포함하여 견고한 테스트 커버리지를 확보하세요.",
-			"reasoning": "포괄적인 테스트 구현, Mock 활용, fixture 설정 등이 포함된 중간 난이도입니다. 기존 5개 서브태스크가 테스트의 각 영역을 적절히 다루고 있습니다."
-		},
-		{
-			"taskId": 31,
-			"taskTitle": "이벤트 플로우 통합 테스트 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "실제 게임 시나리오에서 이벤트 시스템의 전체 플로우를 검증하는 통합 테스트를 구현합니다. 성능 요구사항 검증, 다중 구독자 동시 처리, 장시간 실행 안정성을 포함한 종합적인 검증을 수행하세요.",
-			"reasoning": "통합 테스트, 성능 검증, 다중 시스템 협력 등이 포함된 중간-고난이도 작업입니다. 기존 4개 서브태스크가 통합 테스트의 핵심 요소들을 잘 분할하고 있습니다."
-		},
-		{
-			"taskId": 32,
-			"taskTitle": "이벤트 시스템 성능 최적화 및 모니터링",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "이벤트 시스템의 성능을 최적화하고 런타임 모니터링 기능을 구현합니다. 프레임당 이벤트 제한, 처리 시간 모니터링, 성능 경고 시스템을 통해 2ms 이내 처리 목표를 달성하세요.",
-			"reasoning": "성능 최적화, 실시간 모니터링, 경고 시스템 등이 포함된 고난이도 작업입니다. 기존 5개 서브태스크가 성능 최적화의 각 측면을 적절히 다루고 있습니다."
-		},
-		{
-			"taskId": 34,
-			"taskTitle": "Entity 클래스 인터페이스 정리 및 표준화",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Entity 클래스의 인터페이스를 표준화하고 타입 힌트를 100% 적용합니다. 65개 참조를 분석하여 최소한의 변경으로 통일된 API를 제공하고, 기존 코드와의 호환성을 유지하세요.",
-			"reasoning": "인터페이스 표준화, 타입 힌트 적용, 호환성 유지 등이 포함된 중간 난이도입니다. 분석, 설계, 구현 단계로 3개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 35,
-			"taskTitle": "Component ABC 인터페이스 표준화",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Component 추상 기본 클래스를 정의하고 109개 참조를 가진 모든 컴포넌트를 표준화합니다. validate(), serialize(), deserialize() 메서드와 @dataclass를 활용하여 타입 안전성을 확보하세요.",
-			"reasoning": "ABC 설계, 대량의 컴포넌트 표준화, 검증 로직 구현 등이 포함된 중간-고난이도 작업입니다. 설계, 구현, 검증, 적용 단계로 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 36,
-			"taskTitle": "System ABC 인터페이스 정의 및 기본 구조 정리",
-			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "System 추상 기본 클래스를 정의하고 26개 참조를 가진 모든 시스템을 표준화합니다. initialize(), update(), cleanup() 메서드와 공통 속성들을 정의하여 통일된 시스템 인터페이스를 제공하세요.",
-			"reasoning": "ABC 설계, 시스템 표준화, 공통 인터페이스 정의 등이 포함된 중간 난이도입니다. 설계, 구현, 적용 단계로 3개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 37,
-			"taskTitle": "DTO 클래스 설계 및 구현",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "타입 안전한 데이터 전송을 위한 DTO 클래스들을 설계하고 구현합니다. @dataclass와 pydantic을 활용하여 creation, update, query 용도별로 분류된 DTO 시스템을 구축하세요.",
-			"reasoning": "DTO 설계, pydantic 활용, 카테고리별 분류 등이 포함된 중간 난이도입니다. 설계, 구현, 검증 단계로 3개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 38,
-			"taskTitle": "System.update() 인터페이스 변경 - entity_manager 파라미터 제거",
-			"complexityScore": 8,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "58개 참조를 가진 System.update() 메서드를 TDD 6단계 프로세스로 안전하게 리팩토링합니다. 좌표변환시스템을 우선 처리하고 Manager 패턴으로 전환하여 의존성을 낮추세요.",
-			"reasoning": "대규모 리팩토링, TDD 적용, 의존성 관리 등이 포함된 고난이도 작업입니다. 분석, TDD 설계, 구현, 검증 단계로 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 39,
-			"taskTitle": "Manager 인터페이스 추상화 구현",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "도메인별 Manager 인터페이스를 구현하고 DTO 기반 타입 안전한 데이터 전송을 제공합니다. 정적 팩토리 메서드와 Mock 객체 지원을 통해 테스트 가능한 Manager 시스템을 구축하세요.",
-			"reasoning": "인터페이스 설계, DTO 통합, 팩토리 패턴 등이 포함된 중간-고난이도 작업입니다. 설계, 구현, 통합, 테스트 단계로 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 40,
-			"taskTitle": "SharedEventQueue 기반 Producer-Consumer 시스템 구현",
-			"complexityScore": 8,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "기존 EventBus를 대체하는 고성능 Producer-Consumer 이벤트 시스템을 구현합니다. queue.Queue와 제네릭 타입을 활용하여 스레드 안전하고 타입 안전한 직접 연결 방식을 구현하세요.",
-			"reasoning": "고성능 이벤트 시스템, 스레드 안전성, 제네릭 타입 등이 포함된 고난이도 작업입니다. 설계, 구현, 최적화, 검증 단계로 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 41,
-			"taskTitle": "Strategy 패턴 인터페이스 정의 및 구현",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "런타임 교체 가능한 전략 패턴 인터페이스를 선별적으로 구현합니다. attack, spawn, movement, coordinate_transform 영역에서 실제 필요한 부분만 Strategy 패턴을 적용하여 과도한 복잡성을 피하세요.",
-			"reasoning": "Strategy 패턴 설계, 런타임 교체, 선별적 적용 등이 포함된 중간 난이도입니다. 분석, 설계, 구현, 적용 단계로 4개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 42,
-			"taskTitle": "폴더 구조 재편성 및 모듈 이동",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "새로운 아키텍처에 맞춰 폴더 구조를 재편성하고 모든 import 경로를 수정합니다. 순환 의존성을 방지하고 모듈 구조를 정리하여 PRD 정의 구조에 맞춰 재배치하세요.",
-			"reasoning": "폴더 재편성, import 경로 수정, 의존성 관리 등이 포함된 중간 난이도입니다. 계획, 이동, 검증 단계로 3개 서브태스크가 적절합니다."
-		},
-		{
-			"taskId": 43,
-			"taskTitle": "통합 테스트 및 성능 검증",
-			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "리팩토링된 전체 시스템의 통합 테스트를 수행하고 성능 목표 달성을 검증합니다. 40+ FPS 유지, 1ms 이하 이벤트 처리, 모든 품질 검사 통과를 종합적으로 확인하세요.",
-			"reasoning": "통합 테스트, 성능 검증, 품질 검사 등이 포함된 중간-고난이도 작업입니다. 기능 테스트, 성능 테스트, 품질 검사, 최종 검증 단계로 4개 서브태스크가 적절합니다."
+			"taskId": 53,
+			"taskTitle": "SystemOrchestrator 통합 및 성능 최적화",
+			"complexityScore": 9,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "SystemOrchestrator에 모든 시스템 등록, SystemPriority 기반 실행 순서 결정 알고리즘, 의존성 검증 및 토폴로지 정렬 구현, 시스템별 성능 통계 수집 시스템, 메모리 사용량 모니터링, 60 FPS 목표 성능 최적화 (적 100개 + 투사체 200개), 장시간 실행 안정성 보장을 각각 분리하여 구현.",
+			"reasoning": "전체 시스템의 통합과 성능 최적화가 결합된 최고 복잡도의 작업. 토폴로지 정렬, 성능 모니터링, 메모리 최적화 등 고급 시스템 프로그래밍이 필요."
 		}
 	]
 }
